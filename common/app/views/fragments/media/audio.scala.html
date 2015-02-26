@@ -1,6 +1,7 @@
 @(player: model.AudioPlayer)
 
 <div class="gu-media-wrapper gu-media-wrapper--audio">
+    <canvas id="mycanvas" width="700" height="60"></canvas>
     <audio controls="controls" class="gu-media gu-media--audio js-gu-media--enhance" data-title="@player.title"
         data-duration="@player.audioElement.duration.toString()" data-media-id="@player.audioElement.id"
         data-auto-play="@player.autoPlay">
