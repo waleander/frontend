@@ -1,5 +1,6 @@
 define([
     'bean',
+    'bonzo',
     'fastdom',
     'qwery',
     'common/utils/_',
@@ -9,6 +10,7 @@ define([
     'common/utils/template'
 ], function (
     bean,
+    bonzo,
     fastdom,
     qwery,
     _,
@@ -31,12 +33,6 @@ define([
         this.analyser.connect(this.audioContext.destination);
 
         this.visuals = 'bars';
-
-        // wave
-        //this.analyser.fftSize = 2048;
-        //this.bufferLength = this.analyser.frequencyBinCount;
-        //this.dataArray = new Uint8Array(this.bufferLength);
-
         // bars
         this.analyser.fftSize = 256;
         this.bufferLength = this.analyser.frequencyBinCount;
@@ -88,8 +84,6 @@ define([
     };
 
     EnhancedAudio.prototype.createPlaylist = function () {
-        //var capiTmpl = 'http://content.guardianapis.com/search?api-key={{key}}gnm-hackday&page-size=6&tag={{seriesId}}',
-
 
         if (config.page.seriesId) {
 
@@ -114,10 +108,11 @@ define([
 
                 _.forEach(playlistItems, function(playlistItem){
                     var webTitle = playlistItem.webTitle.split(' – ')[0].split(' - ')[0];
-                    var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position">{{position}}</span> <a class="audio-player-playlist--item-title" data-src="">{{title}}</a></div>',
+                    var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position">{{position}}</span> <a class="audio-player-playlist--item-title" api-url="{{apiUrl}}">{{title}}</a></div>',
                     {
                         position: playlistPosition,
-                        title: webTitle
+                        title: webTitle,
+                        apiUrl: playlistItem.apiUrl
                     }));
                     $audioPlaylist.append($newItem);
                     playlistPosition++;
@@ -125,12 +120,40 @@ define([
 
                 $('.js-audio-playlist').append($audioPlaylist);
 
+                bean.on(document.body, 'click', '.audio-player-playlist--item-title', function(event){
+                    var $selectedItem = bonzo(event.currentTarget),
+                        req = {
+                        url: $selectedItem.attr('api-url'),
+                        type: 'json',
+                        method: 'get',
+                        crossOrigin: true,
+                        timeout: 5000,
+                        data: {
+                            'api-key': 'gnm-hackday',
+                            'show-elements': 'audio'
+                        }
+                    };
+
+                    ajaxPromise(req).then(function (data) {
+                        var assetFile = data.response.content.elements[0].assets[0].file;
+                        this.player.src(assetFile);
+                        this.player.play();
+
+                        $('.audio-player-playlist--item-nowplaying').removeClass('audio-player-playlist--item-nowplaying');
+                        $selectedItem.addClass('audio-player-playlist--item-nowplaying');
+
+                    }.bind(this));
+
+
+                }.bind(this));
+
                 console.log(playlistItems);
-            });
+            }.bind(this));
 
         }
 
     };
+
 
     EnhancedAudio.prototype.draw = function () {
         fastdom.defer(2, this.draw.bind(this));
@@ -195,6 +218,7 @@ define([
 
         } else {
             this.canvasContext.fillStyle = 'rgb(0, 0, 0)';
+            this.canvasContext.fillRect(0, 0, this.WIDTH, this.HEIGHT);
         }
     };
 

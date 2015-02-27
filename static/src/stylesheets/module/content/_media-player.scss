@@ -973,6 +973,15 @@ $ima-controls-height: 70px;
 
 .audio-player-playlist--item-title {
     color: #f1f1f1;
+
+    &.audio-player-playlist--item-nowplaying {
+        font-weight: bolder;
+    }
+    &.audio-player-playlist--item-nowplaying:after {
+        content: " - Now Playing";
+        color: #fb0;
+        @include fs-textSans(2);
+    }
 }
 
 /* Tech overrides
