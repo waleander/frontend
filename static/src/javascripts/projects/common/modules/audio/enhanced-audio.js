@@ -88,13 +88,12 @@ define([
         if (config.page.seriesId) {
 
             var request = {
-                url: 'http://content.guardianapis.com/search',
+                url: 'http://internal.content.guardianapis.com/search',
                 type: 'json',
                 method: 'get',
                 crossOrigin: true,
                 timeout: 5000,
                 data: {
-                    'api-key': 'gnm-hackday',
                     'page-size': 6,
                     tag: config.page.seriesId
                 }
@@ -102,9 +101,15 @@ define([
 
             ajaxPromise(request).then(function (data) {
                 var playlistItems = _.filter(data.response.results, function(result){ return result.id != config.page.pageId}),
-
                     $audioPlaylist = $.create('<div class="audio-player-playlist"></div>'),
-                    playlistPosition = 1;
+                    playlistPosition = 1,
+                    currentPageItem = {
+                        webTitle: config.page.webTitle,
+                        apiUrl: 'http://internal.content.guardianapis.com/' + config.page.pageId
+                    };
+
+                // Add the current page item to the start of the list.
+                playlistItems.unshift(currentPageItem);
 
                 _.forEach(playlistItems, function(playlistItem){
                     var webTitle = playlistItem.webTitle.split(' – ')[0].split(' - ')[0];
@@ -112,7 +117,7 @@ define([
                     {
                         position: playlistPosition,
                         title: webTitle,
-                        apiUrl: playlistItem.apiUrl
+                        apiUrl: playlistItem.apiUrl.replace(/\/content.guardianapis.com/, "/internal.content.guardianapis.com")
                     }));
                     $audioPlaylist.append($newItem);
                     playlistPosition++;
@@ -129,7 +134,6 @@ define([
                         crossOrigin: true,
                         timeout: 5000,
                         data: {
-                            'api-key': 'gnm-hackday',
                             'show-elements': 'audio'
                         }
                     };
@@ -137,23 +141,24 @@ define([
                     ajaxPromise(req).then(function (data) {
                         var assetFile = data.response.content.elements[0].assets[0].file;
                         this.player.src(assetFile);
-                        this.player.play();
 
                         $('.audio-player-playlist--item-nowplaying').removeClass('audio-player-playlist--item-nowplaying');
                         $selectedItem.addClass('audio-player-playlist--item-nowplaying');
 
+                        this.player.play();
+
                     }.bind(this));
-
-
                 }.bind(this));
 
-                console.log(playlistItems);
+                this.player.one('play', function(){
+                    if (!qwery('.audio-player-playlist--item-nowplaying').length){
+                        $('.audio-player-playlist--item-title').first().addClass('audio-player-playlist--item-nowplaying');
+                    }
+                }.bind(this));
+
             }.bind(this));
-
         }
-
     };
-
 
     EnhancedAudio.prototype.draw = function () {
         fastdom.defer(2, this.draw.bind(this));
