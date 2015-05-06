@@ -14,11 +14,14 @@ define([
         if (!reporter) {
             reporter = raven.captureException;
         }
-
-        try {
+        if (document.domain.toLowerCase().indexOf("local") == -1) {
+            try {
+                block();
+            } catch (e) {
+                reporter(e, {tags: {module: name}});
+            }
+        } else {
             block();
-        } catch (e) {
-            reporter(e, { tags: { module: name } });
         }
     }
 
