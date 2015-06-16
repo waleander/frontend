@@ -26,7 +26,7 @@ define([
             direction: 'down',
             showNavigation: false,
             thresholdMobile: 400,
-            firstLoadDepth: 500
+            firstLoadDepth: 300 // We are below the big top banner
         };
         this.breakpoint = detect.getBreakpoint();
         this.isMobile = _.contains(this.breakpoint, 'mobile');
