@@ -213,6 +213,11 @@ define([
                 this.$els.main.css('margin-top', 0);
             }
 
+            // If search is open close it
+            if (this.config.direction === 'down' && $('.js-search-toggle').hasClass('is-active')) {
+                bean.fire(qwery('.js-search-toggle')[0], 'click');
+            }
+
         }.bind(this));
     };
 
