@@ -240,7 +240,7 @@ define([
                     position:  'fixed',
                     top:       this.headerBigHeight,
                     width:     '100%',
-                    'z-index': '999' // Sticky z-index -1 as it should be sticky but should go below the sticky header
+                    'z-index': '1000' // Sticky z-index -1 as it should be sticky but should go below the sticky header
                 });
                 this.$els.main.css('margin-top', this.headerBigHeight + bannerHeight);
 
