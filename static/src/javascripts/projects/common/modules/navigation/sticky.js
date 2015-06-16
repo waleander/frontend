@@ -145,7 +145,7 @@ define([
                     position:  'fixed',
                     top:       0,
                     width:     '100%',
-                    'z-index': '1000',
+                    'z-index': '1002',
                     'margin-top': 0,
                     'transform': 'translateY(-100%)'
                 });
@@ -167,7 +167,7 @@ define([
                     position: 'absolute',
                     width: '100%',
                     top: this.headerBigHeight,
-                    'z-index': '999' // Sticky z-index +1 so banner is over sticky header
+                    'z-index': '1001' // Sticky z-index +1 so banner is over sticky header
                 });
 
                 //header is slim from now on
@@ -183,7 +183,7 @@ define([
                         position:  'relative',
                         'margin-top': bannerHeight,
                         'transform': 'translateY(-500%)',
-                        'z-index': '998'
+                        'z-index': '1000'
                     });
 
                     this.$els.main.css('margin-top', this.headerBigHeight - this.$els.header.dim().height);
@@ -194,7 +194,7 @@ define([
                     position:  'fixed',
                     top:       0,
                     width:     '100%',
-                    'z-index': '999'
+                    'z-index': '1001'
                 });
                 // Header is not slim yet
                 this.$els.header.removeClass('l-header--is-slim');
@@ -207,7 +207,7 @@ define([
                     width:     '100%',
                     'margin-top': bannerHeight,
                     'transform': 'translateY(0%)',
-                    'z-index': '998'
+                    'z-index': '1000'
                 });
 
                 this.$els.main.css('margin-top', 0);
