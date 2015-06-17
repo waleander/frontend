@@ -75,7 +75,7 @@ define([
                         });
                     });
                     clearInterval(checkInterval);
-                })
+                });
             }
         };
 
