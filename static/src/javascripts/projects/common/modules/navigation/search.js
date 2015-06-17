@@ -3,13 +3,15 @@ define([
     'fastdom',
     'common/utils/_',
     'common/utils/$',
-    'common/utils/config'
+    'common/utils/config',
+    'common/modules/experiments/ab'
 ], function (
     bean,
     fastdom,
     _,
     $,
-    config
+    config,
+    ab
 ) {
 
     var Search = function () {
@@ -48,10 +50,14 @@ define([
 
         this.focusSearchField = function () {
             var $input = $('input.gsc-input');
+            var ViewabilityTest = ab.getParticipations().Viewability;
+
             if ($input.length > 0) {
                 $input.focus();
 
-                checkInterval = setInterval(self.checkResults, 250);
+                if (ab.testCanBeRun('Viewability') && ViewabilityTest && ViewabilityTest.variant === 'variant' && config.page.contentType !== 'Interactive') {
+                    checkInterval = setInterval(self.checkResults, 250);
+                }
             }
         };
 
