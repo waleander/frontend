@@ -19,7 +19,8 @@ define([
             gcsUrl,
             resultSetSize,
             container,
-            self = this;
+            self = this,
+            checkInterval;
 
         if (config.switches.googleSearch && config.page.googleSearchUrl && config.page.googleSearchId) {
 
@@ -49,6 +50,26 @@ define([
             var $input = $('input.gsc-input');
             if ($input.length > 0) {
                 $input.focus();
+
+                checkInterval = setInterval(self.checkResults, 250);
+            }
+        };
+
+        // Check if google returned results as there is no callback from google API v2 for this
+        this.checkResults = function () {
+            if ($('.gsc-resultsbox-visible').length > 0) {
+                fastdom.read(function () {
+                    var height = window.innerHeight - $('.popup--search').offset().top;
+
+                    fastdom.write(function () {
+                        $('.popup--search').css('height', height);
+                        $('.gsc-results').css({
+                            height: height - 150,
+                            'overflow-y': 'auto'
+                        });
+                    });
+                    clearInterval(checkInterval);
+                })
             }
         };
 
