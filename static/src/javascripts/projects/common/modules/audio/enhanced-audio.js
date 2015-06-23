@@ -113,7 +113,7 @@ define([
 
                 _.forEach(playlistItems, function (playlistItem) {
                     var webTitle = playlistItem.webTitle.split(' – ')[0].split(' - ')[0];
-                    var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position">{{position}}</span> <a class="audio-player-playlist--item-title" api-url="{{apiUrl}}">{{title}}</a></div>',
+                    var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position"><%=position%></span> <a class="audio-player-playlist--item-title" api-url="<%=apiUrl%>"><%=title%></a></div>',
                     {
                         position: playlistPosition,
                         title: webTitle,
