@@ -100,7 +100,7 @@ define([
             };
 
             ajaxPromise(request).then(function (data) {
-                var playlistItems = _.filter(data.response.results, function(result){ return result.id != config.page.pageId}),
+                var playlistItems = _.filter(data.response.results, function (result) { return result.id != config.page.pageId}),
                     $audioPlaylist = $.create('<div class="audio-player-playlist"></div>'),
                     playlistPosition = 1,
                     currentPageItem = {
@@ -111,7 +111,7 @@ define([
                 // Add the current page item to the start of the list.
                 playlistItems.unshift(currentPageItem);
 
-                _.forEach(playlistItems, function(playlistItem){
+                _.forEach(playlistItems, function (playlistItem) {
                     var webTitle = playlistItem.webTitle.split(' – ')[0].split(' - ')[0];
                     var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position">{{position}}</span> <a class="audio-player-playlist--item-title" api-url="{{apiUrl}}">{{title}}</a></div>',
                     {
@@ -125,7 +125,7 @@ define([
 
                 $('.js-audio-playlist').append($audioPlaylist);
 
-                bean.on(document.body, 'click', '.audio-player-playlist--item-title', function(event){
+                bean.on(document.body, 'click', '.audio-player-playlist--item-title', function (event) {
                     var $selectedItem = bonzo(event.currentTarget),
                         req = {
                         url: $selectedItem.attr('api-url'),
@@ -150,8 +150,8 @@ define([
                     }.bind(this));
                 }.bind(this));
 
-                this.player.one('play', function(){
-                    if (!qwery('.audio-player-playlist--item-nowplaying').length){
+                this.player.one('play', function () {
+                    if (!qwery('.audio-player-playlist--item-nowplaying').length) {
                         $('.audio-player-playlist--item-title').first().addClass('audio-player-playlist--item-nowplaying');
                     }
                 }.bind(this));
@@ -212,11 +212,11 @@ define([
             var barHeight;
             var x = 0;
 
-            for(var i = 0; i < this.bufferLength; i++) {
+            for (var i = 0; i < this.bufferLength; i++) {
                 barHeight = this.dataArray[i];
 
-                this.canvasContext.fillStyle = 'rgb(170,' + (barHeight+100) + ',270)';
-                this.canvasContext.fillRect(x,this.HEIGHT-barHeight/2,barWidth,barHeight/2);
+                this.canvasContext.fillStyle = 'rgb(170,' + (barHeight + 100) + ',270)';
+                this.canvasContext.fillRect(x, this.HEIGHT - barHeight / 2, barWidth, barHeight / 2);
 
                 x += barWidth + 1;
             }
