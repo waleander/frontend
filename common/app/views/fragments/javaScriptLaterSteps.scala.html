@@ -196,6 +196,27 @@
                 }
             }
 
+            // hijack addEventListener so we can throttle 3rd parties that hook into high-firing events
+            (function (win) {
+              var throttleTime = 100; // set high for demo
+              var addEventListenerPrototype = win.prototype.addEventListener;
+
+              win.prototype.addEventListener = function (type, fn, capture) {
+                if (/scroll|mousemove|touchmove/.test(type)) {
+                  console.log('Hijacking eventListener: on' + type);
+                  this.addEventListenerPrototype = addEventListenerPrototype;
+                  this.addEventListenerPrototype(type, throttle(fn, throttleTime), capture);
+                } else {
+                  addEventListenerPrototype(type, fn, capture);
+                }
+              };
+
+              // ******************* lodash.throttle *******************
+              function isObjectLike(t){return!!t&&typeof t=="object"}function lodash(){}function getNative(t,n){var e=null==t?undefined:t[n];return isNative(e)?e:undefined}function debounce(t,n,e){function i(){g&&clearTimeout(g),s&&clearTimeout(s),T=0,s=g=p=undefined}function o(n,e){e&&clearTimeout(e),s=g=p=undefined,n&&(T=now(),l=t.apply(d,u),g||s||(u=d=undefined))}function r(){var t=n-(now()-f);t<=0||t>n?o(p,s):g=setTimeout(r,t)}function a(){o(v,g)}function c(){if(u=arguments,f=now(),d=this,p=v&&(g||!h),b===false)var e=h&&!g;else{
+            s||h||(T=f);var i=b-(f-T),o=i<=0||i>b;o?(s&&(s=clearTimeout(s)),T=f,l=t.apply(d,u)):s||(s=setTimeout(a,i))}return o&&g?g=clearTimeout(g):g||n===b||(g=setTimeout(r,n)),e&&(o=true,l=t.apply(d,u)),!o||g||s||(u=d=undefined),l}var u,s,l,f,d,g,p,T=0,b=false,v=true;if(typeof t!="function")throw new TypeError(FUNC_ERROR_TEXT);if(n=n<0?0:+n||0,e===true){var h=true;v=false}else isObject(e)&&(h=!!e.leading,b="maxWait"in e&&nativeMax(+e.maxWait||0,n),v="trailing"in e?!!e.trailing:v);return c.cancel=i,c}function throttle(t,n,e){
+            var i=true,o=true;if(typeof t!="function")throw new TypeError(FUNC_ERROR_TEXT);return e===false?i=false:isObject(e)&&(i="leading"in e?!!e.leading:i,o="trailing"in e?!!e.trailing:o),debounce(t,n,{leading:i,maxWait:+n,trailing:o})}function isFunction(t){return isObject(t)&&objToString.call(t)==funcTag}function isObject(t){var n=typeof t;return!!t&&("object"==n||"function"==n)}function isNative(t){return null==t?false:isFunction(t)?reIsNative.test(fnToString.call(t)):isObjectLike(t)&&reIsHostCtor.test(t)}var undefined,VERSION="3.10.0",FUNC_ERROR_TEXT="Expected a function",funcTag="[object Function]",reIsHostCtor=/^\[object .+?Constructor\]$/,objectProto=Object.prototype,fnToString=Function.prototype.toString,hasOwnProperty=objectProto.hasOwnProperty,objToString=objectProto.toString,reIsNative=RegExp("^"+fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g,"\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g,"$1.*?")+"$"),nativeMax=Math.max,nativeNow=getNative(Date,"now"),now=nativeNow||function(){return(new Date).getTime()};
+            })(Window);
+
         })(guardian.isModernBrowser);
 
     </script>
