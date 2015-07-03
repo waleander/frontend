@@ -131,3 +131,6 @@ GET         /css-reports                                                        
 GET         /css-reports.json                                                                       controllers.admin.CssReportController.index
 GET         /css-reports/all.json                                                                   controllers.admin.CssReportController.aggregateReport
 GET         /css-reports/:date.json                                                                 controllers.admin.CssReportController.report(date: LocalDate)
+
+# AB test API
+GET         /ab/:testId                                                                             controllers.admin.AbTestApiController.abTest(testId: Option[String])
