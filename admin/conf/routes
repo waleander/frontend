@@ -133,4 +133,5 @@ GET         /css-reports/all.json                                               
 GET         /css-reports/:date.json                                                                 controllers.admin.CssReportController.report(date: LocalDate)
 
 # AB test API
-GET         /ab/:testId                                                                             controllers.admin.AbTestApiController.abTest(testId: Option[String])
+GET         /ab/all.json                                                                            controllers.admin.AbTestApiController.abTest(testId: String = "")
+GET         /ab/:testId.json                                                                        controllers.admin.AbTestApiController.abTest(testId: String)
