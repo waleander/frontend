@@ -1,5 +1,6 @@
 define([
     'raven',
+    'common/utils/ajax-promise',
     'common/utils/_',
     'common/utils/config',
     'common/utils/cookies',
@@ -13,12 +14,11 @@ define([
     'common/modules/experiments/tests/high-commercial-component',
     'common/modules/experiments/tests/save-for-later',
     'common/modules/experiments/tests/cookie-refresh',
-    'common/modules/experiments/tests/pintrest',
     'common/modules/experiments/headlines',
-    'common/modules/experiments/tests/membership-message',
-    'common/modules/experiments/tests/viewability'
+    'common/modules/experiments/tests/membership-message'
 ], function (
     raven,
+    ajax,
     _,
     config,
     cookies,
@@ -32,13 +32,10 @@ define([
     HighCommercialComponent,
     SaveForLater,
     CookieRefresh,
-    Pintrest,
     Headline,
-    MembershipMessage,
-    Viewability
+    MembershipMessage
 ) {
-
-    var TESTS = _.flatten([
+    var localTests = [
         new ArticleTruncation(),
         new FacebookMostViewed(),
         new TwitterMostViewed(),
@@ -46,13 +43,30 @@ define([
         new HighCommercialComponent(),
         new SaveForLater(),
         new CookieRefresh(),
-        new Pintrest(),
         new MembershipMessage(),
-        new Viewability(),
         _.map(_.range(1, 10), function (n) {
             return new Headline(n);
         })
-    ]);
+    ];
+
+    var remoteTests = [];
+    var TESTS = [];
+
+    ajax({
+        url: 'http://localhost:9000/ab/all.json',
+        type: 'json',
+        crossOrigin: true
+    }).then(
+        function (resp) {
+            _.forEach(resp, function (remoteTest) {
+                if (remoteTest.js) {
+                    var fnc = eval('(' + remoteTest.js + ')');
+                    remoteTests.push(new fnc());
+                }
+            });
+            TESTS = _.flatten(remoteTests.concat(localTests));
+        }
+    );
 
     var participationsKey = 'gu.ab.participations';
 
