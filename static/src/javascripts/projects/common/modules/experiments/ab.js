@@ -60,6 +60,7 @@ define([
         function (resp) {
             _.forEach(resp, function (remoteTest) {
                 if (remoteTest.js) {
+                    //TODO: How to avoid eval?
                     var Fnc = eval('(' + remoteTest.js + ')');
                     remoteTests.push(new Fnc());
                 }
