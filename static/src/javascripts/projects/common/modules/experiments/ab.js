@@ -60,8 +60,8 @@ define([
         function (resp) {
             _.forEach(resp, function (remoteTest) {
                 if (remoteTest.js) {
-                    var fnc = eval('(' + remoteTest.js + ')');
-                    remoteTests.push(new fnc());
+                    var Fnc = eval('(' + remoteTest.js + ')');
+                    remoteTests.push(new Fnc());
                 }
             });
             TESTS = _.flatten(remoteTests.concat(localTests));
