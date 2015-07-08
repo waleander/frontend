@@ -46,13 +46,6 @@ define([
                 e.preventDefault();
                 mediator.emit('modules:search');
             });
-
-            bean.on(document, 'click', '.search-results', function (e) {
-                var targetEl = e.target;
-                if (targetEl.nodeName.toLowerCase() === 'a') {
-                    targetEl.target = '_self';
-                }
-            });
         }
 
         this.focusSearchField = function () {
@@ -125,13 +118,15 @@ define([
             // Load the Google search monolith, if not already present in this context.
             // We have to re-run their script each time we do this.
             if (!container.innerHTML) {
+                var autoComplete = !ab.shouldRunTest('Viewability', 'variant') || config.page.contentType === 'Interactive';
+
                 fastdom.write(function () {
                     container.innerHTML = '' +
                         '<div class="search-box" role="search">' +
-                            '<gcse:searchbox enableAutoComplete="false"></gcse:searchbox>' +
+                            '<gcse:searchbox enableAutoComplete="' + autoComplete + '"></gcse:searchbox>' +
                         '</div>' +
                         '<div class="search-results" data-link-name="search">' +
-                            '<gcse:searchresults webSearchResultSetSize="' + resultSetSize + '"></gcse:searchresults>' +
+                            '<gcse:searchresults webSearchResultSetSize="' + resultSetSize + '" linkTarget="_self"></gcse:searchresults>' +
                         '</div>';
                 });
 
