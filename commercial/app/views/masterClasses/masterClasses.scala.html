@@ -21,12 +21,12 @@
                 </a>
             </div>
             <div class="commercial__body">
-                <ul class="lineitems">
+                <ul class="commercial__list">
                     @events.take(4).map { event =>
-                        <li class="lineitem">
-                            <a class="lineitem__link" href="@clickMacro@event.eventBriteEvent.guardianUrl" data-link-name="merchandising-masterclasses-s-v@{version}_@{date}-@{relevance}-@event.eventBriteEvent.name">
+                        <li class="commercialbox">
+                            <a class="commercialbox__link" href="@clickMacro@event.eventBriteEvent.guardianUrl" data-link-name="merchandising-masterclasses-s-v@{version}_@{date}-@{relevance}-@event.eventBriteEvent.name">
                                 @event.mainPicture.map{ picture =>
-                                    @Item300.bestFor(picture).map{ url => <div class="lineitem__image-crop"><img class="lineitem__image" src="@url" alt=""/></div> }
+                                    @Item300.bestFor(picture).map{ url => <img class="commercialbox__image" src="@url" alt=""/> }
                                 }
                                 <h4 class="lineitem__title">@event.eventBriteEvent.name</h4>
                                 <p class="lineitem__meta">
