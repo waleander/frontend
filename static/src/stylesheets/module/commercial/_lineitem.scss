@@ -55,6 +55,29 @@
     position: relative;
     width: 100%;
     overflow: hidden;
+    vertical-align: top;
+}
+
+.commercialbox__title {
+    color: colour(neutral-1);
+    @include fs-header(1);
+    font-weight: 500;
+    padding-top: 2px;
+    margin-bottom: $gs-baseline/2;
+}
+
+.commercialbox__meta {
+    color: colour(neutral-2);
+    @include fs-textSans(1);
+    margin-bottom: $gs-baseline/2;
+
+    b {
+        color: colour(neutral-1);
+    }
+}
+
+.commercialbox__meta__highlight {
+    color: colour(guardian-brand);
 }
 
 .commercial {
