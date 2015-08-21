@@ -177,15 +177,6 @@ object Switches {
     exposeClientSide = false
   )
 
-  val JspmTestUniqueVisitorsBeacon = Switch(
-    "Performance",
-    "jspm-test-unique-visitors-beacon",
-    "Send beacon for unique visitors in JspmTest and JspmControl server-side test variants",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 18),
-    exposeClientSide = true
-  )
-
   val RelatedContentSwitch = Switch(
     "Performance",
     "related-content",
@@ -278,15 +269,6 @@ object Switches {
     exposeClientSide = false
   )
 
-  val PngResizingSwitch = Switch(
-    "Performance",
-    "png-resizing",
-    "If this switch is on png images will be resized via the png-resizing server",
-    safeState = Off,
-    sellByDate = never,
-    exposeClientSide = false
-  )
-
   val Viewability = Switch(
     "Performance",
     "viewability",
@@ -330,6 +312,15 @@ object Switches {
     "Allowing to show new outbrain logic for facelift",
     safeState = On,
     sellByDate = new LocalDate(2015, 8, 30),
+    exposeClientSide = true
+  )
+
+  val NoMobileTopAdSwitch = Switch(
+    "Commercial",
+    "no-mobile-top-ad",
+    "On mobile there is no top banner and we are showing only two MPUs",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 9, 30),
     exposeClientSide = true
   )
 
@@ -540,15 +531,6 @@ object Switches {
     exposeClientSide = true
   )
 
-  val LazyLoadAds = Switch(
-    "Commercial",
-    "lz-ads",
-    "If switched on then all ads are lazy loaded",
-    safeState = Off,
-    sellByDate = never,
-    exposeClientSide = true
-  )
-
   val AdBlockMessage = Switch(
     "Commercial",
     "adblock",
@@ -563,8 +545,26 @@ object Switches {
     "fixed-top-above-nav",
     "Fixes size of top-above-nav ad slot on UK network front.",
     safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 12),
+    sellByDate = new LocalDate(2015, 9, 9),
     exposeClientSide = false
+  )
+
+  val CreativeTemplatesInS3 = Switch(
+    "Commercial",
+    "creative-templates-in-s3",
+    "Stores DFP creative template data in S3.",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 9, 9),
+    exposeClientSide = false
+  )
+
+  val UkNewsTargeting = Switch(
+    "Commercial",
+    "uk-news-target",
+    "Uses full UK News keyword for DFP targeting.",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 9, 9),
+    exposeClientSide = true
   )
 
 
@@ -584,7 +584,7 @@ object Switches {
     "enable-omniture-confidence-no-js",
     "Enables Omniture confidence tracking for no-JS devices",
     safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 1),
+    sellByDate = new LocalDate(2015, 9, 2),
     exposeClientSide = true
   )
 
@@ -658,15 +658,6 @@ object Switches {
     "Notifications",
     safeState = Off,
     sellByDate = new LocalDate(2015, 10, 15),
-    exposeClientSide = true
-  )
-
-  val ImgixSwitch = Switch(
-    "Feature",
-    "imgix",
-    "If this switch is on, then images will be served via the third party image resizing service Imgix.com",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 20),
     exposeClientSide = true
   )
 
@@ -789,12 +780,12 @@ object Switches {
     exposeClientSide = false
   )
 
-  val IdentityUseAvatarApi = Switch(
+  val IdentityCookieRefreshSwitch = Switch(
     "Identity",
-    "id-use-avatar-api",
-    "If switched on, avatars will be uploaded using the new Avatar API",
+    "id-cookie-refresh",
+    "If switched on, users cookies will be refreshed.",
     safeState = Off,
-    sellByDate = new LocalDate(2015, 9, 1),
+    sellByDate = never,
     exposeClientSide = true
   )
 
@@ -866,7 +857,7 @@ object Switches {
     "quiz-scores-service",
     "If switched on, the diagnostics server will provide a service to store quiz results in memcached",
     safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 16),
+    sellByDate = new LocalDate(2015, 10, 1),
     exposeClientSide = false
   )
 
@@ -897,25 +888,16 @@ object Switches {
     exposeClientSide = false
   )
 
+  val SyndicationReprintEnabledSwitch = Switch (
+    "Feature",
+    "syndication-reprint-enabled",
+    "Toggle on/off the syndication button on all pages (for desktop or above only)",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 9, 30),
+    exposeClientSide = true
+  )
+
   // A/B Tests
-
-  val TruncationWithFacebook = Switch(
-    "A/B Tests",
-    "ab-truncation-with-facebook",
-    "Truncation, with facebook most-viewed container",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 17),
-    exposeClientSide = true
-  )
-
-  val TruncationWithRelevant = Switch(
-    "A/B Tests",
-    "ab-truncation-with-relevant",
-    "Truncation, with relevant section-front container",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 17),
-    exposeClientSide = true
-  )
 
   val ABLiveblogNotifications = Switch(
     "A/B Tests",
@@ -935,30 +917,30 @@ object Switches {
     exposeClientSide = false
   )
 
-  val ABIdentityCookieRefresh = Switch(
+  val ABMembershipMessageUk = Switch(
     "A/B Tests",
-    "ab-cookie-refresh",
-    "It this switch is turned on, users cookies will be refreshed. Turn off if the identity API barfs" ,
+    "ab-membership-message-uk",
+    "Switch for the UK Membership message A/B variants test",
     safeState = Off,
-    sellByDate = never,
+    sellByDate = new LocalDate(2015, 9, 21),
     exposeClientSide = true
   )
 
-  val ABMembershipMessageVariants = Switch(
+  val ABMembershipMessageUsa = Switch(
     "A/B Tests",
-    "ab-membership-message-variants",
-    "Switch for the Membership message A/B variants test",
+    "ab-membership-message-usa",
+    "Switch for the USA Supporter message test",
     safeState = Off,
-    sellByDate = new LocalDate(2015, 8, 20),
+    sellByDate = new LocalDate(2015, 9, 21),
     exposeClientSide = true
   )
 
-  val ABSignedOutSaveForLaterAug = Switch(
+  val ABAdblockStickyBanner = Switch(
     "A/B Tests",
-    "ab-signed-out-save-for-later-aug",
-    "Switch off the signed out save for later test",
+    "ab-adblock-sticky-banner",
+    "Switch for the Ad-block sticky banner A/B test",
     safeState = Off,
-    sellByDate = never,
+    sellByDate = new LocalDate(2015, 8, 28),
     exposeClientSide = true
   )
 

@@ -29,6 +29,15 @@ object CrosswordsController extends Controller with ExecutionContexts {
     }
   }
 
+  def accessibleCrossword(crosswordType: String, id: Int) = Action.async { implicit request =>
+    withCrossword(crosswordType, id) { (crossword, content) =>
+      Cached(60)(Ok(views.html.accessibleCrossword(
+        new CrosswordPage(CrosswordData.fromCrossword(crossword), ApiContentWithMeta(content)),
+        AccessibleCrosswordRows(crossword)
+      )))
+    }
+  }
+
   def thumbnail(crosswordType: String, id: Int) = Action.async { implicit request =>
     withCrossword(crosswordType, id) { (crossword, _) =>
       val xml = CrosswordSvg(crossword, Some("100%"), Some("100%"), trim = true)
@@ -42,10 +51,13 @@ object CrosswordsController extends Controller with ExecutionContexts {
       }
     }
   }
+}
 
+object CrosswordPreferencesController extends Controller with PreferenceController {
   private val CrosswordOptIn = "crossword_opt_in"
   private val CrosswordOptInPath= "/crosswords"
   private val CrosswordOptInMaxAge = 14.days.toSeconds.toInt
+  private val CrosswordOptOutMaxAge = 60.days.toSeconds.toInt
 
   def crosswordsOptIn = Action { implicit request =>
     Cached(60)(SeeOther("/crosswords?view=beta").withCookies(
@@ -53,14 +65,19 @@ object CrosswordsController extends Controller with ExecutionContexts {
         CrosswordOptIn, "true",
         path = CrosswordOptInPath,
         maxAge = Some(CrosswordOptInMaxAge),
-        domain = Some(Configuration.id.domain))))
+        domain = getShortenedDomain(request.domain)
+      )
+    ))
   }
 
   def crosswordsOptOut = Action { implicit request =>
-    Cached(60)(SeeOther("/crosswords?view=old").discardingCookies(
-      DiscardingCookie(
-        CrosswordOptIn,
+    Cached(60)(SeeOther("/crosswords?view=classic").withCookies(
+      Cookie(
+        CrosswordOptIn, "false",
         path = CrosswordOptInPath,
-        domain = Some(Configuration.id.domain))))
+        maxAge = Some(CrosswordOptOutMaxAge),
+        domain = getShortenedDomain(request.domain)
+      )
+    ))
   }
 }

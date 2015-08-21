@@ -17,7 +17,7 @@ import org.jsoup.Jsoup
 import org.jsoup.safety.Whitelist
 import org.scala_tools.time.Imports._
 import play.api.libs.json._
-import views.support.{ImgSrc, Item700, Naked, StripHtmlTagsAndUnescapeEntities}
+import views.support._
 
 import scala.collection.JavaConversions._
 import scala.language.postfixOps
@@ -95,12 +95,12 @@ class Content protected (val apiContent: ApiContentWithMeta) extends Trail with 
 
   // read this before modifying
   // https://developers.facebook.com/docs/opengraph/howtos/maximizing-distribution-media-content#images
-  lazy val openGraphImage: String = {
-    bestOpenGraphImage
-      .orElse(mainPicture.flatMap(largestImageUrl))
-      .orElse(trailPicture.flatMap(largestImageUrl))
-      .getOrElse(facebook.imageFallback)
-  }
+  lazy val openGraphImage: String = ImgSrc(rawOpenGraphImage, FacebookOpenGraphImage)
+
+  private lazy val rawOpenGraphImage: String = bestOpenGraphImage
+    .orElse(mainPicture.flatMap(largestImageUrl))
+    .orElse(trailPicture.flatMap(largestImageUrl))
+    .getOrElse(facebook.imageFallback)
 
   lazy val shouldHideAdverts: Boolean = fields.get("shouldHideAdverts").exists(_.toBoolean)
   override lazy val isInappropriateForSponsorship: Boolean = fields.get("isInappropriateForSponsorship").exists(_.toBoolean)
@@ -115,6 +115,22 @@ class Content protected (val apiContent: ApiContentWithMeta) extends Trail with 
     series.filterNot{ tag => tag.id == "commentisfree/commentisfree"}.headOption.map( series =>
       Seq(("series", JsString(series.name)), ("seriesId", JsString(series.id)))
     ) getOrElse Nil
+  }
+
+  lazy val syndicationType = {
+    if(isBlog){
+      "blog"
+    } else if (isGallery){
+      "gallery"
+    } else if(isPodcast){
+      "podcast"
+    } else if (isAudio){
+      "audio"
+    } else if(isVideo){
+      "video"
+    } else {
+      "article"
+    }
   }
 
   private lazy val fields: Map[String, String] = delegate.safeFields
@@ -187,7 +203,7 @@ class Content protected (val apiContent: ApiContentWithMeta) extends Trail with 
       ("webPublicationDate", Json.toJson(webPublicationDate)),
       ("author", JsString(contributors.map(_.name).mkString(","))),
       ("authorIds", JsString(contributors.map(_.id).mkString(","))),
-      ("hasShowcaseMainPicture", JsBoolean(hasShowcaseMainPicture)),
+      ("hasShowcaseMainElement", JsBoolean(hasShowcaseMainElement)),
       ("tones", JsString(tones.map(_.name).mkString(","))),
       ("toneIds", JsString(tones.map(_.id).mkString(","))),
       ("blogs", JsString(blogs.map { _.name }.mkString(","))),
@@ -221,7 +237,8 @@ class Content protected (val apiContent: ApiContentWithMeta) extends Trail with 
   )
 
   override def cards: List[(String, String)] = super.cards ++ List(
-    "twitter:app:url:googleplay" -> webUrl.replace("http", "guardian")
+    "twitter:app:url:googleplay" -> webUrl.replace("http", "guardian"),
+    "twitter:image" -> rawOpenGraphImage
   ) ++ contributorTwitterHandle.map(handle => "twitter:creator" -> s"@$handle").toList
 
   override def elements: Seq[Element] = delegate.elements
@@ -320,6 +337,8 @@ class Content protected (val apiContent: ApiContentWithMeta) extends Trail with 
   }
 
   def showFooterContainers = false
+
+  override def iosType = Some("article")
 }
 
 object Content {
@@ -701,12 +720,14 @@ class Gallery(content: ApiContentWithMeta) extends Content(content) with Lightbo
   )
 
   override lazy val openGraphImage: String = {
-    bestOpenGraphImage
+    val imageUrl = bestOpenGraphImage
       .orElse(galleryImages.headOption.flatMap(_.largestImage.flatMap(_.url)))
       .getOrElse(conf.Configuration.facebook.imageFallback)
+
+    ImgSrc(imageUrl, FacebookOpenGraphImage)
   }
 
-  override def openGraphImages: Seq[String] = largestCrops.flatMap(_.url)
+  override def openGraphImages: Seq[String] = largestCrops.flatMap(_.url).map(ImgSrc(_, FacebookOpenGraphImage))
 
   override def schemaType = Some("http://schema.org/ImageGallery")
 

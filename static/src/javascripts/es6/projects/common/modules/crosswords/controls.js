@@ -1,11 +1,12 @@
 import React from 'react';
 
+import ConfirmButton from './confirm-button';
+
 const buttonClassName = 'button button--small';
 const buttonCurrentClassName = 'button--crossword--current';
 const buttonGenericClassName = 'button--secondary';
 
 export default class Controls extends React.Component {
-
     render () {
         const hasSolutions = this.props.hasSolutions;
         const hasFocus = this.props.clueInFocus;
@@ -16,32 +17,40 @@ export default class Controls extends React.Component {
 
         // GRID CONTROLS
         controls.grid.unshift(
-            <button className={`${buttonClassName} ${buttonGenericClassName}`}
+            <ConfirmButton className={`${buttonClassName} ${buttonGenericClassName}`}
                 onClick={this.props.onClearAll}
-                key='clear'>
-                Clear all
-            </button>
+                key='clear'
+                text='Clear all'>
+            </ConfirmButton>
         );
 
         if (hasSolutions) {
             controls.grid.unshift(
-                <button className={`${buttonClassName} ${buttonGenericClassName}`}
+                <ConfirmButton className={`${buttonClassName} ${buttonGenericClassName}`}
                     onClick={this.props.onSolution}
-                    key='solution'>
-                    Reveal all
-                </button>
+                    key='solution'
+                    text='Reveal all'>
+                </ConfirmButton>
             );
             controls.grid.unshift(
-                <button className={`${buttonClassName} ${buttonGenericClassName}`}
+                <ConfirmButton className={`${buttonClassName} ${buttonGenericClassName}`}
                     onClick={this.props.onCheckAll}
-                    key='checkAll'>
-                    Check all
-                </button>
+                    key='checkAll'
+                    text='Check all'>
+                </ConfirmButton>
             );
         }
 
         // HIGHLIGHTED CLUE CONTROLS
         if (hasFocus && hasSolutions) {
+            controls.clue.unshift(
+                <button className={`${buttonClassName} ${buttonCurrentClassName}`}
+                    onClick={this.props.onClearSingle}
+                    key='clear-single'>
+                    Clear this
+                </button>
+            );
+
             controls.clue.unshift(
                 <button className={`${buttonClassName} ${buttonCurrentClassName}`}
                     onClick={this.props.onCheat}
