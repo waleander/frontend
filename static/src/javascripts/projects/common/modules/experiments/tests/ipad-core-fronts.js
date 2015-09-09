@@ -15,7 +15,7 @@ define([], function () {
         this.idealOutcome = 'Fewer iPad users will crash on fronts.';
 
         this.canRun = function () {
-            // is an iPad2 or later with iOS 6,7 or 8
+            // is an iPad 3 or later with iOS 6,7 or 8
             return navigator.platform === 'iPad'
                 && window.devicePixelRatio === 2
                 && /.*iPad; CPU OS ([678])_\d+.*/.test(navigator.userAgent)
