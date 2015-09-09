@@ -881,6 +881,15 @@ object Switches {
 
   // A/B Tests
 
+  val ABIpadCoreFrontsSwitch = Switch(
+    "A/B Tests",
+    "ab-ipad-core-fronts",
+    "Serve core fronts to a percentage of crash-prone ipad users",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 10, 31),
+    exposeClientSide = true
+  )
+
   val ABLiveblogNotifications = Switch(
     "A/B Tests",
     "ab-liveblog-notifications",
