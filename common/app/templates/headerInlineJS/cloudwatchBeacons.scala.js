@@ -21,20 +21,18 @@
                 return id;
             };
 
-            // send immediate beacon - adding 1 second delay in an attempt to resolve signal loss on Android and Windows7
-            window.setTimeout(function () {
-                (new Image()).src = window.guardian.config.page.beaconUrl + '/count/' + identifier() + '-start.gif';
-            }, 1000);
+            // send immediate beacon
+            (new Image()).src = window.guardian.config.page.beaconUrl + '/count/' + identifier() + '-start.gif';
 
             // send another after 5 seconds, if we're still around
             window.setTimeout(function () {
                 (new Image()).src = window.guardian.config.page.beaconUrl + '/count/' + identifier() + '-after-5.gif';
             }, 5000);
 
-            // send another after 30 seconds
+            // send another after 10 seconds
             window.setTimeout(function () {
-                (new Image()).src = window.guardian.config.page.beaconUrl + '/count/' + identifier() + '-after-30.gif';
-            }, 30000);
+                (new Image()).src = window.guardian.config.page.beaconUrl + '/count/' + identifier() + '-after-10.gif';
+            }, 10000);
 
             // send last one after 60 seconds
             window.setTimeout(function () {

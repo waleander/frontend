@@ -49,17 +49,17 @@ object Metric extends Logging {
 
     ("ipad-3orLater-start", CountMetric(s"ipad-3orLater-start")),
     ("ipad-3orLater-after-5", CountMetric(s"ipad-3orLater-after-5")),
-    ("ipad-3orLater-after-30", CountMetric(s"ipad-3orLater-after-30")),
+    ("ipad-3orLater-after-10", CountMetric(s"ipad-3orLater-after-10")),
     ("ipad-3orLater-after-60", CountMetric(s"ipad-3orLater-after-60")),
 
     ("ipad-3orLater-core-opted-in-start", CountMetric(s"ipad-3orLater-core-opted-in-start")),
     ("ipad-3orLater-core-opted-in-after-5", CountMetric(s"ipad-3orLater-core-opted-in-after-5")),
-    ("ipad-3orLater-core-opted-in-after-30", CountMetric(s"ipad-3orLater-core-opted-in-after-30")),
+    ("ipad-3orLater-core-opted-in-after-10", CountMetric(s"ipad-3orLater-core-opted-in-after-10")),
     ("ipad-3orLater-core-opted-in-after-60", CountMetric(s"ipad-3orLater-core-opted-in-after-60")),
 
     ("ipad-3orLater-core-mvt-fronts-start", CountMetric(s"ipad-3orLater-core-mvt-fronts-start")),
     ("ipad-3orLater-core-mvt-fronts-after-5", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-5")),
-    ("ipad-3orLater-core-mvt-fronts-after-30", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-30")),
+    ("ipad-3orLater-core-mvt-fronts-after-10", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-10")),
     ("ipad-3orLater-core-mvt-fronts-after-60", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-60")),
 
 // KILL THESE WHILE THE IPAD CORE TEST IS RUNNING TO SAVE £££s ON AWS BEACON COSTS
