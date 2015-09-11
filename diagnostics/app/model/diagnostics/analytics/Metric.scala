@@ -46,12 +46,28 @@ object Metric extends Logging {
     ("ipad-old-after-5", CountMetric(s"ipad-old-after-5")),
     ("ipad-2orMini-start", CountMetric(s"ipad-2orMini-start")),
     ("ipad-2orMini-after-5", CountMetric(s"ipad-2orMini-after-5")),
+
     ("ipad-3orLater-start", CountMetric(s"ipad-3orLater-start")),
     ("ipad-3orLater-after-5", CountMetric(s"ipad-3orLater-after-5")),
-    ("android-nexus5-start", CountMetric(s"android-nexus5-start")),
-    ("android-nexus5-after-5", CountMetric(s"android-nexus5-after-5")),
-    ("windows7-chrome-start", CountMetric(s"windows7-chrome-start")),
-    ("windows7-chrome-after-5", CountMetric(s"windows7-chrome-after-5")),
+    ("ipad-3orLater-after-30", CountMetric(s"ipad-3orLater-after-30")),
+    ("ipad-3orLater-after-60", CountMetric(s"ipad-3orLater-after-60")),
+
+    ("ipad-3orLater-core-opted-in-start", CountMetric(s"ipad-3orLater-core-opted-in-start")),
+    ("ipad-3orLater-core-opted-in-after-5", CountMetric(s"ipad-3orLater-core-opted-in-after-5")),
+    ("ipad-3orLater-core-opted-in-after-30", CountMetric(s"ipad-3orLater-core-opted-in-after-30")),
+    ("ipad-3orLater-core-opted-in-after-60", CountMetric(s"ipad-3orLater-core-opted-in-after-60")),
+
+    ("ipad-3orLater-core-mvt-fronts-start", CountMetric(s"ipad-3orLater-core-mvt-fronts-start")),
+    ("ipad-3orLater-core-mvt-fronts-after-5", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-5")),
+    ("ipad-3orLater-core-mvt-fronts-after-30", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-30")),
+    ("ipad-3orLater-core-mvt-fronts-after-60", CountMetric(s"ipad-3orLater-core-mvt-fronts-after-60")),
+
+// KILL THESE WHILE THE IPAD CORE TEST IS RUNNING TO SAVE £££s ON AWS BEACON COSTS
+// ** REMEMBER TO UPDATE common/app/templates/headerInlineJS/cloudwatchBeacons.scala.js IF RE-ENABLING **
+//  ("android-nexus5-start", CountMetric(s"android-nexus5-start")),
+//  ("android-nexus5-after-5", CountMetric(s"android-nexus5-after-5")),
+//  ("windows7-chrome-start", CountMetric(s"windows7-chrome-start")),
+//  ("windows7-chrome-after-5", CountMetric(s"windows7-chrome-after-5")),
 
     ("headlines-variant-seen", CountMetric(s"headlines-variant-seen")),
     ("headlines-control-seen", CountMetric(s"headlines-control-seen")),
