@@ -20,7 +20,7 @@ define([], function () {
             try {
                 var corePref = window.localStorage.getItem('gu.prefs.force-core');
                 if (corePref) {
-                    if ((JSON.parse(corePref).value) === "on") {
+                    if ((JSON.parse(corePref).value) === 'on') {
                         return true;
                     }
                 }
