@@ -4,17 +4,45 @@
 @if(IphoneConfidence.isSwitchedOn && Seq("uk", "us", "au").contains(item.id)) {
     (function (window, navigator) {
 
+        var coreOptedIn = function () {
+            try {
+                var corePref = window.localStorage.getItem('gu.prefs.force-core');
+                if (corePref) {
+                    if ((JSON.parse(corePref).value) === "on") {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        var coreFrontsMvtParticipant = function () {
+            try {
+                var participations = window.localStorage.getItem('gu.ab.participations');
+                if (participations) {
+                    var corePart = JSON.parse(participations).filter(function (abTest) {
+                        return abTest.id === 'IpadCoreFronts'
+                    });
+                    if (corePart.length > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        };
+
         function logDevice(model, device) {
             var identifier = function() {
                 var id = device + '-' + model;
                 if ((device === 'ipad' && model === '3orLater')) {
-                    var corePref = window.localStorage.getItem('gu.prefs.force-core');
-                    if (corePref) {
-                        if ((JSON.parse(corePref).value) === "on") {
-                            return id + '-core-opted-in';
-                        }
+                    if (coreOptedIn()) {
+                        return id + '-core-opted-in';
                     }
-                    if (window.guardian.config.tests['ipad-core-fronts'] === true) {
+                    if (coreFrontsMvtParticipant()) {
                         return id + '-core-mvt-fronts';
                     }
                 }
