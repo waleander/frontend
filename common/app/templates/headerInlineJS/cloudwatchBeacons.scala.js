@@ -22,12 +22,9 @@
             try {
                 var participations = window.localStorage.getItem('gu.ab.participations');
                 if (participations) {
-                    var corePart = JSON.parse(participations).filter(function (abTest) {
-                        return abTest.id === 'IpadCoreFronts'
-                    });
-                    if (corePart.length > 0) {
-                        return true;
-                    }
+                    var jParts = JSON.parse(participations).value;
+                    var isParticipating = jParts["IpadCoreFronts"].variant === 'core';
+                    return isParticipating;
                 }
                 return false;
             } catch (e) {
