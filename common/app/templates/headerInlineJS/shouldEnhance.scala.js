@@ -12,6 +12,24 @@
         }
     };
 
+    var coreFrontsMvtParticipant = function () {
+        try {
+            var participations = window.localStorage.getItem('gu.ab.participations');
+            if (participations) {
+                var jParts = JSON.parse(participations).value;
+                var isParticipating = jParts["IpadCoreFronts"].variant === 'core';
+                return isParticipating;
+            }
+            return false;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    var isCoreFrontIpadUser = function () {
+      return @item.isFront && coreFrontsMvtParticipant();
+    };
+
     // Guess whether the device is too old, regardless of whether it cuts the mustard
     //
     // 'older' iOS normally indicates a device with lower power (they stop being upgradeable at some point).
@@ -30,7 +48,7 @@
         return false;
     };
 
-    window.shouldEnhance = !personPrefersCore() && !isOlderDevice();
+    window.shouldEnhance = !personPrefersCore() && !isOlderDevice() && !isCoreFrontIpadUser();
 })(navigator, window)
 
 
