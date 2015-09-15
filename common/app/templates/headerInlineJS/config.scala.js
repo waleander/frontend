@@ -17,6 +17,9 @@ window.guardian = {
                     || "XDomainRequest" in window
             )
     ),
+    isCoreFrontsExperience: (
+        window.coreFronts
+    ),
     css: {
         loaded: false
     },

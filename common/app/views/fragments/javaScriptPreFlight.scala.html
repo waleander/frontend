@@ -12,6 +12,7 @@
 
 <script id="gu">
     @Html(templates.headerInlineJS.js.polyfills().body)
+    @Html(templates.headerInlineJS.js.coreFronts(item).body)
     @Html(templates.headerInlineJS.js.shouldEnhance(item).body)
     @Html(templates.headerInlineJS.js.config(item).body)
     @Html(templates.headerInlineJS.js.featureDetection().body)
