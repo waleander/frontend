@@ -25,7 +25,11 @@ GET         /                                                                   
 GET         /admin                                                                                  controllers.admin.AdminIndexController.admin()
 
 #Facia Press
-GET         /press/all                                                                              controllers.FrontPressController.queueAllFrontsForPress()
+GET         /press                                                                                  controllers.FrontPressController.press()
+POST        /press/all                                                                              controllers.FrontPressController.queueAllFrontsForPress()
+POST        /press/high                                                                             controllers.FrontPressController.queueHighFrequencyFrontsForPress()
+POST        /press/standard                                                                         controllers.FrontPressController.queueStandardFrequencyFrontsForPress()
+POST        /press/low                                                                              controllers.FrontPressController.queueLowFrequencyFrontsForPress()
 
 # API endpoint proxying for https
 GET         /api/proxy/*path                                                                        controllers.admin.Api.proxy(path, callback)
@@ -48,11 +52,7 @@ POST        /dev/switchboard                                                    
 # Analytics
 GET         /analytics/abtests                                                                      controllers.admin.AnalyticsController.abtests()
 GET         /analytics/confidence                                                                   controllers.admin.AnalyticsConfidenceController.renderConfidence()
-GET         /analytics/google-referrers                                                             controllers.admin.GoogleReferrerController.renderGoogleReferrerDashboard()
-GET         /analytics/content/liveblog                                                             controllers.admin.ContentPerformanceController.renderLiveBlogDashboard()
 GET         /analytics/content/video                                                                controllers.admin.ContentPerformanceController.renderVideoEncodingsDashboard()
-GET         /analytics/omniture/segments/:rsid                                                      controllers.admin.OmnitureReportController.getSegments(rsid)
-GET         /analytics/omniture/*reportName                                                         controllers.admin.OmnitureReportController.getReport(reportName)
 
 GET         /analytics/headlines-test                                                               controllers.admin.MetricsController.renderHeadlinesTest()
 

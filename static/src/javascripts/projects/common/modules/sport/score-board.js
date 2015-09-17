@@ -1,12 +1,14 @@
 define([
     'bonzo',
     'common/utils/detect',
+    'common/utils/$',
     'common/utils/template',
     'common/modules/component',
     'text!common/views/sport/score-container.html'
 ], function (
     bonzo,
     detect,
+    $,
     template,
     component,
     scoreContainerHtml
@@ -19,8 +21,8 @@ define([
         - context.endpoint          - the ajax endpoint which will provide html scores inside a json object.
     */
     function ScoreBoard(context) {
-
         this.pageType = context.pageType;
+        this.parent = context.parent;
 
         this.placeholder = bonzo.create(template(scoreContainerHtml, {
             loadingState: this.pageType !== 'report' ? ' score__loading--live' : ''
@@ -44,7 +46,10 @@ define([
     ScoreBoard.prototype.componentClass = 'match-summary';
 
     ScoreBoard.prototype.prerender = function () {
-        this.placeholder.innerHTML = '';
+        var scoreLoadingPlaceholder = $('.score__loading', $(this.placeholder));
+        if (scoreLoadingPlaceholder.length) {
+            scoreLoadingPlaceholder.remove();
+        }
     };
 
     ScoreBoard.prototype.ready = function () {
@@ -64,6 +69,7 @@ define([
 
     ScoreBoard.prototype.error = function () {
         this.placeholder.innerHTML = '';
+        this.parent.removeClass('u-h');
     };
 
     return ScoreBoard;

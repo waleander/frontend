@@ -549,6 +549,14 @@ object Switches {
     exposeClientSide = true
   )
 
+  val AdFreeExperience = Switch(
+    "Commercial",
+    "advert-opt-out",
+    "Display advert free experience",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 12, 9),
+    exposeClientSide = true
+  )
 
   // Monitoring
 
@@ -607,6 +615,15 @@ object Switches {
   )
 
   // Features
+  val DiscussionCrosswordsOptionalRelativeTimestampSwitch = Switch(
+    "Feature",
+    "discussion-crosswords-optional-relative-timestamp-switch",
+    "Discussion optional relative timestamp in the crossword section",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 9, 28),
+    exposeClientSide = true
+  )
+
   val InternationalEditionSwitch = Switch(
     "Feature",
     "international-edition",
@@ -622,6 +639,15 @@ object Switches {
     "Fixtures and results container on football tag pages",
     safeState = On,
     sellByDate = never,
+    exposeClientSide = false
+  )
+
+  val ChapterHeadingsSwitch = Switch(
+    "Feature",
+    "chapter-headings",
+    "If this switch is turned on, we will add a block of chapter headings to the top of article pages",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 10, 7),
     exposeClientSide = false
   )
 
@@ -800,11 +826,29 @@ object Switches {
 
   val RugbyWorldCupswitch = Switch(
     "Feature",
-    "rugby-world-cup-cleanup",
-    "Does nothing, other than remind us to delete some World Cup specific code",
+    "rugby-world-cup",
+    "If this switch is on rugby world cup scores will be loaded in to rugby match reports and liveblogs",
     safeState = Off,
     sellByDate = new LocalDate(2015, 11, 6),
     exposeClientSide = true
+  )
+
+  val RugbyWorldCupMatchStatsSwitch = Switch(
+    "Feature",
+    "rugby-world-cup-match-stats",
+    "If this switch is on rugby world cup stats will be loaded in to rugby match reports and liveblogs",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 11, 6),
+    exposeClientSide = true
+  )
+
+  val RugbyWorldCupFriendlies = Switch(
+    "Feature",
+    "rugby-world-cup-friendlies-for-pre-prod",
+    "If this switch is on rugby world cup scores will be load in Friendlies too (only use in CODE)",
+    safeState = Off,
+    sellByDate = new LocalDate(2015, 11, 6),
+    exposeClientSide = false
   )
 
   val WeatherSwitch = Switch(
@@ -914,24 +958,6 @@ object Switches {
     "Switch for the USA Supporter message test",
     safeState = Off,
     sellByDate = new LocalDate(2015, 9, 21),
-    exposeClientSide = true
-  )
-
-  val ABRugbyScores = Switch(
-    "A/B Tests",
-    "ab-rugby-scores",
-    "Switches on the score components for the Rugby",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 11, 7),
-    exposeClientSide = true
-  )
-
-  val ABAdblockStickyBanner = Switch(
-    "A/B Tests",
-    "ab-adblock-sticky-banner",
-    "Switch for the Ad-block sticky banner A/B test",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 9, 11),
     exposeClientSide = true
   )
 
@@ -1066,6 +1092,15 @@ object Switches {
   val FrontPressJobSwitch = Switch(
     "Facia",
     "front-press-job-switch",
+    "If this switch is on then the jobs to push and pull from SQS will run",
+    safeState = Off,
+    sellByDate = never,
+    exposeClientSide = false
+  )
+
+  val FrontPressJobSwitchStandardFrequency = Switch(
+    "Facia",
+    "front-press-job-switch-standard-frequency",
     "If this switch is on then the jobs to push and pull from SQS will run",
     safeState = Off,
     sellByDate = never,

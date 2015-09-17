@@ -93,7 +93,6 @@ class Assets(base: String, assetMap: String = "assets/assets.map") extends Loggi
         case "football" => "football.css"
         case "index" => "index.css"
         case "rich-links" => "rich-links.css"
-        case "crosswords" => "crosswords.css"
         case _ => "content.css"
       }
 
@@ -151,6 +150,7 @@ class Assets(base: String, assetMap: String = "assets/assets.map") extends Loggi
      val systemJsAppConfig: String = inlineJs("assets/systemjs-config.js")
      val systemJsNormalize: String = inlineJs("assets/systemjs-normalize.js")
      val systemJsBundleConfig: String = inlineJs("assets/systemjs-bundle-config.js")
+     val omnitureJs: String = inlineJs("assets/vendor/omniture.js")
 
      lazy val systemJsSetupFragment: String = templates.js.systemJsSetup().body
   }
