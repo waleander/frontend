@@ -183,6 +183,11 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
 
   override def isSurging: Seq[Int] = SurgingContentAgent.getSurgingLevelsFor(id)
 
+  lazy val hasAtoms: Boolean = elements.exists({
+    case _:AtomElement => true
+    case _ => false
+  })
+
   // Static Meta Data used by plugins on the page. People (including 3rd parties) rely on the names of these things,
   // think carefully before changing them.
   override def metaData: Map[String, JsValue] = {
@@ -213,7 +218,8 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
       ("references", JsArray(delegate.references.toSeq.map(ref => Reference.toJavaScript(ref.id)))),
       ("sectionName", JsString(sectionName)),
       ("showRelatedContent", JsBoolean(showInRelated)),
-      ("productionOffice", JsString(productionOffice.getOrElse("")))
+      ("productionOffice", JsString(productionOffice.getOrElse(""))),
+      ("hasAtoms", JsBoolean(hasAtoms))
     ) ++ conditionalMetaData
   }
 

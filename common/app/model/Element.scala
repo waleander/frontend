@@ -22,6 +22,7 @@ object Element {
       case "video" => new VideoElement(theDelegate, elementIndex)
       case "audio" => new AudioElement(theDelegate, elementIndex)
       case "embed" => new EmbedElement(theDelegate, elementIndex)
+      case "atom"  => new AtomElement(theDelegate, elementIndex)
       case _ => new Element{
         lazy val delegate = theDelegate
         lazy val index = elementIndex
@@ -117,3 +118,4 @@ class ImageElement(val delegate: ApiElement, val index: Int) extends Element wit
 class VideoElement(val delegate: ApiElement, val index: Int) extends Element with ImageContainer with VideoContainer
 class AudioElement(val delegate: ApiElement, val index: Int) extends Element with ImageContainer with AudioContainer
 class EmbedElement(val delegate: ApiElement, val index: Int) extends Element with EmbedContainer
+class AtomElement(val delegate: ApiElement, val index: Int) extends Element with EmbedContainer
