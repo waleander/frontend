@@ -1,0 +1,53 @@
+.element-atom .quiz {
+
+    .quiz__questions {
+        font-weight: bold;
+    }
+
+    .question {
+        margin-bottom: $gs-gutter;
+    }
+
+    %answer {
+        font-weight: normal;
+        color: colour(neutral-2);
+        background-color: colour(neutral-8);
+        padding: $gs-baseline;
+        margin: $gs-gutter/4;
+
+        .js-on & {
+            cursor: pointer;
+        }
+    }
+
+
+
+    .answer,
+    .answer--correct,
+    .answer--incorrect {
+        @extend %answer;
+    }
+
+    .answer--correct {
+        background-color: colour(quiz-correct-inactive);
+
+        &.is-active {
+            color: white;
+            background-color: colour(quiz-correct);
+        }
+    }
+
+    .answer--incorrect {
+        color: white;
+        background-color: colour(quiz-incorrect)
+    }
+
+    .answer__text {
+        margin: 0;
+    }
+
+    .quiz__correct-answers,
+    .quiz__correct-answers-title {
+        display: none;
+    }
+}

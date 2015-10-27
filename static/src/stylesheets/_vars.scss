@@ -149,7 +149,14 @@ $frontend-palette: (
     // Membership
     // =============================================================================
 
-    membership-default:     #bb3a7f
+    membership-default:     #bb3a7f,
+
+    // Quiz
+    // =============================================================================
+
+    quiz-incorrect:         #BB001A,
+    quiz-correct-inactive:  #aedfb8,
+    quiz-correct:           #43B347
 );
 
 $c-top-header-background: guss-colour(guardian-brand-dark, $pasteup-palette); // one-off colour for header bg
