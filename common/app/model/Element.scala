@@ -114,8 +114,13 @@ trait EmbedContainer extends Element {
    lazy val embedAssets: Seq[EmbedAsset] = delegate.assets.filter(_.`type` == "embed").map(EmbedAsset(_))
 }
 
+trait AtomContainer extends Element {
+
+  lazy val atomAssets: Seq[AtomAsset] = delegate.assets.filter(_.`type` == "atom").map(AtomAsset(_))
+}
+
 class ImageElement(val delegate: ApiElement, val index: Int) extends Element with ImageContainer
 class VideoElement(val delegate: ApiElement, val index: Int) extends Element with ImageContainer with VideoContainer
 class AudioElement(val delegate: ApiElement, val index: Int) extends Element with ImageContainer with AudioContainer
 class EmbedElement(val delegate: ApiElement, val index: Int) extends Element with EmbedContainer
-class AtomElement(val delegate: ApiElement, val index: Int) extends Element with EmbedContainer
+class AtomElement(val delegate: ApiElement, val index: Int) extends Element with AtomContainer

@@ -90,3 +90,13 @@ case class EmbedAsset(private val delegate: Asset) {
   lazy val embedType: Option[String] = fields.get("embedType")
   lazy val role: Option[String] = fields.get("role")
 }
+
+case class AtomAsset(private val delegate: Asset) {
+
+  private lazy val fields: Map[String,String] = delegate.typeData
+
+  //lazy val id: Option[String] = delegate.id.getOrElse(None)
+  lazy val atomType: Option[String] = delegate.atomType
+  lazy val data: Option[String] = delegate.data
+
+}

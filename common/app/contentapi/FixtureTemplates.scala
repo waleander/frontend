@@ -41,6 +41,8 @@ object FixtureTemplates {
     "",
     None,
     None,
-    Map.empty
+    Map.empty,
+    None,
+    None
   )
 }
