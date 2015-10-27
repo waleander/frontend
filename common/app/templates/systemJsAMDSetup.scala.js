@@ -39,7 +39,8 @@ System.config({
         'bootstraps/liveblog': '@Static("javascripts/bootstraps/liveblog.js")',
         'bootstraps/trail': '@Static("javascripts/bootstraps/trail.js")',
         'bootstraps/gallery': '@Static("javascripts/bootstraps/gallery.js")',
-        'bootstraps/profile': '@Static("javascripts/bootstraps/profile.js")'
+        'bootstraps/profile': '@Static("javascripts/bootstraps/profile.js")',
+        'bootstraps/quizAtom': '@Static("javascripts/bootstraps/quizAtom.js")'
     }
 });
 

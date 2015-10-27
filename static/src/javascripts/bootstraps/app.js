@@ -137,6 +137,12 @@ define([
                 });
             }
 
+            if (config.page.hasAtoms) {
+                require(['bootstraps/quizAtom'], function (quizAtom) {
+                    bootstrapContext('quizAtom', quizAtom);
+                });
+            }
+
             // Mark the end of synchronous execution.
             userTiming.mark('App End');
         };

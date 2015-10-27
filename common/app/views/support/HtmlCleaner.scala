@@ -99,7 +99,7 @@ case class PictureCleaner(article: Article, amp: Boolean)(implicit request: Requ
     for {
       figure <- body.getElementsByTag("figure")
       image <- figure.getElementsByTag("img").headOption
-      if !figure.hasClass("element-comment") && !figure.hasClass("element-witness")
+      if !figure.hasClass("element-comment") && !figure.hasClass("element-witness") && !figure.hasClass("element-atom")
       container <- findContainerFromId(figure.attr("data-media-id"), image.attr("src"))
       image <- container.largestImage
     }{
@@ -453,7 +453,8 @@ object InBodyElementCleaner extends HtmlCleaner {
     "element-image",
     "element-witness",
     "element-comment",
-    "element-interactive"
+    "element-interactive",
+    "element-atom"
   )
 
   override def clean(document: Document): Document = {
@@ -510,7 +511,7 @@ case class DropCaps(isFeature: Boolean) extends HtmlCleaner {
             val next = h2.nextElementSibling()
             if (next.nodeName() == "p") {
                 next.html(setDropCap(next))
-            } 
+            }
         }
     }
     document

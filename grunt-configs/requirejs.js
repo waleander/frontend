@@ -133,6 +133,18 @@ module.exports = function(grunt, options) {
                 ]
             }
         },
+        quizAtom: {
+            options: {
+                name: 'bootstraps/quizAtom',
+                out: options.staticTargetDir + 'javascripts/bootstraps/quizAtom.js',
+                exclude: [
+                    'core',
+                    'bootstraps/app',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
         sudoku: {
             options: {
                 name: 'bootstraps/sudoku',
