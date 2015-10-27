@@ -108,22 +108,25 @@ define([
                 }
             },
 
-            renderAnswerIcon: function (answer, questionIndex, answerIndex) {
-
+            answerClass: function (answer, questionIndex, answerIndex) {
+                var BASE = 'question__answer answer',
+                    CORRECT = 'answer--correct',
+                    INCORRECT = 'answer--incorrect',
+                    SPACE = ' ';
                 var questions = this.state.quiz.content.questions;
                 var thisQuestion = questions[questionIndex];
                 var answerHasBeenClicked = thisQuestion.checkedAnswer === answerIndex;
 
                 if (answerHasBeenClicked && answer.correct) {
-                    return React.createElement('i', { className: 'i-tick-green' });
+                    return [BASE, SPACE, CORRECT].join('');
                 } else if (answerHasBeenClicked && !answer.correct) {
-                    return React.createElement('i', { className: 'i-cross-red' });
+                    return [BASE, SPACE, INCORRECT].join('');
                 }
+
+                return BASE;
             },
 
             render: function () {
-
-                var _this2 = this;
 
                 var self = this;
 
@@ -139,93 +142,86 @@ define([
 
                 return React.createElement(
                     'article',
-                    { className: 'editor__main' },
+                    { className: 'quiz' },
+                    React.createElement(
+                        'h2',
+                        { className: 'quiz__title' },
+                        self.state.quiz.title
+                    ),
+                    React.createElement(
+                        'ol',
+                        { className: 'quiz__questions' },
+                        questions.map(function (question, questionIndex) {
+
+                            var questionName = 'q' + questionIndex;
+
+                            var answers = question.answers || [];
+
+                            return React.createElement(
+                                'li',
+                                { className: 'quiz__question question' },
+                                React.createElement(
+                                    'p',
+                                    { className: 'question__text' },
+                                    self.renderQuestionImage(question),
+                                    React.createElement(
+                                        'span',
+                                        { className: 'question__number' },
+                                        ['Q', (questionIndex + 1), ' '].join('')
+                                    ),
+                                    question.questionText
+                                ),
+                                React.createElement(
+                                    'ol',
+                                    { className: 'question__answers' },
+                                    answers.map(function (answer, answerIndex) {
+                                        var radioId = self.getRadioName(questionIndex, answerIndex);
+                                        return React.createElement(
+                                            'li',
+                                            null,
+                                            React.createElement(
+                                                'label',
+                                                {
+                                                    htmlFor: radioId,
+                                                    className: self.answerClass(answer, questionIndex, answerIndex)
+                                                },
+                                                React.createElement(
+                                                    'input',
+                                                    {
+                                                        type: 'radio',
+                                                        id: radioId,
+                                                        className: 'answer__radio',
+                                                        name: questionName,
+                                                        value: answerIndex,
+                                                        onChange: self.updateScore.bind(self, questionIndex, answerIndex)
+                                                    }
+                                                ),
+                                                React.createElement(
+                                                    'span',
+                                                    { className: 'answer__text' },
+                                                    answer.answerText
+                                                )
+                                            )
+                                        );
+                                    })
+                                )
+                            );
+                        })
+                    ),
                     React.createElement(
                         'div',
-                        { className: 'editor__question-scroll-cont' },
-                        React.createElement(
-                            'div',
-                            { className: 'preview__panel' },
-                            React.createElement(
-                                'h2',
-                                { className: 'preview__title' },
-                                self.state.quiz.title
-                            ),
-                            React.createElement(
-                                'ul',
-                                null,
-                                questions.map(function (question, questionIndex) {
-
-                                    var questionName = 'q' + questionIndex;
-
-                                    var answers = question.answers || [];
-
-                                    return React.createElement(
-                                        'li',
-                                        { className: 'preview-question' },
-                                        React.createElement(
-                                            'div',
-                                            { className: 'preview-question__number' },
-                                            'Q',
-                                            questionIndex + 1
-                                        ),
-                                        React.createElement(
-                                            'div',
-                                            { className: 'preview-question__question' },
-                                            React.createElement(
-                                                'span',
-                                                { className: 'preview-question__text' },
-                                                question.questionText
-                                            ),
-                                            self.renderQuestionImage(question),
-                                            React.createElement(
-                                                'div',
-                                                { className: 'preview-question__answers' },
-                                                answers.map(function (answer, answerIndex) {
-                                                    var radioId = self.getRadioName(questionIndex, answerIndex);
-                                                    return React.createElement(
-                                                        'div',
-                                                        null,
-                                                        React.createElement(
-                                                            'label',
-                                                            { htmlFor: radioId, className: 'preview-question__answer' },
-                                                            React.createElement(
-                                                                'span',
-                                                                { className: 'preview__correct' },
-                                                                _this2.renderAnswerIcon(answer, questionIndex, answerIndex)
-                                                            ),
-                                                            React.createElement('input', {
-                                                                type: 'radio',
-                                                                id: radioId,
-                                                                name: questionName,
-                                                                value: answerIndex,
-                                                                onChange: self.updateScore.bind(self, questionIndex, answerIndex) }),
-                                                            answer.answerText
-                                                        )
-                                                    );
-                                                })
-                                            )
-                                        )
-                                    );
-                                })
-                            ),
-                            React.createElement(
-                                'div',
-                                { className: 'preview__score' },
-                                'Score: ',
-                                self.state.score,
-                                '/',
-                                self.state.quiz.content.questions.length
-                            ),
-                            React.createElement(
-                                'div',
-                                { className: 'preview__result-group' },
-                                self.renderResultGroup(self.findResultGroup(self.state.score))
-                            )
-                        )
+                        { className: 'preview__score' },
+                        'Score: ',
+                        self.state.score,
+                        '/',
+                        self.state.quiz.content.questions.length
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'preview__result-group' },
+                        self.renderResultGroup(self.findResultGroup(self.state.score))
                     )
-                );
-
+                )
             }
         });
 

@@ -137,7 +137,7 @@ define([
                 });
             }
 
-            if (config.page.hasAtoms) {
+            if (config.page.hasAtoms && config.page.atoms.length > 0) {
                 require(['bootstraps/quizAtom'], function (quizAtom) {
                     bootstrapContext('quizAtom', quizAtom);
                 });

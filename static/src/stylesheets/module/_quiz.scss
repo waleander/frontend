@@ -8,7 +8,13 @@
         margin-bottom: $gs-gutter;
     }
 
+    .quiz__questions,
+    .question__answers {
+        list-style: none;
+    }
+
     %answer {
+        display: block;
         font-weight: normal;
         color: colour(neutral-2);
         background-color: colour(neutral-8);
@@ -17,6 +23,9 @@
 
         .js-on & {
             cursor: pointer;
+            &:hover {
+                background-color: colour(neutral-10);
+            }
         }
     }
 
@@ -42,6 +51,10 @@
 
     .answer__text {
         margin: 0;
+    }
+
+    .answer__radio {
+        display: none;
     }
 
     .quiz__correct-answers,
