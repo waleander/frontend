@@ -20,8 +20,6 @@
         }
     }
 
-
-
     .answer,
     .answer--correct,
     .answer--incorrect {
@@ -32,14 +30,14 @@
         background-color: colour(quiz-correct-inactive);
 
         &.is-active {
-            color: white;
+            color: #ffffff;
             background-color: colour(quiz-correct);
         }
     }
 
     .answer--incorrect {
-        color: white;
-        background-color: colour(quiz-incorrect)
+        color: #ffffff;
+        background-color: colour(quiz-incorrect);
     }
 
     .answer__text {
