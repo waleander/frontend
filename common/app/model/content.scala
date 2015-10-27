@@ -188,6 +188,13 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
     case _ => false
   })
 
+  def getAtoms: Seq[JsValue] = for {
+    atomElement <- elements.collect({ case a: AtomElement => a})
+    atomAsset <- atomElement.atomAssets
+  } yield {
+    Json.parse(atomAsset.data.getOrElse(""))
+  }
+
   // Static Meta Data used by plugins on the page. People (including 3rd parties) rely on the names of these things,
   // think carefully before changing them.
   override def metaData: Map[String, JsValue] = {
@@ -219,7 +226,8 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
       ("sectionName", JsString(sectionName)),
       ("showRelatedContent", JsBoolean(showInRelated)),
       ("productionOffice", JsString(productionOffice.getOrElse(""))),
-      ("hasAtoms", JsBoolean(hasAtoms))
+      ("hasAtoms", JsBoolean(hasAtoms)),
+      ("atoms", JsArray(getAtoms))
     ) ++ conditionalMetaData
   }
 
@@ -345,6 +353,8 @@ private object ArticleSchemas {
 }
 
 class Article(delegate: contentapi.Content) extends Content(delegate) with Lightboxable {
+
+
   lazy val main: String = delegate.safeFields.getOrElse("main","")
   lazy val body: String = delegate.safeFields.getOrElse("body","")
   override lazy val contentType = GuardianContentTypes.Article
