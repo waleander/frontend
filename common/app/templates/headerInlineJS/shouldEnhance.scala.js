@@ -1,5 +1,4 @@
 @(item: model.MetaData)(implicit request: RequestHeader)
-@import conf.switches.Switches._
 
 (function (navigator, window) {
     // Enable manual optin to core functionality/optout of enhancement
@@ -21,18 +20,21 @@
     // For usage stats see http://david-smith.org/iosversionstats/
     //
     // NOTE: this moves people into a category where they do not get important things such as commenting
-    var isOlderDevice = function () {
-        // This is NOT what we want to be doing long term. It is a stopgap measure only...
-        var olderIPadOnFront = @SplitOlderIPadsSwitch.isSwitchedOn && @item.isFront && window.devicePixelRatio === 1;
-
+    var enhanceForDevice = function () {
         if (navigator.platform === 'iPhone' || navigator.platform === 'iPad' || navigator.platform === 'iPod') {
-            // I'm intentionally being a bit over zealous in the detection department here
-            return /.*(iPhone|iPad; CPU) OS ([3456])_\d+.*/.test(navigator.userAgent) || olderIPadOnFront;
+            if (@item.isFront && (navigator.platform === 'iPad')) {
+                return false;
+            } else {
+                // I'm intentionally being a bit over zealous in the detection department here
+                return !(/.*(iPhone|iPad; CPU) OS ([3456])_\d+.*/.test(navigator.userAgent));
+            }
+        } else {
+            return true;
         }
-        return false;
     };
 
-    window.shouldEnhance = !personPrefersCore() && !isOlderDevice() && !(@item.isFront && window.serveCoreFronts);
+    window.shouldEnhance = !personPrefersCore() && enhanceForDevice();
+
     window.shouldEnhance || console && console.info && console.info("THIS IS CORE");
 })(navigator, window);
 
