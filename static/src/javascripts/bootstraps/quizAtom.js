@@ -47,18 +47,6 @@ define([
                 });
             },
 
-            renderQuestionImage: function (question) {
-                var asset = _.first(question.assets);
-
-                if (asset && asset.type === 'image') {
-                    return React.createElement(
-                        'div',
-                        { className: 'preview-question__image' },
-                        React.createElement('img', { width: '300', src: asset.data.quizBuilderDisplayUrl })
-                    );
-                }
-            },
-
             renderResultGroup: function (group) {
                 if (group) {
                     return React.createElement(
@@ -84,15 +72,43 @@ define([
                 }
             },
 
-            renderQuestionImage: function (question) {
-                var asset = _.first(question.assets);
+            responsiveImage: function (image) { // See img.scala.html
 
-                if (asset && asset.type === 'image') {
-                    return React.createElement(
-                        'div',
-                        { className: 'preview-question__image' },
-                        React.createElement('img', { width: '300', src: asset.data.quizBuilderDisplayUrl })
-                    );
+                var sizes = image.data.assets;
+
+                var sortedBySize = _.sortBy(sizes, 'fields.width'); // smallest first
+
+                function generateSrcSet (images) { // <url> <width>w, <url> <width>w, etc...
+                    var srcSet = [];
+                    sortedBySize.forEach(function (img) {
+                        var srcSetString = '';
+                        srcSetString += img.secureUrl;
+                        srcSetString += ' ';
+                        srcSetString += img.fields.width + 'w';
+                        srcSet.push(srcSetString);
+                    });
+                    return srcSet.join(', ');
+                }
+
+                return React.createElement('div',
+                    { className: 'u-responsive-ratio preview-question__image' },
+                    React.createElement('img',
+                        {
+                            className: 'gu-image',
+                            src: _.last(sortedBySize).secureUrl,
+                            srcSet: generateSrcSet(sizes),
+                            sizes: '(min-width: 660px) 620px, (min-width: 480px) 605px, 445px',
+                            itemProp: 'contentUrl',
+                            alt: image.data.fields.altText
+                        })
+                );
+            },
+
+            renderImage: function (assets) {
+                var image = _.first(assets); // TODO: Validate, image may not be the first asset
+
+                if (image && image.type === 'image') {
+                    return this.responsiveImage(image);
                 }
             },
 
@@ -163,7 +179,7 @@ define([
                                 React.createElement(
                                     'p',
                                     { className: 'question__text' },
-                                    self.renderQuestionImage(question),
+                                    self.renderImage(question.assets),
                                     React.createElement(
                                         'span',
                                         { className: 'question__number' },
@@ -196,6 +212,7 @@ define([
                                                         onChange: self.updateScore.bind(self, questionIndex, answerIndex)
                                                     }
                                                 ),
+                                                self.renderImage(answer.assets),
                                                 React.createElement(
                                                     'span',
                                                     { className: 'answer__text' },
