@@ -34,29 +34,13 @@ define([
 
                 thisQuestion.checkedAnswer = answerIndex;
 
-                if (thisAnswer.correct) {
-                    questions[questionIndex].markedCorrect = true;
-                } else {
-                    questions[questionIndex].markedCorrect = false;
-                }
+                questions[questionIndex].markedCorrect = thisAnswer.correct ? true : false;
 
                 this.setState({
                     score: questions.reduce(function (p, c) {
                         return p + (c.markedCorrect ? 1 : 0);
                     }, 0)
                 });
-            },
-
-            renderResultGroup: function (group) {
-                if (group) {
-                    return React.createElement(
-                        'div',
-                        { className: 'result-group' },
-                        group.title,
-                        ' | ',
-                        group.share
-                    );
-                }
             },
 
             renderAnswerIcon: function (answer, questionIndex, answerIndex) {
@@ -78,7 +62,7 @@ define([
 
                 var sortedBySize = _.sortBy(sizes, 'fields.width'); // smallest first
 
-                function generateSrcSet (images) { // <url> <width>w, <url> <width>w, etc...
+                function generateSrcSet (sortedBySize) { // <url> <width>w, <url> <width>w, etc...
                     var srcSet = [];
                     sortedBySize.forEach(function (img) {
                         var srcSetString = '';
@@ -96,7 +80,7 @@ define([
                         {
                             className: 'gu-image',
                             src: _.last(sortedBySize).secureUrl,
-                            srcSet: generateSrcSet(sizes),
+                            srcSet: generateSrcSet(sortedBySize),
                             sizes: '(min-width: 660px) 620px, (min-width: 480px) 605px, 445px',
                             itemProp: 'contentUrl',
                             alt: image.data.fields.altText
@@ -249,10 +233,10 @@ define([
         );
     }
 
-
     var module = {
         DOM_ID: 'js-quiz-atom',
         init: init
     };
+
     return module;
 });
