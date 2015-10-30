@@ -189,7 +189,7 @@ define([
 
                                 return React.createElement(
                                     'li',
-                                    { className: 'quiz__question question' },
+                                    { className: 'quiz__question question', key: questionIndex },
                                     React.createElement(
                                         'p',
                                         { className: 'question__text' },
@@ -208,7 +208,7 @@ define([
                                             var radioId = self.getRadioName(questionIndex, answerIndex);
                                             return React.createElement(
                                                 'li',
-                                                null,
+                                                { key: answerIndex },
                                                 React.createElement(
                                                     'label',
                                                     {
