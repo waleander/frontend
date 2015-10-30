@@ -188,6 +188,18 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
     case _ => false
   })
 
+  lazy val hasQuiz: Boolean = elements.exists({
+    case atomElement:AtomElement => {
+      atomElement.atomAssets.exists({
+        case atomAsset:AtomAsset if atomAsset.atomType.getOrElse("") == "quiz" => true
+        case _ => false
+      })
+    }
+    case _ => false
+  })
+
+  def getAtomIds: Seq[JsValue] = Seq(JsString("f5dc1146-d38f-44b2-906f-942c2746e32f"))
+
   def getAtoms: Seq[JsValue] = for {
     atomElement <- elements.collect({ case a: AtomElement => a})
     atomAsset <- atomElement.atomAssets
@@ -227,7 +239,8 @@ class Content protected (val delegate: contentapi.Content) extends Trail with Me
       ("showRelatedContent", JsBoolean(showInRelated)),
       ("productionOffice", JsString(productionOffice.getOrElse(""))),
       ("hasAtoms", JsBoolean(hasAtoms)),
-      ("atoms", JsArray(getAtoms))
+      ("hasQuiz", JsBoolean(hasQuiz)),
+      ("atomIds", JsArray(getAtomIds))
     ) ++ conditionalMetaData
   }
 

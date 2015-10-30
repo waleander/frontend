@@ -68,3 +68,6 @@ GET        /business-data/stocks.json                 controllers.StocksControll
 # User tech feedback
 GET        /info/tech-feedback                        controllers.TechFeedbackController.techFeedback(path = "")
 GET        /info/tech-feedback/*path                  controllers.TechFeedbackController.techFeedback(path)
+
+# Content Atoms
+GET        /atoms/quizzes/:quizId.json                controllers.ContentAtomsController.renderQuiz(quizId)
