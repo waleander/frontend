@@ -49,8 +49,14 @@
         background-color: colour(quiz-incorrect);
     }
 
-    .answer__text {
+    .answer__text,
+    .answer__reveal-text {
         margin: 0;
+        display: block;
+    }
+
+    .answer__reveal-text {
+        @include fs-bodyCopy(1);
     }
 
     .answer__radio {

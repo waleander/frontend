@@ -117,6 +117,16 @@ define([
                 }
             },
 
+            renderRevealText: function (question, answer) {
+                if (answer.correct && question.markedCorrect) {
+                    return React.createElement(
+                        'span',
+                        { className: 'answer__reveal-text' },
+                        answer.revealText
+                    );
+                }
+            },
+
             renderResultGroup: function (group) {
                 if (group) {
                     return React.createElement(
@@ -221,7 +231,8 @@ define([
                                                         'span',
                                                         { className: 'answer__text' },
                                                         answer.answerText
-                                                    )
+                                                    ),
+                                                    self.renderRevealText(question, answer)
                                                 )
                                             );
                                         })
