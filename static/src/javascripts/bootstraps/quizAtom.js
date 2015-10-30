@@ -40,11 +40,21 @@ define([
                 };
             },
 
+            enhanceWithScoreAndTitle: function (group) {
+                var shareRegex = /([\s\S]+)_\/_([\s\S]+)<quiz title>/g;
+                var replaceText = "$1" + this.state.score + "/" + this.state.quiz.content.questions.length + "$2" + this.state.quiz.title;
+                group.share = group.share.replace(shareRegex, replaceText);
+                return group;
+            },
+
             findResultGroup: function (score) {
                 var groups = this.state.quiz.content.resultGroups.groups;
-                return _.findLast(groups, function (group, index) {
+                var theGroup = _.findLast(groups, function (group, index) {
                     return group.minScore <= score;
                 });
+                if (theGroup) {
+                    return this.enhanceWithScoreAndTitle(theGroup);
+                }
             },
 
             getRadioName: function (q, a) {
@@ -65,19 +75,6 @@ define([
                         return p + (c.markedCorrect ? 1 : 0);
                     }, 0)
                 });
-            },
-
-            renderAnswerIcon: function (answer, questionIndex, answerIndex) {
-
-                var questions = this.state.quiz.content.questions;
-                var thisQuestion = questions[questionIndex];
-                var answerHasBeenClicked = thisQuestion.checkedAnswer === answerIndex;
-
-                if (answerHasBeenClicked && answer.correct) {
-                    return React.createElement('i', { className: 'i-tick-green' });
-                } else if (answerHasBeenClicked && !answer.correct) {
-                    return React.createElement('i', { className: 'i-cross-red' });
-                }
             },
 
             responsiveImage: function (image) { // See img.scala.html
