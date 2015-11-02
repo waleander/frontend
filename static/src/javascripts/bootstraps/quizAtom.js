@@ -103,7 +103,7 @@ define([
                 }
 
                 return React.createElement('div',
-                    { className: 'u-responsive-ratio preview-question__image' },
+                    { className: 'u-responsive-ratio quiz-question__image' },
                     React.createElement('img',
                         {
                             className: 'gu-image',
@@ -248,8 +248,8 @@ define([
                             })
                         ),
                         React.createElement(
-                            'div',
-                            { className: 'preview__score' },
+                            'h3',
+                            { className: 'quiz__score' },
                             'Score: ',
                             self.state.score,
                             '/',
@@ -257,7 +257,7 @@ define([
                         ),
                         React.createElement(
                             'div',
-                            { className: 'preview__result-group' },
+                            { className: 'quiz__result-group' },
                             self.renderResultGroup(self.findResultGroup(self.state.score))
                         )
                     );
