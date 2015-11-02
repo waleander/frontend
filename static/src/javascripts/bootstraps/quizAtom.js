@@ -43,18 +43,25 @@ define([
             enhanceWithScoreAndTitle: function (group) {
                 var shareRegex = /([\s\S]+)_\/_([\s\S]+)<quiz title>/g;
                 var replaceText = "$1" + this.state.score + "/" + this.state.quiz.content.questions.length + "$2" + this.state.quiz.title;
-                group.share = group.share.replace(shareRegex, replaceText);
+                group.enhancedShare = group.share.replace(shareRegex, replaceText);
                 return group;
             },
 
             findResultGroup: function (score) {
-                var groups = this.state.quiz.content.resultGroups.groups;
-                var theGroup = _.findLast(groups, function (group, index) {
-                    return group.minScore <= score;
+                var quizContent = this.state.quiz.content;
+                var allQuestionsAnswered = _.every(quizContent.questions, function (question) {
+                    return typeof question.checkedAnswer !== 'undefined';
                 });
-                if (theGroup) {
-                    return this.enhanceWithScoreAndTitle(theGroup);
+                if (allQuestionsAnswered) {
+                    var groups = quizContent.resultGroups.groups;
+                    var theGroup = _.findLast(groups, function (group, index) {
+                        return group.minScore <= score;
+                    });
+                    if (theGroup) {
+                        return this.enhanceWithScoreAndTitle(theGroup);
+                    }
                 }
+                return false;
             },
 
             getRadioName: function (q, a) {
@@ -134,7 +141,7 @@ define([
                         { className: 'result-group' },
                         group.title,
                         ' | ',
-                        group.share
+                        group.enhancedShare
                     );
                 }
             },
