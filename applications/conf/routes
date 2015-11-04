@@ -78,3 +78,7 @@ GET        /$leftSide<[^+]+>+*rightSide                                         
 
 # Google site verification
 GET        /google$account<[\w\d-]*>.html                                       controllers.SiteVerificationController.googleSiteVerify(account)
+
+# newpaper pages
+GET        /$publication<(theguardian|theobserver)>/:path                       controllers.PublicationController.articlesToday(publication, path)
+GET        /$publication<(theguardian|theobserver)>/$path<.+>/$year<\d\d\d\d>/$month<\w\w\w>/$day<\d\d>     controllers.PublicationController.articlesOnDate(publication, path, year, month, day)
