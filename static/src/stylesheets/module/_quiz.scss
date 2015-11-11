@@ -13,6 +13,12 @@
         list-style: none;
     }
 
+    .quiz__question--locked {
+        .answer--correct.answer--revealed {
+            opacity: 0.8;
+        }
+    }
+
     %answer {
         display: block;
         font-weight: normal;
@@ -20,6 +26,7 @@
         background-color: colour(neutral-8);
         padding: $gs-baseline;
         margin: $gs-gutter/4;
+        position: relative;
 
         .js-on & {
             cursor: pointer;
@@ -33,6 +40,11 @@
     .answer--correct,
     .answer--incorrect {
         @extend %answer;
+    }
+
+    .answer--correct,
+    .answer--incorrect {
+        padding-left: 30px;
     }
 
     .answer--correct {
@@ -66,5 +78,12 @@
     .quiz__correct-answers,
     .quiz__correct-answers-title {
         display: none;
+    }
+
+    .quiz__answer-icon {
+        position: absolute;
+        left: 6px;
+        top: 12px;
+        color: #fff;
     }
 }

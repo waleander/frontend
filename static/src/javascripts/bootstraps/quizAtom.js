@@ -2,12 +2,14 @@ define([
     'react',
     'common/utils/_',
     'common/utils/ajax',
-    'common/utils/config'
+    'common/utils/config',
+    'common/views/svgs',
 ], function (
     React,
     _,
     ajax,
-    config
+    config,
+    svgs
 ) {
 
     function init (callback) {
@@ -50,44 +52,39 @@ define([
                 };
             },
 
-            enhanceWithScoreAndTitle: function (group) {
-                var shareRegex = /([\s\S]+)_\/_([\s\S]+)<quiz title>/g;
-                var replaceText = "$1" + this.state.score + "/" + this.state.quiz.content.questions.length + "$2" + this.state.quiz.title;
-                group.enhancedShare = group.share.replace(shareRegex, replaceText);
-                return group;
-            },
+            /**
+             * Selecting an Answer should:
+             *  - Lock out the question from further changes and apply relevant styling
+             *  - Display the correct answer and reveal text if the chosen answer was incorrect
+             *  - Update the quiz score
+             * @param questionIndex
+             * @param answerIndex
+             * @param event
+             */
+            selectAnswer: function (questionIndex, answerIndex, event) {
 
-            findResultGroup: function (score) {
-                var quizContent = this.state.quiz.content;
-                var allQuestionsAnswered = _.every(quizContent.questions, function (question) {
-                    return typeof question.checkedAnswer !== 'undefined';
-                });
-                if (allQuestionsAnswered) {
-                    var groups = quizContent.resultGroups.groups;
-                    var theGroup = _.findLast(groups, function (group, index) {
-                        return group.minScore <= score;
-                    });
-                    if (theGroup) {
-                        return this.enhanceWithScoreAndTitle(theGroup);
-                    }
-                }
-                return false;
-            },
-
-            updateScore: function (questionIndex, answerIndex, event) {
                 var questions = this.state.quiz.content.questions;
                 var thisQuestion = questions[questionIndex];
-                var thisAnswer = thisQuestion.answers[answerIndex];
 
-                thisQuestion.checkedAnswer = answerIndex;
+                if (typeof thisQuestion.checkedAnswer === 'undefined') {
 
-                questions[questionIndex].markedCorrect = thisAnswer.correct ? true : false;
+                    var thisAnswer = thisQuestion.answers[answerIndex];
 
-                this.setState({
-                    score: questions.reduce(function (p, c) {
-                        return p + (c.markedCorrect ? 1 : 0);
-                    }, 0)
-                });
+                    thisQuestion.checkedAnswer = answerIndex;
+
+                    if (thisAnswer.correct) {
+                        questions[questionIndex].markedCorrect = true;
+                    } else { // Display correct answer
+                        questions[questionIndex].markedCorrect = false;
+                        questions[questionIndex].revealCorrect = true;
+                    }
+
+                    this.setState({
+                        score: questions.reduce(function (p, c) {
+                            return p + (c.markedCorrect ? 1 : 0);
+                        }, 0)
+                    });
+                }
             },
 
             responsiveImage: function (image) { // See img.scala.html
@@ -130,18 +127,6 @@ define([
                 }
             },
 
-            renderResultGroup: function (group) {
-                if (group) {
-                    return React.createElement(
-                        'div',
-                        { className: 'result-group' },
-                        group.title,
-                        ' | ',
-                        group.enhancedShare
-                    );
-                }
-            },
-
             render: function () {
 
                 var self = this;
@@ -171,7 +156,7 @@ define([
                                     question: question,
                                     questionIndex: questionIndex,
                                     renderImage: self.renderImage,
-                                    updateScore: self.updateScore,
+                                    selectAnswer: self.selectAnswer,
                                     key: questionIndex,
                                     quiz: self.state.quiz
                                 });
@@ -185,12 +170,98 @@ define([
                             '/',
                             self.state.quiz.content.questions.length
                         ),
+                        React.createElement(ShareResult, {
+                            score: self.state.score,
+                            quiz: self.state.quiz
+                        })
+                    );
+                }
+            }
+        });
+
+        var ShareResult = React.createClass({
+
+            enhanceWithScoreAndTitle: function (group) {
+                var shareRegex = /([\s\S]+)_\/_([\s\S]+)<quiz title>/g;
+                var replaceText = "$1" + this.props.score + "/" + this.props.quiz.content.questions.length + "$2" + this.props.quiz.title;
+                group.enhancedShare = group.share.replace(shareRegex, replaceText);
+                return group;
+            },
+
+            findResultGroup: function (score) {
+                var quizContent = this.props.quiz.content;
+                var allQuestionsAnswered = _.every(quizContent.questions, function (question) {
+                    return typeof question.checkedAnswer !== 'undefined';
+                });
+                if (allQuestionsAnswered) {
+                    var groups = quizContent.resultGroups.groups;
+                    var theGroup = _.findLast(groups, function (group, index) {
+                        return group.minScore <= score;
+                    });
+                    if (theGroup) {
+                        return this.enhanceWithScoreAndTitle(theGroup);
+                    }
+                }
+                return false;
+            },
+
+            buildTweetUrl: function (tweetText) {
+                // https://twitter.com/intent/tweet?text=Hello%20world
+                var BASE_URL = 'https://twitter.com/intent/tweet?text=';
+                var encodedTweet = encodeURIComponent(tweetText);
+                return BASE_URL + encodedTweet;
+            },
+
+            renderTweetButton: function () {
+                var scriptElement,
+                    nativeTweetElements = qwery('blockquote.twitter-tweet'),
+                    widgetScript = qwery('#twitter-widget');
+
+                if (nativeTweetElements.length > 0) {
+                    if (widgetScript.length === 0) {
+                        scriptElement = document.createElement('script');
+                        scriptElement.id = 'twitter-widget';
+                        scriptElement.async = true;
+                        scriptElement.src = '//platform.twitter.com/widgets.js';
+                        $(document.body).append(scriptElement);
+                    }
+
+                    if (typeof twttr !== 'undefined' && 'widgets' in twttr && 'load' in twttr.widgets) {
+                        twttr.widgets.load(body);
+                    }
+                }
+            },
+
+            render: function () {
+                var self = this;
+                var group = self.findResultGroup(self.props.score);
+                if (group) {
+                    return React.createElement(
+                        'div',
+                        { className: 'quiz__result-group' },
                         React.createElement(
                             'div',
-                            { className: 'quiz__result-group' },
-                            self.renderResultGroup(self.findResultGroup(self.state.score))
+                            { className: 'result-group' },
+                            group.title,
+                            ' | ',
+                            group.enhancedShare
+                        ),
+                        React.createElement(
+                            'a',
+                            {
+                                className: 'twitter-share-button',
+                                href: self.buildTweetUrl(group.enhancedShare),
+                                target: '_blank'
+                            },
+                            'Tweet'
                         )
                     );
+                } else {
+                    return React.createElement(
+                        'div',
+                        { className: 'quiz__result-group' },
+                        'Complete the quiz to share your results...'
+                    )
                 }
             }
         });
@@ -208,7 +279,7 @@ define([
 
             componentWillMount: function () {
                 this.renderImage = this.props.renderImage;
-                this.updateScore = this.props.updateScore;
+                this.selectAnswer = this.props.selectAnswer;
                 this.setState({
                     quiz: this.props.quiz
                 });
@@ -218,6 +289,11 @@ define([
                 this.setState({
                     quiz: nextProps.quiz
                 });
+            },
+
+            questionClass: function (question) {
+                var BASE_QUESTION_CLASS = 'quiz__question question';
+                return typeof question.checkedAnswer === 'undefined' ? BASE_QUESTION_CLASS : BASE_QUESTION_CLASS + ' quiz__question--locked';
             },
 
             render: function () {
@@ -230,7 +306,7 @@ define([
 
                 return React.createElement(
                     'li',
-                    { className: 'quiz__question question' },
+                    { className: this.questionClass(question) },
                     React.createElement(
                         'p',
                         { className: 'question__text' },
@@ -249,10 +325,11 @@ define([
                             return React.createElement(Answer, {
                                 question: question,
                                 questionIndex: questionIndex,
+                                revealCorrect: question.revealCorrect,
                                 answer: answer,
                                 answerIndex: answerIndex,
                                 renderImage: self.renderImage,
-                                updateScore: self.updateScore,
+                                selectAnswer: self.selectAnswer,
                                 key: answerIndex,
                                 quiz: self.state.quiz
                             })
@@ -275,7 +352,7 @@ define([
 
             componentWillMount: function () {
                 this.renderImage = this.props.renderImage;
-                this.updateScore = this.props.updateScore;
+                this.selectAnswer = this.props.selectAnswer;
                 this.setState({
                     quiz: this.props.quiz
                 });
@@ -290,23 +367,27 @@ define([
             answerClass: function (answer, questionIndex, answerIndex) {
                 var BASE = 'question__answer answer',
                     CORRECT = 'answer--correct',
+                    CORRECT_ACTIVE = 'is-active',
                     INCORRECT = 'answer--incorrect',
+                    REVEALED = 'answer--revealed',
                     SPACE = ' ';
                 var questions = this.state.quiz.content.questions;
                 var thisQuestion = questions[questionIndex];
                 var answerHasBeenClicked = thisQuestion.checkedAnswer === answerIndex;
 
                 if (answerHasBeenClicked && answer.correct) {
-                    return [BASE, SPACE, CORRECT].join('');
+                    return [BASE, SPACE, CORRECT, SPACE, CORRECT_ACTIVE].join('');
                 } else if (answerHasBeenClicked && !answer.correct) {
                     return [BASE, SPACE, INCORRECT].join('');
+                } else if (!answerHasBeenClicked && answer.correct && this.props.revealCorrect) { // Reveal correct answer if incorrect has been selected
+                    return [BASE, SPACE, CORRECT, SPACE, REVEALED].join('');
                 }
 
                 return BASE;
             },
 
             renderRevealText: function (question, answer) {
-                if (answer.correct && question.markedCorrect) {
+                if (answer.correct && question.markedCorrect || answer.correct &&  this.props.revealCorrect) {
                     return React.createElement(
                         'span',
                         { className: 'answer__reveal-text' },
@@ -317,6 +398,78 @@ define([
 
             getRadioName: function (q, a) {
                 return 'q' + q + 'a' + a;
+            },
+
+            renderCrossIcon: function () {
+
+                return React.createElement(
+                    'span',
+                    {
+                        className: 'quiz__answer-icon',
+                        dangerouslySetInnerHTML: {
+                            __html: svgs('quizIncorrect')
+                        }
+                    }, null);
+
+                //return React.createElement(
+                //    'span',
+                //    {
+                //        className: 'inline-quiz-incorrect inline-icon quiz__answer-icon'
+                //    },
+                //    React.DOM.svg({
+                //            x: '0px',
+                //            y:'0px',
+                //            width:'28',
+                //            height:'28',
+                //            viewBox:'0 0 28 28'
+                //        },
+                //        React.DOM.path({
+                //            d: 'M24.247 7.633l-3.535-3.535-6.626 6.626L7.46 4.098 3.925 7.633l6.626 6.626-6.624 6.624L7.46 24.42l6.626-6.626 6.626 6.626 3.535-3.535-6.626-6.626z',
+                //            fill: '#fff'
+                //        })
+                //    )
+                //)
+            },
+
+            renderTickIcon: function () {
+
+                return React.createElement(
+                    'span',
+                    {
+                        className: 'quiz__answer-icon',
+                        dangerouslySetInnerHTML: {
+                            __html: svgs('quizCorrect')
+                        }
+                    }, null);
+
+                //return React.createElement(
+                //    'span',
+                //    {
+                //        className: 'inline-quiz-correct inline-icon quiz__answer-icon'
+                //    },
+                //    React.DOM.svg({
+                //            x: '0px',
+                //            y:'0px',
+                //            width:'28',
+                //            height:'28',
+                //            viewBox:'0 0 28 28'
+                //        },
+                //        React.DOM.path({
+                //            d: 'M23.895 3.215L10.643 16.467 5.235 11.06 1.7 14.594l5.407 5.407 3.182 3.183.353.353L27.43 6.75z',
+                //            fill: '#fff'
+                //        })
+                //    )
+                //)
+            },
+
+            renderAnswerIcon: function (question, answer, questionIndex, answerIndex) {
+                if (typeof question.checkedAnswer !== 'undefined') {
+                    if (answer.correct && question.markedCorrect || answer.correct &&  this.props.revealCorrect) { // Tick Icon
+                        return this.renderTickIcon();
+                    } else if (question.checkedAnswer === answerIndex && !answer.correct) { // Cross icon
+                        return this.renderCrossIcon();
+                    }
+                }
             },
 
             render: function () {
@@ -339,6 +492,7 @@ define([
                             htmlFor: radioId,
                             className: self.answerClass(answer, questionIndex, answerIndex)
                         },
+                        self.renderAnswerIcon(question, answer, questionIndex, answerIndex),
                         React.createElement(
                             'input',
                             {
@@ -346,7 +500,7 @@ define([
                                 id: radioId,
                                 className: 'answer__radio',
                                 value: answerIndex,
-                                onChange: self.updateScore.bind(null, questionIndex, answerIndex)
+                                onChange: self.selectAnswer.bind(null, questionIndex, answerIndex)
                             }
                         ),
                         self.renderImage(answer.assets),
