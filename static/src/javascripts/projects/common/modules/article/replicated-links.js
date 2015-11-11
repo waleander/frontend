@@ -38,7 +38,7 @@ define([
                 if (resp.html) {
                     fastdom.write(function () {
                         $(a).html(resp.html);
-                        mediator.emit('replicated-link:loaded', el);
+                        bonzo(el).removeClass('element-replicated-link__internal--hidden');
                     });
                 }
             });

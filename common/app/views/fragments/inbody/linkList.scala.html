@@ -7,7 +7,8 @@
     <div
     class="@RenderClasses(Map(
         "js-replicated-link" -> true,
-        s"element-replicated-link__$suffix" -> true
+        s"element-replicated-link__$suffix" -> true,
+        s"element-replicated-link__$suffix--hidden" -> !enhanced
     ))"
     data-timestamp="@bodyLink.date"
     >
@@ -18,9 +19,6 @@
             }.getOrElse {
                 @if(enhanced) {
                     <span class="element-replicated-link__headline">@bodyLink.text</span>
-                } else {
-                    @* when the guardian ones are found client side, the contents of the a are replaced with a span element-replicated-link__headline *@
-                    <q class="element-replicated-link__text">@bodyLink.text</q>
                 }
             }
         </a>

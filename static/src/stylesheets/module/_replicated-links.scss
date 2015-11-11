@@ -35,7 +35,7 @@
         pointer-events: none;
         z-index: 1;
         background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff);
-    }   
+    }
 }
 
 .element-replicated-links__title {
@@ -101,6 +101,7 @@
     font-weight: bold;
 }
 
-.element-replicated-links__more--hidden {
+.element-replicated-links__more--hidden,
+.element-replicated-link__internal--hidden {
     display: none;
 }
