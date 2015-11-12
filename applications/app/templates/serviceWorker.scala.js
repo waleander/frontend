@@ -94,16 +94,16 @@
         event.waitUntil(updateCache());
     });
 
+    // Update cache each time the SW is started
+    // We want the latest crossword!
+    isCacheUpdated().then(function (isUpdated) {
+        if (!isUpdated) {
+            updateCache().then(deleteOldCaches);
+        }
+    });
+
     this.addEventListener('fetch', function (event) {
         var request = event.request;
-
-        if (doesRequestAcceptHtml(request)) {
-            isCacheUpdated().then(function (isUpdated) {
-                if (!isUpdated) {
-                    updateCache().then(deleteOldCaches);
-                }
-            });
-        }
 
         var url = new URL(request.url);
         var isRootRequest = url.host === self.location.host;
