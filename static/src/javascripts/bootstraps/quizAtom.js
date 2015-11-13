@@ -127,6 +127,30 @@ define([
                 }
             },
 
+            renderEndMessage: function () {
+                var allQuestionsAnswered = _.every(this.state.quiz.content.questions, function (question) {
+                    return typeof question.checkedAnswer !== 'undefined';
+                });
+                if (allQuestionsAnswered) {
+                    return React.DOM.div({
+                            className: 'quiz__end-message'
+                        },
+                        React.createElement(
+                            'h3',
+                            {className: 'quiz__score'},
+                            'Score: ',
+                            this.state.score,
+                            '/',
+                            this.state.quiz.content.questions.length
+                        ),
+                        React.createElement(ShareResult, {
+                            score: this.state.score,
+                            quiz: this.state.quiz
+                        })
+                    );
+                }
+            },
+
             render: function () {
 
                 var self = this;
@@ -138,7 +162,7 @@ define([
                         'Quiz Not Found'
                     );
                 } else {
-                    var questions = this.state.quiz.content.questions || [];
+                    var questions = self.state.quiz.content.questions || [];
 
                     return React.createElement(
                         'article',
@@ -162,18 +186,7 @@ define([
                                 });
                             })
                         ),
-                        React.createElement(
-                            'h3',
-                            { className: 'quiz__score' },
-                            'Score: ',
-                            self.state.score,
-                            '/',
-                            self.state.quiz.content.questions.length
-                        ),
-                        React.createElement(ShareResult, {
-                            score: self.state.score,
-                            quiz: self.state.quiz
-                        })
+                        this.renderEndMessage()
                     );
                 }
             }
@@ -190,19 +203,13 @@ define([
 
             findResultGroup: function (score) {
                 var quizContent = this.props.quiz.content;
-                var allQuestionsAnswered = _.every(quizContent.questions, function (question) {
-                    return typeof question.checkedAnswer !== 'undefined';
+                var groups = quizContent.resultGroups.groups;
+                var theGroup = _.findLast(groups, function (group, index) {
+                    return group.minScore <= score;
                 });
-                if (allQuestionsAnswered) {
-                    var groups = quizContent.resultGroups.groups;
-                    var theGroup = _.findLast(groups, function (group, index) {
-                        return group.minScore <= score;
-                    });
-                    if (theGroup) {
-                        return this.enhanceWithScoreAndTitle(theGroup);
-                    }
+                if (theGroup) {
+                    return this.enhanceWithScoreAndTitle(theGroup);
                 }
-                return false;
             },
 
             buildTweetUrl: function (tweetText) {
@@ -257,11 +264,8 @@ define([
                         )
                     );
                 } else {
-                    return React.createElement(
-                        'div',
-                        { className: 'quiz__result-group' },
-                        'Complete the quiz to share your results...'
-                    )
+                    // No result group for score
+                    return false;
                 }
             }
         });
@@ -445,7 +449,9 @@ define([
 
                 return React.createElement(
                     'li',
-                    null,
+                    {
+                        className: 'question__answer-container'
+                    },
                     React.createElement(
                         'label',
                         {

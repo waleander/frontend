@@ -17,10 +17,17 @@
         .answer--correct.answer--revealed {
             opacity: 0.8;
         }
+        .answer:hover {
+            text-decoration: none;
+        }
     }
 
     .question__text {
         margin-bottom: 10px;
+    }
+
+    .question__answer-container {
+        margin-bottom: $gs-gutter/4;
     }
 
     %answer {
@@ -29,8 +36,11 @@
         color: colour(neutral-2);
         background-color: colour(neutral-8);
         padding: $gs-baseline;
-        margin: $gs-gutter/4;
         position: relative;
+
+        &:hover {
+            text-decoration: underline;
+        }
 
         .js-on & {
             cursor: pointer;
@@ -94,5 +104,13 @@
         height: 14px;
         width: 14px;
         color: #fff;
+    }
+
+    // End message
+
+    .quiz__end-message {
+        border-top: 1px solid #aad8f1;
+        background-color: #f6f6f6;
+        padding: 30px 12px 10px 12px;
     }
 }
