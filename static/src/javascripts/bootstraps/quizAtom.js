@@ -308,7 +308,7 @@ define([
                     'li',
                     { className: this.questionClass(question) },
                     React.createElement(
-                        'p',
+                        'h4',
                         { className: 'question__text' },
                         self.renderImage(question.assets),
                         React.createElement(
@@ -401,7 +401,6 @@ define([
             },
 
             renderCrossIcon: function () {
-
                 return React.createElement(
                     'span',
                     {
@@ -410,29 +409,9 @@ define([
                             __html: svgs('quizIncorrect')
                         }
                     }, null);
-
-                //return React.createElement(
-                //    'span',
-                //    {
-                //        className: 'inline-quiz-incorrect inline-icon quiz__answer-icon'
-                //    },
-                //    React.DOM.svg({
-                //            x: '0px',
-                //            y:'0px',
-                //            width:'28',
-                //            height:'28',
-                //            viewBox:'0 0 28 28'
-                //        },
-                //        React.DOM.path({
-                //            d: 'M24.247 7.633l-3.535-3.535-6.626 6.626L7.46 4.098 3.925 7.633l6.626 6.626-6.624 6.624L7.46 24.42l6.626-6.626 6.626 6.626 3.535-3.535-6.626-6.626z',
-                //            fill: '#fff'
-                //        })
-                //    )
-                //)
             },
 
             renderTickIcon: function () {
-
                 return React.createElement(
                     'span',
                     {
@@ -441,25 +420,6 @@ define([
                             __html: svgs('quizCorrect')
                         }
                     }, null);
-
-                //return React.createElement(
-                //    'span',
-                //    {
-                //        className: 'inline-quiz-correct inline-icon quiz__answer-icon'
-                //    },
-                //    React.DOM.svg({
-                //            x: '0px',
-                //            y:'0px',
-                //            width:'28',
-                //            height:'28',
-                //            viewBox:'0 0 28 28'
-                //        },
-                //        React.DOM.path({
-                //            d: 'M23.895 3.215L10.643 16.467 5.235 11.06 1.7 14.594l5.407 5.407 3.182 3.183.353.353L27.43 6.75z',
-                //            fill: '#fff'
-                //        })
-                //    )
-                //)
             },
 
             renderAnswerIcon: function (question, answer, questionIndex, answerIndex) {

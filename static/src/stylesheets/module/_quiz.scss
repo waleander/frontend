@@ -19,6 +19,10 @@
         }
     }
 
+    .question__text {
+        margin-bottom: 10px;
+    }
+
     %answer {
         display: block;
         font-weight: normal;
@@ -54,6 +58,9 @@
             color: #ffffff;
             background-color: colour(quiz-correct);
         }
+        &.answer--revealed svg path {
+            fill: colour(quiz-correct);
+        }
     }
 
     .answer--incorrect {
@@ -83,7 +90,9 @@
     .quiz__answer-icon {
         position: absolute;
         left: 6px;
-        top: 12px;
+        top: 13px;
+        height: 14px;
+        width: 14px;
         color: #fff;
     }
 }
