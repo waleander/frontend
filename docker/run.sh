@@ -1,10 +1,20 @@
 #!/bin/sh
+readonly MACHINE_NAME=default
 
-brew cask install dockertoolbox
+installed() {
+  hash "$1" 2>/dev/null
+}
 
-docker-machine create -d virtualbox default
+if ! installed docker-machine; then
+  brew cask install dockertoolbox
+fi
 
-dockerenv=$(docker-machine env default)
-eval($dockerenv)
+if [[ -z $(docker-machine ls | grep $MACHINE_NAME) ]]; then
+  docker-machine create -d virtualbox $MACHINE_NAME
+fi
 
-docker run -ti -v "$HOME/.ivy2:/root/.ivy2"  -v "$HOME/work/frontend:/root" -P hseeberger/scala-sbt sbt
+dockerenv=$(docker-machine env $MACHINE_NAME)
+eval $dockerenv
+
+docker build -t frontend .
+docker run -ti -v "$HOME/.ivy2:/root/.ivy2"  -v "$HOME/work/frontend:/frontend" -P frontend ./sbt
