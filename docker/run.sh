@@ -16,5 +16,4 @@ fi
 dockerenv=$(docker-machine env $MACHINE_NAME)
 eval $dockerenv
 
-docker build -t frontend .
 docker run -ti -v "$HOME/.ivy2:/root/.ivy2"  -v "$PWD/..:/frontend" -P richardnguyen/frontend ./sbt
