@@ -11,3 +11,5 @@ RUN /root/pagespeed.sh
 RUN /root/substitute.sh
 
 EXPOSE 80
+
+CMD nginx
