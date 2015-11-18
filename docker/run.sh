@@ -16,4 +16,4 @@ fi
 dockerenv=$(docker-machine env $MACHINE_NAME)
 eval $dockerenv
 
-docker run -ti -v "$HOME/.ivy2:/root/.ivy2"  -v "$PWD/..:/frontend" -p 9000:9000 desbo/frontend ./sbt
+docker run -ti -v "$HOME/.ivy2:/root/.ivy2"  -v "$HOME/code/frontend:/frontend" -v "$HOME/.sbt:/root/.sbt" -v "$HOME/.aws:/root/.aws" -v "$HOME/.gu:/root/.gu" -p 9000:9000 desbo/frontend
