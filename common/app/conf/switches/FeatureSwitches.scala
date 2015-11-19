@@ -6,15 +6,6 @@ import org.joda.time.LocalDate
 trait FeatureSwitches {
 
   // Features
-  val EuCookieMessageSwitch = Switch(
-    "Feature",
-    "eu-cookie-msg",
-    "Show the EU cookies message footer? On: yes, Off: no.",
-    safeState = Off,
-    sellByDate = new LocalDate(2015, 11, 11),
-    exposeClientSide = true
-  )
-
   val OfflinePageSwitch = Switch(
     "Feature",
     "offline-page",
@@ -112,15 +103,6 @@ trait FeatureSwitches {
     safeState = On,
     sellByDate = never,
     exposeClientSide = true
-  )
-
-  val IdentitySocialOAuthSwitch = Switch(
-    "Feature",
-    "id-social-oauth",
-    "If this switch is on then social sign-in attempts will be directed to Identity OAuth app, rather than the Webapp.",
-    safeState = Off,
-    sellByDate = never,
-    exposeClientSide = false
   )
 
   val FacebookAutoSigninSwitch = Switch(
@@ -340,4 +322,14 @@ trait FeatureSwitches {
     sellByDate = never,
     exposeClientSide = true
   )
+
+  val DiscussionHttpsSwitch = Switch(
+    "Feature",
+    "discussion-https",
+    "in discussion we will send requests to https",
+    safeState = Off,
+    sellByDate = never,
+    exposeClientSide = true
+  )
+
 }
