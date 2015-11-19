@@ -20,8 +20,7 @@ define([
     'common/modules/onward/related',
     'common/modules/onward/tonal',
     'common/modules/social/share-count',
-    'common/modules/onward/inject-container',
-    'common/modules/experiments/ab'
+    'common/modules/onward/inject-container'
 ], function (
     enhancer,
     fastdom,
@@ -42,8 +41,7 @@ define([
     Related,
     TonalComponent,
     shareCount,
-    injectContainer,
-    ab
+    injectContainer
 ) {
     function insertOrProximity(selector, insert) {
         if (window.location.hash) {
