@@ -11,6 +11,9 @@ COPY Gemfile /tmp/Gemfile
 COPY Gemfile.lock /tmp/Gemfile.lock
 RUN cd /tmp; bundle install --system
 
+RUN mkdir /etc/gu
+COPY install_vars /etc/gu/install_vars
+
 RUN mkdir /frontend
 WORKDIR /frontend
 
