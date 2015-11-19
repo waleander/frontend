@@ -4,8 +4,8 @@ define([
     'fastdom',
     'qwery',
     'Promise',
+    'lodash/collections/sortBy',
     'common/modules/experiments/ab',
-    'common/utils/_',
     'common/utils/$',
     'common/utils/ajax-promise',
     'common/utils/config',
@@ -17,8 +17,8 @@ define([
     fastdom,
     qwery,
     Promise,
+    sortBy,
     ab,
-    _,
     $,
     ajax,
     config,
@@ -64,7 +64,7 @@ define([
     function mergeLinks(container, related) {
         var sorted;
         container.append(related);
-        sorted = _.sortBy(container[0].children, function (value) {
+        sorted = sortBy(container[0].children, function (value) {
             return bonzo(value).attr('data-timestamp');
         });
         container.empty();
