@@ -6,8 +6,8 @@ define([
     'common/modules/commercial/article-aside-adverts',
     'common/modules/commercial/article-body-adverts',
     'common/modules/commercial/badges',
-    'common/modules/commercial/dfp-api',
     'common/modules/commercial/front-commercial-components',
+    'common/modules/commercial/prebid',
     'common/modules/commercial/slice-adverts',
     'common/modules/commercial/third-party-tags',
     'lodash/collections/forEach'
@@ -19,8 +19,8 @@ define([
     articleAsideAdverts,
     articleBodyAdverts,
     badges,
-    dfp,
     frontCommercialComponents,
+    prebid,
     sliceAdverts,
     thirdPartyTags,
     forEach) {
@@ -46,7 +46,7 @@ define([
             Promise.all(modulePromises).then(function () {
                 if (config.switches.commercial) {
                     robust.catchErrorsAndLogAll([
-                        ['cm-dfp', dfp.init],
+                        ['cm-prebid', prebid.init],
                         // TODO does dfp return a promise?
                         ['cm-ready', function () {
                             mediator.emit('page:commercial:ready');

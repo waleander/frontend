@@ -29,6 +29,7 @@ var curl = {
             socketio:                       'components/socket.io-client/socket.io',
             'facebook.js':                  '//connect.facebook.net/en_US/all.js',
             'foresee.js':                   'vendor/foresee/20150703/foresee-trigger.js',
+            'prebid.js':                    'vendor/prebid/20151125/prebid.min.js',
             'googletag.js':                 '@{Configuration.javascript.config("googletagJsUrl")}',
             'ophan/ng':                     '@{Configuration.javascript.config("ophanJsUrl")}',
             svgs:                           '../inline-svgs',
