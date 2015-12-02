@@ -46,7 +46,7 @@ object RelatedController extends Controller with Related with Containers with Lo
 
   def linkInfo(trails: Seq[Content]) =
     trails.map { trail =>
-      LinkInfo(trail.webPublicationDate.getMillis, None, trail.webUrl, trail.headline)
+      LinkInfo(trail.webPublicationDate.getMillis, trail.webUrl, trail.headline)
     }
 
   def renderUsingCallback(renderCallback: Seq[Content] => Result, path: String)(implicit request: RequestHeader) = {

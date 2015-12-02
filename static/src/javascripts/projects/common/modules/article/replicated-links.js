@@ -68,32 +68,33 @@ define([
             return bonzo(value).attr('data-timestamp');
         });
         container.empty();
-        container.append(sorted);
+        container.append(sorted.shift());
+        $('.js-replicated-links__more').append(sorted);
         var container2 = $('.js-replicated-links'),
-            links = $('.js-replicated-links__links', links);
+            links = $('.js-replicated-links__more', links);
         // causes full relayout
         container2.removeClass('element-replicated-links--not-in-test');
         fastdom.read(function () {
-            var tooHigh = links.height() > 150;
+            //var tooHigh = links.height() > 200;
             fastdom.write(function () {
-                if (tooHigh) {
+                //if (tooHigh) {
                     // this block causes another full relayout
                     var more = $('.js-replicated-links-more'),
                         less = $('.js-replicated-links-less');
-                    links.addClass('element-replicated-links__links--contracted');
+                    links.addClass('element-replicated-links__more--hidden');
                     more.removeClass('element-replicated-links__more--hidden');
                     bean.on(more[0], 'click', function () {
-                        links.removeClass('element-replicated-links__links--contracted');
+                        links.removeClass('element-replicated-links__more--hidden');
                         more.addClass('element-replicated-links__more--hidden');
                         less.removeClass('element-replicated-links__more--hidden');
                     });
                     bean.on(less[0], 'click', function () {
-                        links.addClass('element-replicated-links__links--contracted');
+                        links.addClass('element-replicated-links__more--hidden');
                         less.addClass('element-replicated-links__more--hidden');
                         more.removeClass('element-replicated-links__more--hidden');
                     });
                     container2.removeClass('element-replicated-links--not-in-test');
-                }
+                //}
                 mediator.emit('replicated-link:related:loaded');
             });
         });

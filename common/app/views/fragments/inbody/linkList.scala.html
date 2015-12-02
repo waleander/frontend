@@ -15,12 +15,8 @@
     >
 
         <a href="@{s"${LinkTo(bodyLink.href)}"}" data-link-name="replicated link">
-            @bodyLink.domain.map{ domain =>
-                <span class="element-replicated-link__domain">@domain</span>
-            }.getOrElse {
-                @if(enhanced) {
-                    <span class="element-replicated-link__headline">@bodyLink.text</span>
-                }
+            @if(enhanced) {
+                <span class="element-replicated-link__headline">@bodyLink.text</span>
             }
         </a>
 

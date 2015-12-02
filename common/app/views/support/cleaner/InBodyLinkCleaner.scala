@@ -57,16 +57,12 @@ case class InBodyLinkCleaner(dataLinkName: String, amp: Boolean = false, replica
 
   def replicatedLinks(document: Document): Option[Element] = {
     val bodyLinks = getBodyLinks(document)
-    if (bodyLinks.nonEmpty) {
-      date map { date =>
-        val (internalLinks, externalLinks): (List[LinkInfo], List[LinkInfo]) = bodyLinks.map { link =>
-          LinkInfo(date.getMillis, UrlParser.externalDomain(link.attr("href")), link.attr("href"), link.text)
-        }.partition(_.domain.isEmpty)
-        val rendered = views.html.fragments.inbody.links(internalLinks, externalLinks).toString
-        Jsoup.parseBodyFragment(rendered).body().child(0)
+    date map { date =>
+      val internalLinks: List[LinkInfo] = bodyLinks.map { link =>
+        LinkInfo(date.getMillis, link.attr("href"), link.text)
       }
-    } else {
-      None
+      val rendered = views.html.fragments.inbody.links(internalLinks).toString
+      Jsoup.parseBodyFragment(rendered).body().child(0)
     }
   }
 
@@ -88,28 +84,15 @@ case class InBodyLinkCleaner(dataLinkName: String, amp: Boolean = false, replica
    */
   def putMentionedBefore(element: Element): Option[Element] = {
     Some(element.children)
-      .map(_.filter(_.text.endsWith(".")))
+      .map(_.filter{ el =>
+        val text = el.ownText.trim
+        val bullet = el.text().startsWith("•")
+        val properPara = text.endsWith(".") || text.endsWith("”") || text.endsWith("?")
+        val longEnough = text.length > 100
+        properPara && longEnough && !bullet
+      })
       .filter(_.size >= 2)
       .map(_.last)
   }
-
-}
-
-
-object UrlParser extends RegexParsers {
-  def proto: Parser[Unit] = """([a-z]+:)?""".r ^^ { _ => () }
-  def domain: Parser[String] = """//(www\.)?""".r ~> """([^/]+)""".r
-  def path: Parser[Unit] = """.*""".r ^^ { _ => () }
-
-  def userHint: Parser[String] = proto ~> domain <~ path
-
-  def externalDomain(url: String, ourRoot: String = Configuration.site.host): Option[String] =
-    Some(url)
-      .filterNot(href => ourRoot.nonEmpty && (href.startsWith(ourRoot) || href.startsWith(ourRoot.split(":")(1))))
-      .map(url => UrlParser.parse(UrlParser.userHint, url))
-      .flatMap {
-      case Success(matched, _) => Some(matched)
-      case a => None
-    }
 
 }

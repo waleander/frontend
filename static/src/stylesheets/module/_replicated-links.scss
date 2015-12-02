@@ -5,18 +5,13 @@
 .element-replicated-links {
     @include fs-textSans(1);
     border-left: $gs-gutter/3 solid colour(neutral-4);
-    padding: 0 0 $gs-baseline/2 $gs-gutter/2;
+    padding: 0 0 0 $gs-gutter/2;
     margin-bottom: $gs-baseline;
-    position: relative;
-    overflow: auto;
+    margin-right: $gs-baseline;
 
-    @include mq($until: mobileLandscape) {
-        margin-left: -$gs-gutter/2;
-    }
 }
 
 .element-replicated-links__links {
-    margin-bottom: $gs-baseline;
     font-size: 15px;
 }
 
@@ -55,24 +50,6 @@
 .element-replicated-links__sources {
     margin: $gs-baseline 0 0;
     display: inline-block;
-}
-
-.element-replicated-link__external {
-    display: inline-block;
-
-    &:nth-last-child(n+2) {
-        &:after {
-            content: ',';
-        }
-    }
-
-    a {
-        font-size: 0;
-
-        span {
-            font-size: 15px;
-        }
-    }
 }
 
 .element-replicated-links__more {
