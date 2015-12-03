@@ -50,7 +50,7 @@ define([
                 'football/manchestercity', 'football/tottenham-hotspur', 'football/liverpool'
             ],
             pageTags      = config.page.keywordIds.split(','),
-            // if this is an advertisement feature, use the page's keyword (there'll only be one)
+        // if this is an advertisement feature, use the page's keyword (there'll only be one)
             popularInTags = config.page.isAdvertisementFeature ? pageTags : intersection(whitelistedTags, pageTags);
 
         if (popularInTags.length) {
@@ -84,40 +84,40 @@ define([
 
                     container.setAttribute('data-component', componentName);
 
-                if (ab.getParticipations().EssentialReadTest1 &&
-                    (ab.getParticipations().EssentialReadTest1.variant === 'automated' || ab.getParticipations().EssentialReadTest1.variant === 'curated')  &&
-                    ab.testCanBeRun('EssentialReadTest1')
-                ) {
-                    switch (config.page.edition) {
-                        case 'UK':
-                            editionSuffix = '/uk.json';
-                            break;
-                        case 'US':
-                            editionSuffix = '/us.json';
-                            break;
-                        case 'AU':
-                            editionSuffix = '/au.json';
-                            break;
-                        case 'INT':
-                            editionSuffix = '/international.json';
-                            break;
-                    }
+                    if (ab.getParticipations().EssentialReadTest1 &&
+                        (ab.getParticipations().EssentialReadTest1.variant === 'automated' || ab.getParticipations().EssentialReadTest1.variant === 'curated')  &&
+                        ab.testCanBeRun('EssentialReadTest1')
+                    ) {
+                        switch (config.page.edition) {
+                            case 'UK':
+                                editionSuffix = '/uk.json';
+                                break;
+                            case 'US':
+                                editionSuffix = '/us.json';
+                                break;
+                            case 'AU':
+                                editionSuffix = '/au.json';
+                                break;
+                            case 'INT':
+                                editionSuffix = '/international.json';
+                                break;
+                        }
 
-                    if (ab.getParticipations().EssentialReadTest1.variant === 'automated') {
-                        relatedUrl = '/container/essential-read/automated' + editionSuffix;
-                    } else if (ab.getParticipations().EssentialReadTest1.variant === 'curated') {
-                        relatedUrl = '/container/essential-read/curated' + editionSuffix;
-                    }
+                        if (ab.getParticipations().EssentialReadTest1.variant === 'automated') {
+                            relatedUrl = '/container/essential-read/automated' + editionSuffix;
+                        } else if (ab.getParticipations().EssentialReadTest1.variant === 'curated') {
+                            relatedUrl = '/container/essential-read/curated' + editionSuffix;
+                        }
 
-                } else {
-                    relatedUrl = popularInTag || '/related/' + config.page.pageId + '.json';
+                    } else {
+                        relatedUrl = popularInTag || '/related/' + config.page.pageId + '.json';
 
-                    if (opts.excludeTags && opts.excludeTags.length) {
-                        relatedUrl += '?' + map(opts.excludeTags, function (tag) {
-                            return 'exclude-tag=' + tag;
-                        }).join('&');
+                        if (opts.excludeTags && opts.excludeTags.length) {
+                            relatedUrl += '?' + map(opts.excludeTags, function (tag) {
+                                    return 'exclude-tag=' + tag;
+                                }).join('&');
+                        }
                     }
-                }
 
                     new LazyLoad({
                         url: relatedUrl,

@@ -77,7 +77,7 @@ define([
         fastdom.read(function () {
             //var tooHigh = links.height() > 200;
             fastdom.write(function () {
-                //if (tooHigh) {
+                if (true) {
                     // this block causes another full relayout
                     var more = $('.js-replicated-links-more'),
                         less = $('.js-replicated-links-less');
@@ -94,7 +94,7 @@ define([
                         more.removeClass('element-replicated-links__more--hidden');
                     });
                     container2.removeClass('element-replicated-links--not-in-test');
-                //}
+                }
                 mediator.emit('replicated-link:related:loaded');
             });
         });
