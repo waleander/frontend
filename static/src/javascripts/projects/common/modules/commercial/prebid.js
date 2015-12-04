@@ -6,6 +6,13 @@ define([
     var PREBID_TIMEOUT = 1000;
  	
     function init() {
+    	if (!window.pbjs) {
+            window.pbjs = {
+            	que: []
+            };
+            require(['js!prebid.js']);
+        }
+
     	setTimeout(initAdserver, PREBID_TIMEOUT);
     }
 
