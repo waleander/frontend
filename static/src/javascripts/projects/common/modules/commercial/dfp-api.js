@@ -380,16 +380,22 @@ define([
 
             //setTimeout(initAdserver, PREBID_TIMEOUT);
 
+            var apxIds = {
+                'top-above-nav': 4298047,
+                'inline1': 4298187
+            };
+
             pbjs.que.push(function() {
                 var adSlots = getAdSlots();
                 var adUnits = map(adSlots, function (slot) {
+                    var slotId = slot.slotId.substr(8);
+
                     return {
-                        code: slot.slotId.substr(8),
+                        code: slot.slotId,
                         size: slot.sizes,
                         bids: [{
                             bidder: 'appnexus',
-                            params: { 
-                                placementId: '4298187',
+                            params: {
                                 referrer: 'http://www.theguardian.com/uk'
                             }
                         }]
@@ -408,7 +414,7 @@ define([
             });
 
             if (commercialFeatures.dfpAdvertising) {
-                setupAdvertising(options);
+                //setupAdvertising(options);
             } else {
                 $(adSlotSelector).remove();
             }
@@ -439,7 +445,6 @@ define([
             }
         },
         loadSlot = function (slot) {
-            console.log(slot);
             googletag.display(slot);
             slots = chain(slots).and(omit, slot).value();
             displayed = true;
