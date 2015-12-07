@@ -324,7 +324,8 @@ define([
             showSponsorshipPlaceholder();
         },
 
-        getAdSlots = function () {
+        // Get adSlot id and sizes
+        getAdSlotsAttributes = function () {
             return chain(qwery(adSlotSelector)).and(map, function (adSlot) {
                     return bonzo(adSlot);
                 // filter out (and remove) hidden ads
@@ -345,6 +346,7 @@ define([
                 }).valueOf();
         },
 
+        // Get all ad slot sizes in Array [[300,250],[728,80]]
         getAdSizes = function ($adSlot) {
             var breakPoint = detect.getBreakpoint()
                 slotBreakpoints = chain(detect.breakpoints).and(filter, function (breakpointInfo) {
@@ -378,15 +380,16 @@ define([
                 require(['js!prebid.js']);
             }
 
-            //setTimeout(initAdserver, PREBID_TIMEOUT);
+            //setTimeout(setupAdvertising, PREBID_TIMEOUT);
 
+            // Appnexus placement ids
             var apxIds = {
-                'top-above-nav': 4298172,
+                'top-above-nav': 4298047,
                 'inline1': 4298187
             };
 
             pbjs.que.push(function() {
-                var adSlots = getAdSlots();
+                var adSlots = getAdSlotsAttributes();
                 var adUnits = map(adSlots, function (slot) {
                     var slotId = slot.slotId.substr(8);
 
