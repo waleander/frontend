@@ -381,7 +381,7 @@ define([
             //setTimeout(initAdserver, PREBID_TIMEOUT);
 
             var apxIds = {
-                'top-above-nav': 4298047,
+                'top-above-nav': 4298172,
                 'inline1': 4298187
             };
 
@@ -395,7 +395,8 @@ define([
                         size: slot.sizes,
                         bids: [{
                             bidder: 'appnexus',
-                            params: {
+                            params: { 
+                                placementId: apxIds[slotId],
                                 referrer: 'http://www.theguardian.com/uk'
                             }
                         }]
@@ -408,7 +409,7 @@ define([
                 pbjs.requestBids({
                     bidsBackHandler: function(bidResponses) {
                         console.log('bidResponses: ', bidResponses);
-                        //setupAdvertising();
+                        setupAdvertising();
                     }
                 })
             });
