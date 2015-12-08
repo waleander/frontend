@@ -298,6 +298,12 @@ define([
 
             resizeTimeout = opts.resizeTimeout;
 
+            // if we don't already have googletag, create command queue and load it async
+            /* Prebid if (!window.googletag) {
+                window.googletag = { cmd: [] };
+                require(['js!googletag.js']);
+            }*/
+
             window.googletag.cmd.push = raven.wrap({ deep: true }, window.googletag.cmd.push);
 
             window.googletag.cmd.push(function () {
@@ -324,7 +330,7 @@ define([
             showSponsorshipPlaceholder();
         },
 
-        // Get adSlot id and sizes
+        // Prebid - Get adSlot id and sizes
         getAdSlotsAttributes = function () {
             return chain(qwery(adSlotSelector)).and(map, function (adSlot) {
                     return bonzo(adSlot);
@@ -346,7 +352,7 @@ define([
                 }).valueOf();
         },
 
-        // Get all ad slot sizes in Array [[300,250],[728,80]]
+        // Prebid - Get all ad slot sizes in Array [[300,250],[728,80]]
         getAdSizes = function ($adSlot) {
             var breakPoint = detect.getBreakpoint()
                 slotBreakpoints = chain(detect.breakpoints).and(filter, function (breakpointInfo) {
@@ -366,13 +372,31 @@ define([
          * Public functions
          */
         init = function (options) {
+            if (commercialFeatures.dfpAdvertising) {
+                setupAdvertising(options);
+            } else {
+                $(adSlotSelector).remove();
+            }
+
+            return dfp;
+        },
+
+        /**
+         * Public functions
+         */
+        // Prebid 
+        prebidInit = function (options) {
              // if we don't already have googletag, create command queue and load it async
+             // This is normally in the setupAdvertising function
             if (!window.googletag) {
                 window.googletag = { cmd: [] };
-                // load the library asynchronously
                 require(['js!googletag.js']);
             }
 
+            // I had to wait till it loads for lazy loading as pbjs is not as smart
+            // as googletag. If we want lazy loading we need to make sure that prebid
+            // is loaded. Unless we will find some creative way of how to use their
+            // cueing we will have to wait for it.
             if (!window.pbjs) {
                 window.pbjs = {
                     que: []
@@ -383,6 +407,9 @@ define([
             } else {
                 pbjsInit(options);
             }
+
+            // This can be used when we are not using lazy loading. It will push all slots
+            // into the pbjs que and then load it at once.
 
             //setTimeout(setupAdvertising, PREBID_TIMEOUT);
              /*pbjs.que.push(function() {
@@ -403,13 +430,8 @@ define([
                     };
                 });
 
-                console.log(adUnits);
-
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({
-                    adUnits: {
-
-                    },
                     bidsBackHandler: function(bidResponses) {
                         console.log('bidResponses: ', bidResponses);
                         setupAdvertising();
@@ -420,6 +442,37 @@ define([
             return dfp;
         },
 
+        prebidSlot = function (slot) {
+            // Appnexus placement ids
+            var apxIds = {
+                'top-above-nav': 4298047,
+                'inline1': 4298187
+            };
+
+            var slotId = slot.substr(8);
+
+            if (apxIds[slotId]) {
+                pbjs.requestBids({
+                    adUnits: [{
+                        code: slot,
+                        size: [[900,250]],
+                        bids: [{
+                            bidder: 'appnexus',
+                            params: { 
+                                placementId: 4298047,
+                                referrer: 'http://www.theguardian.com/uk'
+                            }
+                        }]
+                    }],
+                    timeout: 250,
+                    bidsBackHandler: function(bidResponses) {
+                        console.log('bidResponses: ', bidResponses, apxIds[slotId]);
+                    }
+                });
+            }
+        },
+
+        // Prebid
         pbjsInit = function (options) {
             if (commercialFeatures.dfpAdvertising) {
                 setupAdvertising(options);
@@ -427,13 +480,18 @@ define([
                 $(adSlotSelector).remove();
             }
         },
+
+        // Prebid
         instantLoad = function () {
             chain(slots).and(keys).and(forEach, function (slot) {
                 if (contains(['dfp-ad--pageskin-inread', 'dfp-ad--merchandising-high'], slot)) {
-                    loadSlot(slot);
+                    //loadSlot(slot);
+                    prebidSlot(slot);
                 }
             });
         },
+
+        // Prebid
         lazyLoad = function () {
             if (slots.length === 0) {
                 mediator.off('window:throttledScroll', lazyLoad);
@@ -446,41 +504,16 @@ define([
                 chain(slots).and(keys).and(forEach, function (slot) {
                     // if the position of the ad is above the viewport - offset (half screen size)
                     if (scrollBottom > document.getElementById(slot).getBoundingClientRect().top + scrollTop - viewportHeight * depth) {
-                        loadSlot(slot);
+                        //loadSlot(slot);
+                        prebidSlot(slot);
                     }
                 });
             }
         },
         loadSlot = function (slot) {
-            // Appnexus placement ids
-            var apxIds = {
-                'top-above-nav': 4298047,
-                'inline1': 4298187
-            };
-
-            var slotId = slot.substr(8);                
-            pbjs.requestBids({
-                adUnits: [{
-                    code: slot,
-                    size: [[900,250]],
-                    bids: [{
-                        bidder: 'appnexus',
-                        params: { 
-                            placementId: 4298047,
-                            referrer: 'http://www.theguardian.com/uk'
-                        }
-                    }]
-                }],
-                timeout: 250,
-                bidsBackHandler: function(bidResponses) {
-                    console.log('bidResponses: ', bidResponses, apxIds[slotId]);
-                    console.log(pbjs.getBidResponses());
-                }
-            });
-
-            /*googletag.display(slot);
+            googletag.display(slot);
             slots = chain(slots).and(omit, slot).value();
-            displayed = true;*/
+            displayed = true;
         },
         addSlot = function ($adSlot) {
             var slotId = $adSlot.attr('id'),
@@ -828,6 +861,7 @@ define([
          */
         dfp = {
             init:           init,
+            prebidInit:     prebidInit,
             addSlot:        addSlot,
             refreshSlot:    refreshSlot,
             getSlots:       getSlots,

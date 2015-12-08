@@ -49,7 +49,8 @@ define([
             Promise.all(modulePromises).then(function () {
                 if (config.switches.commercial) {
                     robust.catchErrorsAndLogAll([
-                        ['cm-dfp', dfp.init],
+                        // prebid ['cm-dfp', dfp.init],
+                        ['cm-dfp', dfp.prebidInit],
                         // TODO does dfp return a promise?
                         ['cm-ready', function () {
                             mediator.emit('page:commercial:ready');
