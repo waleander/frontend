@@ -377,18 +377,15 @@ define([
                 window.pbjs = {
                     que: []
                 };
-                require(['js!prebid.js']);
+                require(['js!prebid.js'], function () {
+                    pbjsInit(options);
+                });
+            } else {
+                pbjsInit(options);
             }
 
             //setTimeout(setupAdvertising, PREBID_TIMEOUT);
-
-            // Appnexus placement ids
-            var apxIds = {
-                'top-above-nav': 4298047,
-                'inline1': 4298187
-            };
-
-            pbjs.que.push(function() {
+             /*pbjs.que.push(function() {
                 var adSlots = getAdSlotsAttributes();
                 var adUnits = map(adSlots, function (slot) {
                     var slotId = slot.slotId.substr(8);
@@ -410,19 +407,25 @@ define([
 
                 pbjs.addAdUnits(adUnits);
                 pbjs.requestBids({
+                    adUnits: {
+
+                    },
                     bidsBackHandler: function(bidResponses) {
                         console.log('bidResponses: ', bidResponses);
                         setupAdvertising();
                     }
                 })
-            });
+            });*/
 
+            return dfp;
+        },
+
+        pbjsInit = function (options) {
             if (commercialFeatures.dfpAdvertising) {
-                //setupAdvertising(options);
+                setupAdvertising(options);
             } else {
                 $(adSlotSelector).remove();
             }
-            return dfp;
         },
         instantLoad = function () {
             chain(slots).and(keys).and(forEach, function (slot) {
@@ -449,9 +452,35 @@ define([
             }
         },
         loadSlot = function (slot) {
-            googletag.display(slot);
+            // Appnexus placement ids
+            var apxIds = {
+                'top-above-nav': 4298047,
+                'inline1': 4298187
+            };
+
+            var slotId = slot.substr(8);                
+            pbjs.requestBids({
+                adUnits: [{
+                    code: slot,
+                    size: [[900,250]],
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: { 
+                            placementId: 4298047,
+                            referrer: 'http://www.theguardian.com/uk'
+                        }
+                    }]
+                }],
+                timeout: 250,
+                bidsBackHandler: function(bidResponses) {
+                    console.log('bidResponses: ', bidResponses, apxIds[slotId]);
+                    console.log(pbjs.getBidResponses());
+                }
+            });
+
+            /*googletag.display(slot);
             slots = chain(slots).and(omit, slot).value();
-            displayed = true;
+            displayed = true;*/
         },
         addSlot = function ($adSlot) {
             var slotId = $adSlot.attr('id'),
