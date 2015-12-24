@@ -92,9 +92,17 @@ define([
     bootStandard()
         .then(function () {
             return commercialResponsesPromise
-                .then(evalAll)
-                // The require is async, we don't need to wait for it
-                .then(function () { bootCommercial(); });
+                // https://github.com/EFForg/https-everywhere/issues/3609
+                .then(function (responses) {
+                    if (responses.length) {
+                        evalAll(responses);
+                        // The require is async, we don't need to wait for it
+                        bootCommercial();
+                    } else {
+                        // Pre-fetch failed, we must wait.
+                        return bootCommercial();
+                    }
+                });
         })
         .then(function () {
             if (shouldRunEnhance) {
