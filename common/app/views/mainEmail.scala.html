@@ -16,15 +16,34 @@
 
     @fragments.fontDefinitions()
 
-    <script id="gu">
+    <script>
     @if(FontSwitch.isSwitchedOn) {
         @InlineJs(loadFonts().body, "loadFonts.js")
     }
     </script>
-
 </head>
 <html>
     <body>
         @body
+
+        <script>
+            @Html(curlConfig().body)
+
+            @Html(Static.js.email);
+console.log('outside define')
+            define([
+                'bootstraps/email'
+            ], function (
+                email
+            ){
+            console.log('defined')
+                email.init();
+
+                // Initalise email forms in iframes
+                forEach(document.getElementsByClassName('js-email-sub__iframe'), function (el) {
+                    email.init(el);
+                });
+            })
+        </script>
     </body>
 </html>

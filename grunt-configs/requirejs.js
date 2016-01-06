@@ -85,6 +85,10 @@ module.exports = function (grunt, options) {
                             'text',
                             'inlineSvg'
                         ]
+                    },
+                    {
+                        name: 'bootstraps/email',
+                        insertRequire: ['bootstraps/email']
                     }
                 ]
             }

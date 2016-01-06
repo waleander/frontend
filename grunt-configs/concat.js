@@ -9,6 +9,13 @@ module.exports = function (grunt, options) {
                 options.requirejsDir + '/boot.js'
             ],
             dest: options.staticTargetDir + 'javascripts/app.js'
+        },
+        email: {
+            src: [
+                options.staticSrcDir + 'javascripts/components/curl/curl-domReady.js',
+                options.requirejsDir + '/bootstraps/email.js'
+            ],
+            dest: options.staticTargetDir + 'javascripts/email.js'
         }
     };
 };

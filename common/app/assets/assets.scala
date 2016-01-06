@@ -152,6 +152,7 @@ class Assets(base: String, assetMapPath: String = "assets/assets.map") extends L
 
      val curl: String = RelativePathEscaper.escapeLeadingDotPaths(inlineJs("assets/curl-domReady.js"))
      val omnitureJs: String = inlineJs("assets/vendor/omniture.js")
+     val email: String = inlineJs("assets/email.js")
   }
 }
 

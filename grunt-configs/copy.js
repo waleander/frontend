@@ -44,6 +44,12 @@ module.exports = function (grunt, options) {
                         'bootstraps/enhanced/main.js.map'
                     ],
                     dest: options.staticTargetDir + 'javascripts'
+                },
+                {
+                    expand: true,
+                    cwd: options.staticTargetDir + 'javascripts/',
+                    src: ['email.js'],
+                    dest: 'common/conf/assets'
                 }
             ]
         },
@@ -95,7 +101,7 @@ module.exports = function (grunt, options) {
         assetMaps: {
             files: [{
                 expand: true,
-                cwd: options.staticHashDir + 'assets',
+                cwd: options.staticTargetDir + 'assets',
                 src: ['**/assets.map'],
                 dest: 'common/conf/assets'
             }]
