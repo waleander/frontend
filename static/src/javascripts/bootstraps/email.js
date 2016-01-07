@@ -13,7 +13,6 @@ define([
     'common/utils/template',
     'common/views/svgs',
     'text!common/views/email/submissionResponse.html',
-    'common/utils/robust',
     'common/utils/detect'
 ], function (
     formInlineLabels,
@@ -30,7 +29,6 @@ define([
     template,
     svgs,
     successHtml,
-    robust,
     detect
 ) {
 
@@ -76,35 +74,31 @@ define([
             textInput: 'js-email-sub__text-input',
             listIdHiddenInput: 'js-email-sub__listid-input'
         },
-        setup = function (rootEl, thisRootEl, isIframed) {
-            $('.' + classes.inlineLabel, thisRootEl).each(function (el) {
-                formInlineLabels.init(el, {
-                    textInputClass: '.js-email-sub__text-input',
-                    labelClass: '.js-email-sub__label',
-                    hiddenLabelClass: 'email-sub__label--is-hidden',
-                    labelEnabledClass: 'email-sub__inline-label--enabled'
-                });
+        setup = function () {
+            var $el = $('.' + classes.wrapper),
+                freezeHeight = ui.freezeHeight($el, false),
+                freezeHeightReset = ui.freezeHeight($el, true),
+                $formEl = $('.' + classes.form);
+
+            formInlineLabels.init($('.' + classes.inlineLabel), {
+                textInputClass: '.js-email-sub__text-input',
+                labelClass: '.js-email-sub__label',
+                hiddenLabelClass: 'email-sub__label--is-hidden',
+                labelEnabledClass: 'email-sub__inline-label--enabled'
             });
 
-            $('.' + classes.wrapper, thisRootEl).each(function (el) {
-                var $el = $(el),
-                    freezeHeight = ui.freezeHeight($el, false),
-                    freezeHeightReset = ui.freezeHeight($el, true),
-                    $formEl = $('.' + classes.form, el);
-
-                formSubmission.bindSubmit($formEl, {
-                    formType: $formEl.data('email-form-type'),
-                    listId: $formEl.data('email-list-id')
-                });
-
-
-                // Ensure our form is the right height, both in iframe and outside
-                (isIframed) ? ui.setIframeHeight(rootEl, freezeHeight).call() : freezeHeight.call();
-
-                mediator.on('window:resize',
-                    debounce((isIframed) ? ui.setIframeHeight(rootEl, freezeHeightReset) : freezeHeightReset, 500)
-                );
+            formSubmission.bindSubmit($formEl, {
+                formType: $formEl.data('email-form-type'),
+                listId: $formEl.data('email-list-id')
             });
+
+            // Ensure our form is the right height
+            freezeHeight.call();
+
+            mediator.on('window:resize',
+                debounce(freezeHeightReset, 500)
+            );
+
         },
         formSubmission = {
             bindSubmit: function ($form, analytics) {
@@ -131,11 +125,11 @@ define([
                     event.preventDefault();
 
                     if (!state.submitting && validate(emailAddress)) {
-                        var formData = $form.data('formData'),
+                        var formData = $form.data(),
                             data =  'email=' + encodeURIComponent(emailAddress) +
                                 '&listId=' + listId +
-                                '&campaignCode=' + formData.campaignCode +
-                                '&referrer=' + formData.referrer;
+                                '&campaignCode=' + formData.campaignCode || '' +
+                                '&referrer=' + formData.referrer || '';
 
                         state.submitting = true;
 
@@ -187,29 +181,28 @@ define([
             }
         },
         ui = {
-            updateForm: function (thisRootEl, el, opts) {
-                var formData = $(thisRootEl).data(),
-                    formTitle = (opts && opts.formTitle) || formData.formTitle || false,
-                    formDescription = (opts && opts.formDescription) || formData.formDescription || false,
-                    formCampaignCode = (opts && opts.formCampaignCode) || formData.formCampaignCode || '',
-                    removeComforter = (opts && opts.removeComforter) || formData.removeComforter || false;
+            updateForm: function (opts) {
+                var formTitle = (opts && opts.formTitle) || false,
+                    formDescription = (opts && opts.formDescription) || false,
+                    formCampaignCode = (opts && opts.formCampaignCode) || '',
+                    removeComforter = (opts && opts.removeComforter) || false;
 
                 fastdom.write(function () {
                     if (formTitle) {
-                        $('.js-email-sub__heading', el).text(formTitle);
+                        $('.js-email-sub__heading').text(formTitle);
                     }
 
                     if (formDescription) {
-                        $('.js-email-sub__description', el).text(formDescription);
+                        $('.js-email-sub__description').text(formDescription);
                     }
 
                     if (removeComforter) {
-                        $('.js-email-sub__small', el).remove();
+                        $('.js-email-sub__small').remove();
                     }
                 });
 
                 // Cache data on the form element
-                $('.js-email-sub__form', el).data('formData', {
+                $('.js-email-sub__form').data('formData', {
                     campaignCode: formCampaignCode,
                     referrer: window.location.href
                 });
@@ -243,21 +236,14 @@ define([
                         setHeight();
                     }
                 };
-            },
-            setIframeHeight: function (iFrameEl, callback) {
-                return function () {
-                    fastdom.write(function () {
-                        iFrameEl.height = '';
-                        iFrameEl.height = iFrameEl.contentWindow.document.body.clientHeight + 'px';
-                        callback.call();
-                    });
-                };
             }
         };
 
-    setup(rootEl, document, false);
+    setup()
 
-    return {
-        updateForm: ui.updateForm
-    };
+    ui.updateForm({
+        formTitle: 'hey there title',
+        formDescription: 'description',
+
+    })
 });
