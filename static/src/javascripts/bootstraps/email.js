@@ -33,27 +33,6 @@ define([
     robust,
     detect
 ) {
-    var omniture;
-
-    /**
-     * The omniture module depends on common/modules/experiments/ab, so trying to
-     * require omniture directly inside an AB test gives you a circular dependency.
-     *
-     * This is a workaround to load omniture without making it a dependency of
-     * this module, which is required by an AB test.
-     */
-    function getOmniture() {
-        return new Promise(function (resolve) {
-            if (omniture) {
-                return resolve(omniture);
-            }
-
-            require('common/modules/analytics/omniture', function (omnitureM) {
-                omniture = omnitureM;
-                resolve(omniture);
-            });
-        });
-    }
 
     function handleSubmit(isSuccess, $form) {
         return function () {
@@ -61,6 +40,31 @@ define([
             state.submitting = false;
         };
     }
+
+    function postMessageToParent(message) {
+        return new Promise(function (resolve) {
+
+            // We only want to post messages when the iframe is embedded on the same host
+            if (parent.location.host === window.location.host) {
+                parent.postMessage(message, parent.location.href);
+                console.log('Posting to parent ', message)
+            } else {
+
+            }
+            return resolve({type: 'success', data: 'Posted to omniture'})
+        });
+    }
+
+    bean.on(window, 'onmessage message', function(event){
+        var messageOrigin = event.origin.replace(/.*?:\/\//g, "");
+        console.log('email message origin', messageOrigin)
+        if (messageOrigin === window.location.host) {
+            console.log(event);
+            if (event.data.type !== 'success') {
+                event.source.postMessage({type: 'success', data: 'hello'}, '//' + messageOrigin)
+            }
+        }
+    });
 
     var state = {
             submitting: false
@@ -135,27 +139,33 @@ define([
 
                         state.submitting = true;
 
-                        return getOmniture().then(function (omniture) {
-                            omniture.trackLinkImmediate('rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | subscribe clicked');
-
-                            return ajax({
-                                url: url,
-                                method: 'post',
-                                data: data,
-                                headers: {
-                                    'Accept': 'application/json'
-                                }
-                            })
-                                .then(function () {
-                                    omniture.trackLinkImmediate('rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | subscribe successful');
-                                })
-                                .then(handleSubmit(true, $form))
-                                .catch(function (error) {
-                                    robust.log('c-email', error);
-                                    omniture.trackLinkImmediate('rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | error');
-                                    handleSubmit(false, $form)();
-                                });
+                        postMessageToParent({
+                            type: 'omniture',
+                            data: 'rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | subscribe clicked'
                         });
+
+                        ajax({
+                            url: url,
+                            method: 'post',
+                            data: data,
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(postMessageToParent({
+                            type: 'omniture',
+                            data: 'rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | subscribe successful'
+                        }))
+                        .then(handleSubmit(true, $form))
+                        .catch(function (error) {
+                            // robust.log('c-email', error); Move to parent
+                            postMessageToParent({
+                                type: 'omniture',
+                                data: 'rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | error'
+                            });
+                            handleSubmit(false, $form)();
+                        });
+
                     }
                 };
             }
