@@ -167,7 +167,7 @@ module.exports = function (grunt) {
         if (!options.isDev && requirejsName !== 'common') {
             grunt.task.run('requirejs:common');
         }
-        grunt.task.run(['requirejs:' + requirejsName, 'copy:javascript', 'concat:app', 'uglify:javascript', 'asset_hash']);
+        grunt.task.run(['requirejs:' + requirejsName, 'concat:email', 'copy:javascript', 'concat:app', 'uglify:javascript', 'asset_hash']);
     }
     for (var requireTaskName in grunt.config('requirejs')) {
         if (requireTaskName !== 'options') {

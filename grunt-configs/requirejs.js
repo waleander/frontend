@@ -93,6 +93,18 @@ module.exports = function (grunt, options) {
                 ]
             }
         },
+        email: {
+            options: {
+                dir: options.requirejsDir,
+                keepBuildDir: false,
+                modules: [
+                    {
+                        name: 'bootstraps/email',
+                        insertRequire: ['bootstraps/email']
+                    }
+                ]
+            }
+        },
         article: {
             options: {
                 name: 'bootstraps/enhanced/article',
