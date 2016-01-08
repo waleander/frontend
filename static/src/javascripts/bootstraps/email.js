@@ -12,8 +12,7 @@ define([
     'lodash/collections/contains',
     'common/utils/template',
     'common/views/svgs',
-    'text!common/views/email/submissionResponse.html',
-    'common/utils/detect'
+    'text!common/views/email/submissionResponse.html'
 ], function (
     formInlineLabels,
     bean,
@@ -28,8 +27,7 @@ define([
     contains,
     template,
     svgs,
-    successHtml,
-    detect
+    successHtml
 ) {
 
     function handleSubmit(isSuccess, $form) {
@@ -45,21 +43,26 @@ define([
             // We only want to post messages when the iframe is embedded on the same host
             if (parent.location.host === window.location.host) {
                 parent.postMessage(message, parent.location.href);
-                console.log('Posting to parent ', message)
-            } else {
-
             }
-            return resolve({type: 'success', data: 'Posted to omniture'})
+
+            resolve();
         });
     }
 
-    bean.on(window, 'onmessage message', function(event){
-        var messageOrigin = event.origin.replace(/.*?:\/\//g, "");
-        console.log('email message origin', messageOrigin)
+    bean.on(window, 'onmessage message', function (event) {
+        var messageOrigin = event.origin.replace(/.*?:\/\//g, ''),
+            eventData = event.data.data;
+
         if (messageOrigin === window.location.host) {
-            console.log(event);
-            if (event.data.type !== 'success') {
-                event.source.postMessage({type: 'success', data: 'hello'}, '//' + messageOrigin)
+
+            if (event.data.type === 'ui') {
+                ui.updateForm({
+                    formTitle: eventData.formTitle,
+                    formDescription: eventData.formDescription,
+                    removeComforter: eventData.removeComforter,
+                    formCampaignCode: eventData.formCampaignCode,
+                    formReferrer: eventData.formReferrer
+                });
             }
         }
     });
@@ -76,7 +79,6 @@ define([
         },
         setup = function () {
             var $el = $('.' + classes.wrapper),
-                freezeHeight = ui.freezeHeight($el, false),
                 freezeHeightReset = ui.freezeHeight($el, true),
                 $formEl = $('.' + classes.form);
 
@@ -92,8 +94,10 @@ define([
                 listId: $formEl.data('email-list-id')
             });
 
-            // Ensure our form is the right height
-            freezeHeight.call();
+            postMessageToParent({
+                type: 'status',
+                data: 'setupDone'
+            });
 
             mediator.on('window:resize',
                 debounce(freezeHeightReset, 500)
@@ -125,7 +129,7 @@ define([
                     event.preventDefault();
 
                     if (!state.submitting && validate(emailAddress)) {
-                        var formData = $form.data(),
+                        var formData = $form.data('formData') || {},
                             data =  'email=' + encodeURIComponent(emailAddress) +
                                 '&listId=' + listId +
                                 '&campaignCode=' + formData.campaignCode || '' +
@@ -151,7 +155,7 @@ define([
                             data: 'rtrt | email form inline | ' + analytics.formType + ' | ' + analytics.listId + ' | subscribe successful'
                         }))
                         .then(handleSubmit(true, $form))
-                        .catch(function (error) {
+                        .catch(function () {
                             // robust.log('c-email', error); Move to parent
                             postMessageToParent({
                                 type: 'omniture',
@@ -239,11 +243,5 @@ define([
             }
         };
 
-    setup()
-
-    ui.updateForm({
-        formTitle: 'hey there title',
-        formDescription: 'description',
-
-    })
+    setup();
 });

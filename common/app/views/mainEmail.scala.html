@@ -26,24 +26,24 @@
     <body>
         @body
 
-        <script>
+        @*
+         @if(play.Play.isDev()) {
+             <script>
+             @Html(curlConfig().body)
+             </script>
+
+             <script>
+             require(['bootstraps/email'])
+             </script>
+        } else {
+         *@
+            <script>
             @Html(curlConfig().body)
-
             @Html(Static.js.email);
-console.log('outside define')
-            define([
-                'bootstraps/email'
-            ], function (
-                email
-            ){
-            console.log('defined')
-                email.init();
+            </script>
+        @*
+        }
+        *@
 
-                // Initalise email forms in iframes
-                forEach(document.getElementsByClassName('js-email-sub__iframe'), function (el) {
-                    email.init(el);
-                });
-            })
-        </script>
     </body>
 </html>

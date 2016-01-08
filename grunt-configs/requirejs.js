@@ -85,10 +85,6 @@ module.exports = function (grunt, options) {
                             'text',
                             'inlineSvg'
                         ]
-                    },
-                    {
-                        name: 'bootstraps/email',
-                        insertRequire: ['bootstraps/email']
                     }
                 ]
             }
@@ -96,7 +92,6 @@ module.exports = function (grunt, options) {
         email: {
             options: {
                 dir: options.requirejsDir,
-                keepBuildDir: false,
                 modules: [
                     {
                         name: 'bootstraps/email',
