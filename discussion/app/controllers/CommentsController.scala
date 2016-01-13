@@ -3,7 +3,6 @@ package controllers
 import model.{MetaData, SimplePage, Cached, TinyResponse}
 import play.api.data.Forms._
 import play.api.libs.ws.{WS, WSResponse}
-import play.filters.csrf.{CSRFCheck, CSRFAddToken}
 import scala.concurrent.{Future}
 import common.{ExecutionContexts, JsonComponent}
 import play.api.mvc.{Cookie, Action, RequestHeader, Result}
@@ -65,7 +64,7 @@ object CommentsController extends DiscussionController with ExecutionContexts {
 
 
   val reportAbusePage = SimplePage(MetaData.make("/reportAbuse", "Discussion", "Report Abuse", "GFE: Report Abuse"))
-  def reportAbuseForm(commentId: Int) = CSRFAddToken {
+  def reportAbuseForm(commentId: Int) =
     Action {
       implicit request =>
 
@@ -73,7 +72,7 @@ object CommentsController extends DiscussionController with ExecutionContexts {
           Ok(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm))
         }
     }
-  }
+
 
   val reportAbuseThankYouPage = SimplePage(MetaData.make("/reportAbuseThankYou", "Discussion", "Report Abuse Thank You", "GFE: Report Abuse Thank You"))
 
@@ -110,7 +109,7 @@ object CommentsController extends DiscussionController with ExecutionContexts {
 
   }
 
-  def reportAbuseSubmission(commentId: Int)  =  CSRFCheck {
+  def reportAbuseSubmission(commentId: Int)  =
     Action.async { implicit request =>
     val scGuU = request.cookies.get("SC_GU_U")
       userForm.bindFromRequest.fold(
@@ -126,7 +125,7 @@ object CommentsController extends DiscussionController with ExecutionContexts {
         }
       )
     }
-  }
+
 
   private def getComments(key: DiscussionKey, optParams: Option[DiscussionParams] = None)(implicit request: RequestHeader): Future[Result] = {
     val params = optParams.getOrElse(DiscussionParams(request))
