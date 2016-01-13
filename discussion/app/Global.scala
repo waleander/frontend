@@ -1,10 +1,9 @@
 import common.CloudWatchApplicationMetrics
 import conf.{SwitchboardLifecycle, CorsErrorHandler, Filters}
 import play.api.mvc.{EssentialFilter, WithFilters}
-import play.filters.csrf.CSRFFilter
 
 object DiscussionFilters {
-  def apply(): List[EssentialFilter] = CSRFFilter() +: Filters.common
+  def apply(): List[EssentialFilter] = Filters.common
 }
 
 object Global extends WithFilters(DiscussionFilters(): _*)
