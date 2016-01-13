@@ -94,6 +94,7 @@ object Frontend extends Build with Prototypes {
 
   val discussion = application("discussion").dependsOn(commonWithTests).aggregate(common).settings(
     libraryDependencies ++= Seq(
+      filters,
       scalaUri
     ),
     TwirlKeys.templateImports ++= Seq("discussion._", "discussion.model._")
