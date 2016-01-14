@@ -3,6 +3,7 @@ package controllers
 import model.{MetaData, SimplePage, Cached, TinyResponse}
 import play.api.data.Forms._
 import play.api.libs.ws.{WS, WSResponse}
+import play.filters.csrf.{MyCSRFCheck, CSRFCheck, MyCSRFAddToken}
 import scala.concurrent.{Future}
 import common.{ExecutionContexts, JsonComponent}
 import play.api.mvc.{Cookie, Action, RequestHeader, Result}
@@ -33,12 +34,14 @@ object CommentsController extends DiscussionController with ExecutionContexts {
       getComments(context._1, Some(params.copy(page = context._2)))
     }
   }
+
   def commentContextJsonOptions(id: Int) = Action { implicit request =>
     TinyResponse.noContent(Some("GET, OPTIONS"))
   }
 
   // Used for getting more replies for a specific comment.
   def commentJson(id: Int) = comment(id)
+
   def comment(id: Int) = Action.async { implicit request =>
     discussionApi.commentFor(id, request.getQueryString("displayThreaded")) map {
       comment =>
@@ -55,45 +58,53 @@ object CommentsController extends DiscussionController with ExecutionContexts {
 
   // Get a list of comments for a discussion.
   def comments(key: DiscussionKey) = Action.async { implicit request => getComments(key) }
+
   def commentsJson(key: DiscussionKey) = Action.async { implicit request => getComments(key) }
+
   def commentsJsonOptions(key: DiscussionKey) = Action { implicit request => TinyResponse.noContent(Some("GET, OPTIONS")) }
 
   // Get the top comments for a discussion.
   def topCommentsJson(key: DiscussionKey) = Action.async { implicit request => getTopComments(key) }
+
   def topCommentsJsonOptions(key: DiscussionKey) = Action { implicit request => TinyResponse.noContent(Some("GET, OPTIONS")) }
 
 
   val reportAbusePage = SimplePage(MetaData.make("/reportAbuse", "Discussion", "Report Abuse", "GFE: Report Abuse"))
-  def reportAbuseForm(commentId: Int) =
+
+  def reportAbuseForm(commentId: Int) = MyCSRFAddToken {
     Action {
       implicit request =>
-
-        Cached(60) {
+        println("IN REQUEST")
+        NoCache {
           Ok(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm))
         }
     }
-
+  }
 
   val reportAbuseThankYouPage = SimplePage(MetaData.make("/reportAbuseThankYou", "Discussion", "Report Abuse Thank You", "GFE: Report Abuse Thank You"))
 
 
   def reportAbuseThankYou(commentId: Int) = Action { implicit request =>
 
-    Cached(60) { Ok(views.html.discussionComments.reportCommentThankYou(commentId, reportAbuseThankYouPage)) }
+    Cached(60) {
+      Ok(views.html.discussionComments.reportCommentThankYou(commentId, reportAbuseThankYouPage))
+    }
   }
 
   def abuseReportToMap(abuseReport: DiscussionAbuseReport): Map[String, Seq[String]] = {
-  Map("categoryId" -> Seq(abuseReport.categoryId.toString),
-          "commentId" -> Seq(abuseReport.commentId.toString),
-          "reason" -> abuseReport.reason.toSeq,
-          "email" -> abuseReport.email.toSeq)
+    Map("categoryId" -> Seq(abuseReport.categoryId.toString),
+      "commentId" -> Seq(abuseReport.commentId.toString),
+      "reason" -> abuseReport.reason.toSeq,
+      "email" -> abuseReport.email.toSeq)
   }
 
 
   def postAbuseReportToDiscussionApi(abuseReport: DiscussionAbuseReport, cookie: Option[Cookie]): Future[WSResponse] = {
     val url = s"${conf.Configuration.discussion.apiRoot}/comment/${abuseReport.commentId}/reportAbuse"
     val headers = Seq("D2-X-UID" -> conf.Configuration.discussion.d2Uid, "GU-Client" -> conf.Configuration.discussion.apiClientHeader)
-    if (cookie.isDefined) { headers :+  ("Cookie"->s"SC_GU_U=${cookie.get}") }
+    if (cookie.isDefined) {
+      headers :+ ("Cookie" -> s"SC_GU_U=${cookie.get}")
+    }
     WS.url(url).withHeaders(headers: _*).withRequestTimeout(2000).post(abuseReportToMap(abuseReport))
 
   }
@@ -109,22 +120,24 @@ object CommentsController extends DiscussionController with ExecutionContexts {
 
   }
 
-  def reportAbuseSubmission(commentId: Int)  =
-    Action.async { implicit request =>
-    val scGuU = request.cookies.get("SC_GU_U")
-      userForm.bindFromRequest.fold(
-        formWithErrors => Future.successful(BadRequest(views.html.discussionComments.reportComment(commentId, reportAbusePage, formWithErrors))),
-        userData => {
-          postAbuseReportToDiscussionApi(userData, scGuU).map {
-            case success if success.status == 200 => NoCache(Redirect(routes.CommentsController.reportAbuseThankYou(commentId)))
-            case error => InternalServerError(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm.fill(userData), errorMessage = Some(ReportAbuseFormValidation.genericErrorMessage)))
-          }.recover({
-            case NonFatal(e) => InternalServerError(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm.fill(userData), errorMessage = Some(ReportAbuseFormValidation.genericErrorMessage)))
-          })
+  def reportAbuseSubmission(commentId: Int) = MyCSRFCheck {
 
-        }
-      )
-    }
+  Action.async { implicit request =>
+    val scGuU = request.cookies.get("SC_GU_U")
+    userForm.bindFromRequest.fold(
+      formWithErrors => Future.successful(BadRequest(views.html.discussionComments.reportComment(commentId, reportAbusePage, formWithErrors))),
+      userData => {
+        postAbuseReportToDiscussionApi(userData, scGuU).map {
+          case success if success.status == 200 => NoCache(Redirect(routes.CommentsController.reportAbuseThankYou(commentId)))
+          case error => InternalServerError(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm.fill(userData), errorMessage = Some(ReportAbuseFormValidation.genericErrorMessage)))
+        }.recover({
+          case NonFatal(e) => InternalServerError(views.html.discussionComments.reportComment(commentId, reportAbusePage, userForm.fill(userData), errorMessage = Some(ReportAbuseFormValidation.genericErrorMessage)))
+        })
+
+      }
+    )
+  }
+}
 
 
   private def getComments(key: DiscussionKey, optParams: Option[DiscussionParams] = None)(implicit request: RequestHeader): Future[Result] = {
