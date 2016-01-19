@@ -2,6 +2,7 @@ package controllers
 
 import common.FaciaMetrics._
 import common._
+import conf.Configuration
 import controllers.front._
 import layout.{CollectionEssentials, FaciaContainer, Front}
 import model._
@@ -26,6 +27,9 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
   val frontJsonFapi: FrontJsonFapi
 
   def applicationsRedirect(path: String)(implicit request: RequestHeader) = {
+    if(Configuration.environment.projectName == "dev-build") {
+      throw new UnsupportedOperationException(s"Facia controller redirecting to application/ this is likely due to ${path} being an automatic page. Internal redirects are not supported in dev-build")
+    }
     FaciaToApplicationRedirectMetric.increment()
     successful(InternalRedirect.internalRedirect("applications", path, request.rawQueryStringOption.map("?" + _)))
   }
