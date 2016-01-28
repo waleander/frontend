@@ -21,11 +21,6 @@ define([
     var root = config.page.discussionApiRoot,
         Api = {
             root: root,
-            proxyRoot: (config.switches.discussionProxy ?
-                (config.switches.discussionHttps ?
-                    toHTTPS(config.page.host + '/guardianapis/discussion/discussion-api') :
-                config.page.host + '/guardianapis/discussion/discussion-api') :
-                root),
             clientHeader: config.page.discussionApiClientHeader,
             d2Uid: config.page.discussionD2Uid
         };
@@ -36,9 +31,7 @@ define([
      * @param {Object.<string.*>} data
      * @return {Reqwest} a promise
      */
-    Api.send = function (endpoint, method, data, useProxy) {
-        var shouldUseProxy = useProxy || false;
-        var root = (method === 'post' || shouldUseProxy) ? Api.proxyRoot : Api.root;
+    Api.send = function (endpoint, method, data) {
         data = data || {};
         // TODO remove this once we turn the discussionHttps switch on permanently
         if (cookies.get('GU_U')) {
@@ -46,7 +39,7 @@ define([
         }
 
         var request = ajax({
-            url: root + endpoint,
+            url: Api.root + endpoint,
             type: (method === 'get') ? 'jsonp' : 'json',
             method: method,
             crossOrigin: true,
