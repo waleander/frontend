@@ -24,12 +24,13 @@ object LiveBlogPageModel {
     val (main, rest) = blocks.splitAt(remainder + pageSize)
     (main, rest.grouped(pageSize).toList)
   }
-
 }
 
 case class BlockInfo[B](page: Seq[B], self: PageReference)
 
-case class LiveBlogPageModel[+B](blocks: Seq[B], main: Seq[B]/*for key events - TODO remove*/, later: PageReference, earlier: PageReference, canonical: PageReference)
+case class LiveBlogPageModel[+B](blocks: Seq[B], main: Seq[B]/*for key events - TODO remove*/, later: PageReference, earlier: PageReference, canonical: PageReference) {
+  def hasBlock(getBlockId: B => String)(blockId: String): Boolean = blocks.exists(block => getBlockId(block) == blockId)
+}
 
 sealed trait PageReference {
   def suffix: Option[String]

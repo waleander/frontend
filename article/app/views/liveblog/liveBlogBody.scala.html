@@ -62,7 +62,7 @@
                                 <div class="blog__timeline-container js-live-blog__timeline-container" data-component="timeline">
                                     @fragments.dropdown("Key events", Some("key-events"), true) {
                                         <ul class="timeline js-live-blog__timeline u-unstyled">
-                                            @views.html.liveblog.keyEvents("/" + article.metadata.id, KeyEventData(blocks.main, timezone))
+                                            @views.html.liveblog.keyEvents("/" + article.metadata.id, KeyEventData(blocks.main, timezone), pageModel = Some(blocks))
                                         </ul>
                                     }
                                 </div>

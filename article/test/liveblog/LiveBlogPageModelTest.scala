@@ -11,6 +11,16 @@ class LiveBlogPageModelTest extends FlatSpec with Matchers {
 
    }
 
+  "LiveBlogPageModel" should "report if given block is on the currrent page" in {
+    case class Block(id: String)
+
+    val block = Block(id = "abc")
+    val result = LiveBlogPageModel(Seq(block), Seq(), NoPage, NoPage, FirstPage)
+
+    result.hasBlock(_.id)("abc") should be(true)
+
+  }
+
   "LiveBlogPageModel" should "allow 3 blocks on one page" in {
     val blocks = Seq.fill(3)(())
     val result = LiveBlogPageModel(2, 0, blocks)(None, _.toString)
