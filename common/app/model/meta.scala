@@ -546,6 +546,7 @@ final case class Tags(
   lazy val keywords: Seq[Tag] = tagsOfType("Keyword")
   lazy val nonKeywordTags: Seq[Tag] = tags.filterNot(_.properties.tagType == "Keyword")
   lazy val contributors: Seq[Tag] = tagsOfType("Contributor")
+  lazy val emailSignUp: Seq[Tag] = tagsOfType("Contributor")
   lazy val isContributorPage: Boolean = contributors.nonEmpty
   lazy val series: Seq[Tag] = tagsOfType("Series")
   lazy val blogs: Seq[Tag] = tagsOfType("Blog")
@@ -600,6 +601,7 @@ final case class Tags(
     ("keywordIds", JsString(keywords.map { _.id }.mkString(","))),
     ("nonKeywordTagIds", JsString(nonKeywordTags.map { _.id }.mkString(","))),
     ("richLink", JsString(richLink.getOrElse(""))),
+    ("emailSignUp", JsString(emailSignUp.map(_.id).mkString(","))),
     ("openModule", JsString(openModule.getOrElse(""))),
     ("author", JsString(contributors.map(_.name).mkString(","))),
     ("authorIds", JsString(contributors.map(_.id).mkString(","))),
