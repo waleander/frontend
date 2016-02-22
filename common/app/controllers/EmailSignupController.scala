@@ -1,7 +1,9 @@
 package controllers
 
-import common.{LinkTo, Logging, ExecutionContexts}
-import conf.Configuration
+import com.gu.contentapi.client.model.ItemResponse
+import common.{Edition, LinkTo, Logging, ExecutionContexts}
+import conf.{LiveContentApi, Configuration}
+import com.gu.contentapi.client.model.v1.{Tag => Tag}
 import model._
 import play.api.Play.current
 import play.api.data._
@@ -11,7 +13,7 @@ import play.api.libs.ws.{WSResponse, WS}
 import play.api.libs.json._
 import play.api.mvc.Results._
 import play.api.data.format.Formats.stringFormat
-import play.api.mvc.{Result, Action, Controller}
+import play.api.mvc.{RequestHeader, Result, Action, Controller}
 import metrics.EmailSubsciptionMetrics._
 
 import scala.concurrent.Future
@@ -161,10 +163,37 @@ object EmailSignupController extends Controller with ExecutionContexts with Logg
     Cached(60)(Ok(views.html.emailLanding(emailLandingPage)))
   }
 
-  def renderForm(emailType: String, tagId: String) = Action { implicit request =>
+  def renderForm(emailType: String, tagId: String) = Action.async { implicit request =>
+    def noResults = {
+      NotFound(s"Tag id $tagId does not exist")
+    }
 
-    val email = new Email("article", 1111, "heading", "descrip", "label", "subtext", "smalltext")
-    Cached(1.day)(Ok(views.html.emailFragment(emailLandingPage, email)))
+    def getTag(tagId: String)(implicit request: RequestHeader): Future[ItemResponse] = {
+      LiveContentApi.getResponse(LiveContentApi.item(s"profile/$tagId", Edition(request)).showFields("all"))
+    }
+
+    def withTag(tagId: String)(f: (Tag) => Result)(implicit request: RequestHeader): Future[Result] = {
+      getTag(tagId).map { response =>
+        val maybeTag = for {
+          tag <- response.tag }
+          yield f(tag)
+        maybeTag getOrElse noResults
+      } recover { case t: Throwable =>
+        log.error(s"Error retrieving $tagId from API", t)
+        noResults
+      }
+    }
+
+    def renderFormFromTag(tagId: String)(implicit request: RequestHeader): Future[Result] = {
+      withTag(tagId) { (tag) =>
+        println(tag.webTitle)
+        val email = new Email("article", 1111, tag.webTitle, tag.twitterHandle.getOrElse(""), "label", "subtext", "smalltext")
+        Cached(1.day)(Ok(views.html.emailFragment(emailLandingPage, email)))
+      }
+    }
+
+    renderFormFromTag(tagId)
+
   }
 
   def subscriptionResult(result: String) = Action { implicit request =>
