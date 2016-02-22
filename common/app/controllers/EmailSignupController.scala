@@ -32,6 +32,16 @@ case class EmailForm(
   referrer: Option[String],
   campaignCode: Option[String])
 
+case class Email (
+   componentClass: String,
+   listId: Int,
+   formHeading: String,
+   formDescription: String,
+   labelText: String,
+   submitText: String,
+   smallText: String
+ )
+
 object ListIds {
   val testList = 3485
   val guardianTodayUk = 37
@@ -151,10 +161,11 @@ object EmailSignupController extends Controller with ExecutionContexts with Logg
     Cached(60)(Ok(views.html.emailLanding(emailLandingPage)))
   }
 
-  def renderForm(emailType: String, listId: Int) = Action { implicit request =>
-    EmailForm.listIdsWithMaybeTrigger.lift(listId) match {
-      case Some(_) => Cached(1.day)(Ok(views.html.emailFragment(emailLandingPage, emailType, listId)))
-      case None => NotFound(s"List id $listId does not exist")}}
+  def renderForm(emailType: String, tagId: String) = Action { implicit request =>
+
+    val email = new Email("article", 1111, "heading", "descrip", "label", "subtext", "smalltext")
+    Cached(1.day)(Ok(views.html.emailFragment(emailLandingPage, email)))
+  }
 
   def subscriptionResult(result: String) = Action { implicit request =>
     Cached(7.days)(result match {

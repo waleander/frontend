@@ -56,7 +56,7 @@ POST        /agree/:groupCode                       @controllers.ThirdPartyCondi
 
 #Email Footer signup routes
 GET        /email                                                               controllers.EmailSignupController.renderPage()
-GET        /email/form/$emailType<article|footer>/:listId                       controllers.EmailSignupController.renderForm(emailType: String, listId: Int)
+GET        /email/form/$emailType<article|footer>/:tagId                       controllers.EmailSignupController.renderForm(emailType: String, tagId: String)
 GET        /email/:result                                                       controllers.EmailSignupController.subscriptionResult(result: String)
 POST       /email                                                               controllers.EmailSignupController.submit()
 OPTIONS    /email                                                               controllers.EmailSignupController.options()
