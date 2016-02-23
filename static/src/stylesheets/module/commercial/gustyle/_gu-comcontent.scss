@@ -143,4 +143,9 @@ $mobile-max-container-width: gs-span(8);
     @include mq(desktop) {
         width: 300px;
     }
+
+    // On gallery pages ads should be centered
+    &.ad-slot--gallery-inline {
+        margin: 0 auto;
+    }
 }
