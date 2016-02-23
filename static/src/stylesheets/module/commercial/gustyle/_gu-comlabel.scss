@@ -1,4 +1,6 @@
 .gu-comlabel {
+    color: colour(neutral-1);
+    
     .gu-comlabel__btn {
         @include f-textSans;
         @include font-size(14, 10);
@@ -14,7 +16,6 @@
         border: 0;
         font-weight: bold;
         text-transform: uppercase;
-        color: colour(neutral-1);
 
         &.is-active:before {
             top: 32px;
