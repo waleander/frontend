@@ -15,7 +15,6 @@ define([
     'common/modules/article/twitter',
     'common/modules/live/notification-bar',
     'lodash/objects/assign',
-    'common/modules/ui/sticky',
     'common/utils/scroller',
     'lodash/collections/toArray',
     'lodash/functions/bindAll',
@@ -34,7 +33,6 @@ define([
     twitter,
     NotificationBar,
     assign,
-    Sticky,
     scroller,
     toArray,
     bindAll,
@@ -129,12 +127,11 @@ define([
             fastdom.write(function () {
                 if (count > 0) {
                     var updateText = (count > 1) ? ' new updates' : ' new update';
-                    $toastButton.removeClass('toast__button--closed').addClass('toast__button--open');
+                    $toastContainer.addClass('toast__container--open');
                     $toastText.html(count + updateText);
-                    $toastSpaceReserver.addClass('toast__space-reserver--open');
                 } else {
-                    $toastButton.removeClass('toast__button--open').removeClass('loading').addClass('toast__button--closed');
-                    $toastSpaceReserver.removeClass('toast__space-reserver--open');
+                    $toastButton.removeClass('loading');
+                    $toastContainer.removeClass('toast__container--open');
                 }
             });
         };
@@ -151,7 +148,7 @@ define([
                     elementsToAdd = toArray(resultHtml.children);
 
                     // Insert new blocks and animate
-                    $toastSpaceReserver.after(elementsToAdd);
+                    $toastContainer.after(elementsToAdd);
 
                     if (detect.pageVisible()) {
                         revealInjectedElements();
@@ -185,7 +182,6 @@ define([
         //
 
         var options = assign({
-            'toastOffsetTop': 12, // pixels from the top
             'minUpdateDelay': (detect.isBreakpoint({ min: 'desktop' }) ? 10 : 30) * 1000, // 10 or 30 seconds minimum, depending on breakpoint
             'maxUpdateDelay': 20 * 60 * 1000, // 20 mins
             'backoffMultiplier': 0.75 // increase or decrease the back off rate by modifying this
@@ -199,14 +195,12 @@ define([
         // Cache selectors
         var $liveblogBody = $('.js-liveblog-body');
         var $toastButton = $('.toast__button');
-        var $toastSpaceReserver = $('.toast__space-reserver');
+        var $toastContainer = $('.toast__container');
         var $toastText = $('.toast__text', this.$toastButton);
-        var toastContainer = qwery('.toast__container')[0];
 
         latestBlockId = 'block-' + $liveblogBody.data('most-recent-block');
 
         new NotificationCounter().init();
-        new Sticky(toastContainer, { top: options.toastOffsetTop, emitMessage: true, containInParent: false }).init();
 
         checkForUpdates();
         detect.initPageVisibility();

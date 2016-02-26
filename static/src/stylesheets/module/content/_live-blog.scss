@@ -573,15 +573,12 @@ $timeline-width: 15px;
 
 .toast__container {
     z-index: 900;
-    padding-bottom: $gs-baseline;
     text-align: center;
     transition: transform .3s ease-in-out;
     transform: translateY((-1) * $gs-baseline * 5);
     width: 100%;
-
-    .toast__space-reserver--open & {
-        transform: translateY(0);
-    }
+    position: fixed;
+    top: 12px;
 
     @include mq(desktop) {
         width: gs-span(8);
@@ -604,6 +601,10 @@ $timeline-width: 15px;
     }
 }
 
+.toast__container--open {
+    transform: translateY(0);
+}
+
 .toast__button {
     @include fs-textSans(1);
     background-color: colour(live-main-2);
@@ -618,10 +619,6 @@ $timeline-width: 15px;
     &:focus {
         color: #ffffff;
         background-color: colour(live-main-1);
-    }
-
-    &.toast__button--closed {
-        height: 0px;
     }
 
     .toast__text {
@@ -662,16 +659,6 @@ $timeline-width: 15px;
     }
     to {
         transform: rotate(360deg);
-    }
-}
-
-.toast__space-reserver {
-    padding-bottom: $gs-baseline;
-    height: $gs-baseline*3; // was 0, for testing
-    display: none;
-
-    .toast-enabled & {
-        display: block;
     }
 }
 
