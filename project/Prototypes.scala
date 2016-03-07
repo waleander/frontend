@@ -11,6 +11,10 @@ import com.gu.riffraff.artifact.RiffRaffArtifact
 import com.gu.riffraff.artifact.RiffRaffArtifact.autoImport._
 import play.twirl.sbt.Import._
 import Dependencies._
+import sbtbuildinfo.BuildInfoPlugin
+import sbtbuildinfo.BuildInfoKeys._
+import sbtbuildinfo.BuildInfoKey
+import sbtbuildinfo.BuildInfoOption
 
 trait Prototypes {
   val version = "1-SNAPSHOT"

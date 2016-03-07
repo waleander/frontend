@@ -1,5 +1,6 @@
 package com.gu
 
+import com.gu.versioninfo.VersionInfo
 import sbt._
 import sbt.Keys._
 import play.Play.autoImport._
@@ -10,10 +11,12 @@ import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
 import com.typesafe.sbt.web.Import._
 import Dependencies._
+import sbtbuildinfo.BuildInfoKeys._
+import sbtbuildinfo._
 
 object Frontend extends Build with Prototypes {
 
-  val common = library("common").settings(
+  val common = library("common").enablePlugins(BuildInfoPlugin).settings(
     libraryDependencies ++= Seq(
       akkaAgent,
       apacheCommonsMath3,
@@ -54,6 +57,13 @@ object Frontend extends Build with Prototypes {
     )
   ).settings(
       mappings in TestAssets ~= filterAssets
+  ).settings(
+    buildInfoPackage := "buildinfo",
+    buildInfoKeys ++= Seq[BuildInfoKey](
+      "gitCommitId" -> VersionInfo.vcsNumber.value,
+      "gitBranch" -> VersionInfo.branch.value,
+      "buildNumber" -> VersionInfo.buildNumber.value
+    )
   )
 
   private def filterAssets(testAssets: Seq[(File, String)]) = testAssets.filterNot{ case (file, fileName) =>

@@ -1,0 +1,69 @@
+@()( implicit request:RequestHeader)
+@import conf.Configuration
+@import buildinfo.BuildInfo
+
+<style type="text/css">
+.buildinfo_wrapper {
+    position: fixed;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 25px 5px 5px;
+    color:white;
+    z-index:1000;
+    transition: left 2s;
+}
+
+.buildinfo_wrapper a:link,
+.buildinfo_wrapper a:visited,
+.buildinfo_close a:link,
+.buildinfo_close a:visited{
+    color:white;
+}
+
+#close-button {
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+#buildinfo_close {
+    display:none;
+}
+
+#buildinfo_close ~ .buildinfo_wrapper #close-button:after {
+    content: 'hide';
+}
+
+#buildinfo_close ~ .buildinfo_wrapper #close-button {
+    transition: 2s;
+}
+
+#buildinfo_close:checked ~ .buildinfo_wrapper {
+    left:-250px;
+}
+#buildinfo_close:checked ~ .buildinfo_wrapper #close-button:after {
+    content: 'show';
+}
+
+#buildinfo_close:checked ~ .buildinfo_wrapper #close-button {
+    transform: rotate(-90deg);
+    transition: 2s;
+    right: -5px;
+}
+
+
+</style>
+
+
+<input id="buildinfo_close" type="checkbox" />
+<div class="buildinfo_wrapper">
+    <label for="buildinfo_close" id="close-button"></label>
+    <h1>Build Info</h1>
+    <p>Build number: <a href="http://teamcity.gu-web.net:8111/viewType.html?buildTypeId=dotcom_pullrequests&branch_dotcom=@BuildInfo.buildNumber&tab=buildTypeStatusDiv">@BuildInfo.buildNumber</a></p>
+    <p>Branch: <a href="https://github.com/guardian/frontend/tree/@BuildInfo.gitBranch">@BuildInfo.gitBranch</a></p>
+    <p>Pull request: <span class="buildinfo_pr"></span></p>
+
+</div>
+
+

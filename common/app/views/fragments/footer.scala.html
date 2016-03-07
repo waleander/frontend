@@ -6,6 +6,8 @@
 @import common.editions.{Au, Uk, Us, International}
 @import model.Page
 @import conf.switches.Switches._
+@import buildinfo.BuildInfo
+
 
 <footer class="l-footer u-cf" data-link-name="footer" data-component="footer">
     <div class="l-footer__primary">
@@ -230,5 +232,8 @@
         <div class="l-footer__misc">
             <div class="really-serious-copyright">© @{new DateTime().year.getAsText} Guardian News and Media Limited or its affiliated companies. All rights reserved.</div>
         </div>
+        <!-- build-commit-id: @BuildInfo.gitCommitId -->
+        <!-- build-branch: @BuildInfo.gitBranch -->
+        <!-- build-number: @BuildInfo.buildNumber -->
     </div>
 </footer>
