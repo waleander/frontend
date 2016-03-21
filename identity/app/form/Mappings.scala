@@ -48,4 +48,7 @@ trait Mappings extends I18nSupport {
 
   val idCountry = comboList("" :: Countries.all)
 
+  val displayname: Mapping[String] = text verifying(
+    Messages("error.displayname"), {value => 6 <= value.length && value.length <= 20}
+    )
 }

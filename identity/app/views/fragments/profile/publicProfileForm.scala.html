@@ -8,6 +8,7 @@
 @import form.Input
 @import helper._
 @import conf.switches.Switches
+@import play.api.i18n._
 
 <fieldset class="fieldset">
     <div class="fieldset__heading">
@@ -60,6 +61,8 @@
         <div class="fieldset__fields">
             <ul class="u-unstyled">
 
+                @inputField(Input(publicProfileForm("displayName"), ('_label, "Display name")))
+                <div class="form-field__note">@Messages("displayname.copy")</div>
                 @inputField(Input(publicProfileForm("location"), ('_label, "Location")))
                 @textareaField(Input(publicProfileForm("aboutMe"), ('_label, "About me"), ('class, "textarea--long")))
                 @textareaField(Input(publicProfileForm("interests"), ('_label, "Interests"), ('class, "textarea--mid"), ('maxlength, "255")))

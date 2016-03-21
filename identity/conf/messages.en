@@ -1,5 +1,6 @@
 error.email=Please enter a valid email address
 error.passwordLength=Please enter a password between 6 and 72 characters
+error.displayname=Please enter a display name between 6 and 20 characters
 error.passwordsMustMatch=The passwords don't match, please try again
 error.passwordMustChange=The new password must be different from the current password.
 error.login=That email address/password combination doesn't match our records. Please try again
@@ -17,3 +18,5 @@ error.emailDomainInvalid=This domain is blacklisted
 error.required=This field is required
 error.boolean=Invalid selection
 error.unknown=Invalid input
+
+displayname.copy=The name that will appear on against comments and contributions. Can only be changed within the first 48 hours of account creation.

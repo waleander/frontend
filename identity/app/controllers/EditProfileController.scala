@@ -83,7 +83,6 @@ class EditProfileController @Inject()(idUrlBuilder: IdentityUrlBuilder,
             identityApiClient.saveUser(user.id, data.toUserUpdate(user), user.auth) map {
               case Left(errors) =>
                 forms.withErrors(errors)
-
               case Right(user) => forms.bindForms(user)
             }
         }
@@ -99,7 +98,6 @@ class EditProfileController @Inject()(idUrlBuilder: IdentityUrlBuilder,
   def profileFormsView(pageWithTrackingParams: IdentityPage, forms: ProfileForms)(implicit request: AuthRequest[AnyContent]) = {
     val idRequest = idRequestParser(request)
     val user = request.user
-
     Future(NoCache(Ok(views.html.profileForms(
            pageWithTrackingParams,
            user, forms, idRequest, idUrlBuilder))))

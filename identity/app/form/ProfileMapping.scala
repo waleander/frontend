@@ -1,7 +1,7 @@
 package form
 
 import play.api.data.Forms._
-import com.gu.identity.model.{PublicFields, User}
+import com.gu.identity.model.{PrivateFields, PublicFields, User}
 import idapiclient.UserUpdate
 import play.api.i18n.Messages.Implicits.applicationMessagesApi
 import play.api.Play.current
@@ -10,6 +10,7 @@ object ProfileMapping extends UserFormMapping[ProfileFormData] {
   override val messagesApi = applicationMessagesApi
 
   protected lazy val formMapping = mapping(
+    "displayName" -> displayname,
     "location" -> textField,
     "aboutMe" -> textArea,
     "interests" -> textField
@@ -18,6 +19,7 @@ object ProfileMapping extends UserFormMapping[ProfileFormData] {
   protected def fromUser(user: User) = ProfileFormData(user)
 
   protected lazy val contextMap =  Map(
+    "publicFields.displayName" -> "displayName",
     "publicFields.location" -> "location",
     "publicFields.aboutMe" -> "aboutMe",
     "publicFields.interests" -> "interests"
@@ -29,6 +31,7 @@ trait ProfileMapping {
 }
 
 case class ProfileFormData(
+  displayName: String,
   location: String,
   aboutMe: String,
   interests: String
@@ -36,6 +39,7 @@ case class ProfileFormData(
 
   def toUserUpdate(currentUser: User): UserUpdate = UserUpdate(
     publicFields = Some(PublicFields(
+      displayName = toUpdate(displayName, currentUser.publicFields.displayName),
       location = toUpdate(location, currentUser.publicFields.location),
       aboutMe = toUpdate(aboutMe, currentUser.publicFields.aboutMe),
       interests = toUpdate(interests, currentUser.publicFields.interests)
@@ -46,6 +50,7 @@ case class ProfileFormData(
 
 object ProfileFormData {
   def apply(user: User): ProfileFormData = ProfileFormData(
+    displayName = user.publicFields.displayName getOrElse "",
     location = user.publicFields.location getOrElse "",
     aboutMe = user.publicFields.aboutMe getOrElse "",
     interests = user.publicFields.interests getOrElse ""
