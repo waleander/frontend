@@ -338,6 +338,7 @@ GET            /container/count/:count/offset/:offset/section/:section/edition/:
 
 # Onward journeys
 GET            /series/*path.json                                                                                                controllers.SeriesController.renderSeriesStories(path)
+GET            /series-popular/*path.json                                                                                        controllers.SeriesController.renderPopularSeriesStories(path)
 
 # Applications (must come before wildcard)
 GET            /sitemaps/news.xml                                                                                                controllers.SiteMapController.renderNewsSiteMap()

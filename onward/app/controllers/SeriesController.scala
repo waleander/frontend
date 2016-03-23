@@ -6,6 +6,7 @@ import com.gu.facia.client.models.Backfill
 import common._
 import conf.LiveContentApi
 import conf.LiveContentApi.getResponse
+import feed.MostPopularSeriesAgent
 import implicits.Requests
 import layout.{CollectionEssentials, DescriptionMetaHeader, FaciaContainer}
 import model._
@@ -31,6 +32,10 @@ object SeriesController extends Controller with Logging with Paging with Executi
     lookup(Edition(request), seriesId) map { series =>
       series.map(renderSeriesTrails).getOrElse(NotFound)
     }
+  }
+
+  def renderPopularSeriesStories(seriesId: String) = Action { implicit request =>
+    MostPopularSeriesAgent.get(Edition(request), seriesId).map(renderSeriesTrails).getOrElse(NotFound)
   }
 
   def renderMf2SeriesStories(seriesId:String) = Action.async { implicit request =>
