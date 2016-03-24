@@ -17,7 +17,7 @@ object MostPopularSeriesAgent {
 
   private val agent = AkkaAgent[Map[String, Map[String, Series]]](Map.empty)
 
-  def get(edition: Edition, seriesId: String): Option[Series] = agent().get(seriesId).flatMap(_.get(edition.id))
+  def get(edition: Edition, seriesId: String): Option[Series] = agent().get(edition.id).flatMap(_.get(seriesId))
 
   def refresh(): Unit = {
     for {
@@ -37,7 +37,7 @@ object MostPopularSeriesAgent {
 
         popularFuture onSuccess {
           case items: Seq[RelatedContentItem] => {
-            agent.alter(current => current + (seriesId -> Map(edition.id -> Series(seriesId, Tag.make(tag), RelatedContent(items)))))
+            agent.send(current => current + (edition.id -> Map(seriesId -> Series(seriesId, Tag.make(tag), RelatedContent(items)))))
           }
         }
       }
