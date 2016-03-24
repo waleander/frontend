@@ -15,6 +15,7 @@ define([
     'common/modules/experiments/tests/adblocking-response',
     'common/modules/experiments/tests/people-who-read-this-also-read-variants',
     'common/modules/experiments/tests/membership',
+    'common/modules/experiments/tests/series-onwards-most-pop',
     'lodash/arrays/flatten',
     'lodash/collections/forEach',
     'lodash/objects/keys',
@@ -41,6 +42,7 @@ define([
     AdblockingResponse,
     PeopleWhoReadThisAlsoReadVariants,
     Membership,
+    SeriesOnwardsMostPop,
     flatten,
     forEach,
     keys,
@@ -62,7 +64,8 @@ define([
         new AdblockingResponse(),
         new EmailSignupMarketingCheckboxV2(),
         new PeopleWhoReadThisAlsoReadVariants(),
-        new Membership()
+        new Membership(),
+        new SeriesOnwardsMostPop()
     ]);
 
     var participationsKey = 'gu.ab.participations';

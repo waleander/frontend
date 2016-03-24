@@ -93,4 +93,13 @@ trait ABTestSwitches {
     sellByDate = new LocalDate(2016, 5, 2),
     exposeClientSide = true
   )
+
+  val ABSeriesOnwardsMostPop = Switch(
+    "A/B Tests",
+    "ab-series-onwards-most-pop",
+    "Test most popular onwards container for series",
+    safeState = Off,
+    sellByDate = new LocalDate(2016, 4, 20),
+    exposeClientSide = true
+  )
 }
