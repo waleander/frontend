@@ -9,6 +9,7 @@ trait OnwardJourneyLifecycle extends GlobalSettings {
 
     Jobs.deschedule("OnwardJourneyAgentsRefreshJob")
     Jobs.deschedule("OnwardJourneyAgentsRefreshHourlyJob")
+    Jobs.deschedule("OnwardJourneyAgentsRefreshDailyJob")
 
       // fire every min
       Jobs.schedule("OnwardJourneyAgentsRefreshJob", "0 * * * * ?") {
@@ -25,6 +26,11 @@ trait OnwardJourneyLifecycle extends GlobalSettings {
         DayMostPopularAgent.refresh()
       }
 
+      // fire every 6 hours
+      Jobs.schedule("OnwardJourneyAgentsRefreshDailyJob", "0 0 0/6 * * ?") {
+        MostPopularSeriesAgent.refresh()
+      }
+
       AkkaAsync {
         MostPopularAgent.refresh()
         MostPopularExpandableAgent.refresh()
@@ -33,6 +39,7 @@ trait OnwardJourneyLifecycle extends GlobalSettings {
         MostViewedAudioAgent.refresh()
         MostViewedGalleryAgent.refresh()
         DayMostPopularAgent.refresh()
+        MostPopularSeriesAgent.refresh()
       }
   }
 
