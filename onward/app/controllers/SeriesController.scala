@@ -35,7 +35,7 @@ object SeriesController extends Controller with Logging with Paging with Executi
   }
 
   def renderPopularSeriesStories(seriesId: String) = Action { implicit request =>
-    MostPopularSeriesAgent.get(Edition(request), seriesId).map(renderSeriesTrails).getOrElse(NotFound)
+    MostPopularSeriesAgent.get(Edition(request), seriesId) map(renderSeriesTrails) getOrElse(NotFound)
   }
 
   def renderMf2SeriesStories(seriesId:String) = Action.async { implicit request =>
