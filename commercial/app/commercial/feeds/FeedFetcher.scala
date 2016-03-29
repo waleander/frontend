@@ -149,8 +149,14 @@ object FeedFetcher {
       new SingleFeedFetcher(TravelOffersFeedMetaData(url))
     }
 
-  val all: Seq[FeedFetcher] = soulmates ++ Seq(bestsellers, masterclasses, travelOffers, jobs).flatten
+  private val hotels: Option[FeedFetcher] =
+    for {
+      id <- Configuration.commercial.hotelsId
+      key <- Configuration.commercial.hotelsPrivateKey
+    }
+      yield new SingleFeedFetcher(HotelsFeedMetaData(id, key))
 
+  val all: Seq[FeedFetcher] = soulmates ++ Seq(bestsellers, masterclasses, travelOffers, jobs, liveEvents, hotels).flatten
 }
 
 object ResponseEncoding {

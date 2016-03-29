@@ -140,6 +140,15 @@ trait CommercialSwitches {
     exposeClientSide = false
   )
 
+  val HotelsFeedSwitch = Switch(
+    SwitchGroup.Commercial,
+    "gu-hotels-feed",
+    "If this switch is on, commercial components will be fed by hotels feed.",
+    safeState = Off,
+    sellByDate = never,
+    exposeClientSide = false
+  )
+
   val JobsFeedFetchSwitch = Switch(
     SwitchGroup.Commercial,
     "gu-jobs-feed-fetch",
