@@ -13,6 +13,15 @@ trait ABTestSwitches {
     exposeClientSide = true
   )
 
+  val ABNextInSeries = Switch(
+    "A/B Tests",
+    "ab-next-in-series",
+    "Show next in series",
+    safeState = Off,
+    sellByDate = new LocalDate(2016, 4, 5),
+    exposeClientSide = true
+  )
+
   val ABIdentityRegisterMembershipStandfirst = Switch(
     "A/B Tests",
     "ab-identity-register-membership-standfirst",
@@ -31,12 +40,12 @@ trait ABTestSwitches {
     exposeClientSide = true
   )
 
-  val ABArticleVideoAutoplay = Switch(
+  val ABBolivianWrestlingAutoplay = Switch(
     "A/B Tests",
-    "ab-article-video-autoplay",
-    "Autoplay embedded videos in article",
+    "ab-bolivian-wrestling-autoplay",
+    "Autoplay Bolivian Wrestling",
     safeState = Off,
-    sellByDate = new LocalDate(2016, 3, 23),
+    sellByDate = new LocalDate(2016, 3, 31),
     exposeClientSide = true
   )
 
@@ -76,4 +85,12 @@ trait ABTestSwitches {
     exposeClientSide = true
   )
 
+  val ABMembership = Switch(
+    "A/B Tests",
+    "ab-membership",
+    "Membership propositions",
+    safeState = Off,
+    sellByDate = new LocalDate(2016, 5, 2),
+    exposeClientSide = true
+  )
 }
