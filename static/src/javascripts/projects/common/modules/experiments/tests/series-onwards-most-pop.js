@@ -1,11 +1,18 @@
 define([
     'common/utils/$',
     'common/utils/config',
-    'common/utils/detect'
+    'common/utils/fastdom-promise',
+    'common/utils/detect',
+    'common/utils/proximity-loader',
+    'common/modules/onward/inject-container',
+    'lodash/utilities/noop'
 ], function (
     $,
     config,
-    detect
+    fastdom,
+    proximityLoader,
+    injectContainer,
+    noop
 ) {
     return function () {
 
@@ -25,17 +32,6 @@ define([
             return true;
         };
 
-        var series = {
-            seriesName: [
-                {
-                    headline: ,
-                    url: ,
-                    image:,
-                    date
-                }
-            ]
-        }
-
         this.variants = [
             {
                 id: 'control',
@@ -43,7 +39,13 @@ define([
             }, {
                 id: 'variant',
                 test: function () {
+                    var $onward = $('.js-onward');
 
+                    proximityLoader.add($onward, 1500, function () {
+                        fastdom.write(function () {
+                            injectContainer.injectContainer('/series/popular/football/series/thefiver.json', $onward, 'inject-popular-series', noop);
+                        });
+                    });
                 }
             }
         ];
