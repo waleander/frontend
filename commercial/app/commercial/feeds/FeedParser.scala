@@ -4,7 +4,7 @@ import common.ExecutionContexts
 import conf.Configuration
 import model.commercial.books.{BestsellersAgent, Book}
 import model.commercial.events.{LiveEvent, LiveEventAgent, Masterclass, MasterclassAgent}
-import model.commercial.hotels.Hotel
+import model.commercial.hotels.{Hotel, HotelAgent}
 import model.commercial.jobs.{Job, JobsAgent}
 import model.commercial.soulmates.{Member, SoulmatesAgent}
 import model.commercial.travel.{TravelOffer, TravelOffersAgent}
@@ -99,7 +99,7 @@ object FeedParser {
 
         val feedMetaData = HotelsFeedMetaData(id, key)
 
-        def parse(feedContent: => Option[String]) = ???
+        def parse(feedContent: => Option[String]) = HotelAgent.refresh(feedMetaData, feedContent)
       }
   }
 
