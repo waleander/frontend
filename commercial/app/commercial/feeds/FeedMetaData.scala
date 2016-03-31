@@ -85,7 +85,8 @@ case class TravelOffersFeedMetaData(url: String) extends FeedMetaData {
 case class HotelsFeedMetaData(id: String, key: String) extends FeedMetaData {
   val name = "hotels"
   val url = "http://datafeeds.hotelscombined.com/Datafeed.ashx"
-  val switch = Switches.HotelsFeedSwitch
+  override val fetchSwitch = Switches.HotelsFeedSwitch
+  override val parseSwitch = Switches.HotelsFeedSwitch
 
   override val responseEncoding = utf8
   override val timeout = 20.seconds

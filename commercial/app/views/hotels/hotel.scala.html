@@ -1,0 +1,13 @@
+@(hotels: Seq[model.commercial.hotels.Hotel])(implicit request: RequestHeader)
+
+<div class="hotels-list">
+    <ul>
+        @for(hotel <- hotels) {
+            <li id="@hotel.hotelID">
+                <h1>@hotel.hotelName</h1>
+                <p>Country: @hotel.countryName</p>
+                <p>Place: @hotel.placeName</p>
+            </li>
+        }
+    </ul>
+</div>

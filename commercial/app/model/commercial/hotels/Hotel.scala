@@ -4,78 +4,71 @@ import scala.language.implicitConversions
 import scala.xml.NodeSeq
 
 case class Hotel (
-                   countryCode: Option[String],
-                   countryFileName: Option[String],
-                   countryName: Option[String],
+                   countryCode: String,
+                   countryFileName: String,
+                   countryName: String,
                    currencyCode: Option[String],
-                   hotelAddress: Option[String],
-                   hotelFileName: Option[String],
-                   hotelID: Option[String],
-                   hotelName: Option[String],
-                   hotelPostcode: Option[String],
-                   latitude: Option[String],
-                   longitude: Option[String],
-                   minRate: Option[Double],
+                   hotelFileName: String,
+                   hotelID: String,
+                   hotelName: String,
                    overallRating: Option[Double],
                    placeFileName: Option[String],
-                   placeID: Option[String],
-                   placeName: Option[String],
+                   placeID: String,
+                   placeName: String,
                    placeType: Option[String],
-                   popularity: Option[Double],
-                   propertyType: Option[String],
-                   propertyTypeID: Option[String],
+                   popularity: Int,
                    starRating: Option[Double],
                    stateName: Option[String],
                    statePlacefilename: Option[String],
-                   statePlaceID: Option[String],
-                   themes: Option[String],
-                   trademarked: Option[Boolean]
+                   statePlaceID: Option[String]
                  )
 
 object Hotel {
 
-  def fromXml(root: NodeSeq): Hotel = {
+  def fromXml(root: NodeSeq): Option[Hotel] = {
 
     implicit def popString[String](x: String) = x
-    implicit def popDouble[Double](x: String) = x.toDouble
     implicit def popBoolean[Boolean](x: String) = x.toBoolean
+    def popDouble[Double](x: String) = x.toDouble
+    def popInt[Int](x: String) = x.toInt
 
     def checkAndWrap[T](element: NodeSeq)(implicit op: String => T): Option[T] = {
       val elementValue = element.text
-      if (elementValue.length == 0)
+      if (elementValue.length == 0 || elementValue == "Null")
         None
       else {
         Some(op(elementValue))
       }
     }
 
-    new Hotel(
-      countryCode = checkAndWrap[String](root \ "countryCode"),
-      countryFileName = checkAndWrap[String](root \ "countryFileName"),
-      countryName = checkAndWrap[String](root \ "countryName"),
-      currencyCode = checkAndWrap[String](root \ "currencyCode"),
-      hotelAddress = checkAndWrap[String](root \ "hotelAddress"),
-      hotelFileName = checkAndWrap[String](root \ "hotelFileName"),
-      hotelID = checkAndWrap[String](root \ "hotelID"),
-      hotelName = checkAndWrap[String](root \ "hotelName"),
-      hotelPostcode = checkAndWrap[String](root \ "hotelPostcode"),
-      latitude = checkAndWrap[String](root \ "latitude"),
-      longitude = checkAndWrap[String](root \ "longitude"),
-      minRate = checkAndWrap[Double](root \ "minRate"),
-      overallRating = checkAndWrap[Double](root \ "overallRating"),
-      placeFileName = checkAndWrap[String](root \ "placeFileName"),
-      placeID = checkAndWrap[String](root \ "placeID"),
-      placeName = checkAndWrap[String](root \ "placeName"),
-      placeType = checkAndWrap[String](root \ "placeType"),
-      popularity = checkAndWrap[Double](root \ "popularity"),
-      propertyType = checkAndWrap[String](root \ "propertyType"),
-      propertyTypeID = checkAndWrap[String](root \ "propertyTypeID"),
-      starRating = checkAndWrap[Double](root \ "starRating"),
-      stateName = checkAndWrap[String](root \ "stateName"),
-      statePlacefilename = checkAndWrap[String](root \ "statePlacefilename"),
-      statePlaceID = checkAndWrap[String](root \ "statePlaceID"),
-      themes = checkAndWrap[String](root \ "themes"),
-      trademarked = checkAndWrap[Boolean](root \ "trademarked")
+    for {
+      countryCode <- checkAndWrap[String](root \ "CountryCode")
+      countryFileName <- checkAndWrap[String](root \ "CountryFileName")
+      countryName <- checkAndWrap[String](root \ "CountryName")
+      hotelFileName <- checkAndWrap[String](root \ "HotelFileName")
+      hotelID <- checkAndWrap[String](root \ "HotelID")
+      hotelName <- checkAndWrap[String](root \ "HotelName")
+      placeID <- checkAndWrap[String](root \ "PlaceID")
+      placeName <- checkAndWrap[String](root \ "PlaceName")
+      popularity <- checkAndWrap[Int](root \ "Popularity")(popInt)
+    } yield new Hotel(
+        countryCode,
+        countryFileName,
+        countryName,
+        currencyCode = checkAndWrap[String](root \ "CurrencyCode"),
+        hotelFileName,
+        hotelID,
+        hotelName,
+        overallRating = checkAndWrap[Double](root \ "OverallRating")(popDouble),
+        placeFileName = checkAndWrap[String](root \ "PlaceFileName"),
+        placeID,
+        placeName,
+        placeType = checkAndWrap[String](root \ "PlaceType"),
+        popularity,
+        starRating = checkAndWrap[Double](root \ "StarRating")(popDouble),
+        stateName = checkAndWrap[String](root \ "StateName"),
+        statePlacefilename = checkAndWrap[String](root \ "StatePlacefilename"),
+        statePlaceID = checkAndWrap[String](root \ "StatePlaceID")
     )
   }
 }

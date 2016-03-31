@@ -21,7 +21,7 @@ object HotelAgent extends ExecutionContexts with Logging {
   def updateAvailableHotels(freshHotels: Seq[Hotel]): Future[Seq[Hotel]] = {
     hotelAgent.alter { oldHotels =>
       if (freshHotels.nonEmpty) {
-        freshHotels
+        freshHotels.sortWith(_.popularity < _.popularity)
       } else {
         log.warn("Using old hotels data as there is no fresh hotels data")
         oldHotels
@@ -29,8 +29,16 @@ object HotelAgent extends ExecutionContexts with Logging {
     }
   }
 
-  def hotelsByPlaceName(placeName: String): Seq[Hotel] = {
-    availableHotels.filter(_.placeName == placeName).sortBy(_.overallRating)
+  def hotelsByCountry(countryName: String): Seq[Hotel] = availableHotels.filter(_.countryName == countryName)
+
+  def hotelsByCountryDeduplicatedByPlace(countryName: String): Seq[Hotel] = {
+    hotelsByCountry(countryName).foldLeft(Seq.empty[Hotel]){
+      (result, current) =>
+        if (result.forall(_.placeName != current.placeName))
+          result :+ current
+        else
+          result
+    }
   }
 
   def refresh(feedMetaData: FeedMetaData, feedContent: => Option[String]): Future[ParsedFeed[Hotel]] = {
@@ -39,7 +47,7 @@ object HotelAgent extends ExecutionContexts with Logging {
       new BOMInputStream(new ByteArrayInputStream(feed.getBytes()))
     }
 
-    feedMetaData.switch.isGuaranteedSwitchedOn flatMap { switchedOn =>
+    feedMetaData.parseSwitch.isGuaranteedSwitchedOn flatMap { switchedOn =>
       if (switchedOn) {
         val start = currentTimeMillis
 
@@ -47,8 +55,9 @@ object HotelAgent extends ExecutionContexts with Logging {
           val xml = XML.loadString(body.tail)
           val hotels =
             for {
-              hotel <- xml \ "Hotel"
-            } yield Hotel.fromXml(hotel)
+              rawHotel <- xml \ "Hotel"
+              hotel <- Hotel.fromXml(rawHotel)
+            } yield hotel
 
           updateAvailableHotels(hotels)
           Future(ParsedFeed(hotels, Duration(currentTimeMillis - start, MILLISECONDS)))
@@ -56,7 +65,7 @@ object HotelAgent extends ExecutionContexts with Logging {
           Future.failed(MissingFeedException(feedMetaData.name))
         }
       } else {
-        Future.failed(SwitchOffException(feedMetaData.switch.name))
+        Future.failed(SwitchOffException(feedMetaData.parseSwitch.name))
       }
     } recoverWith {
       case NonFatal(e) => Future.failed(e)
