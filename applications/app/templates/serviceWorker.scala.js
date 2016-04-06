@@ -184,9 +184,9 @@ self.addEventListener('notificationclick', function(event){
     event.notification.close();
     var url = '@{JavaScript(Configuration.site.host)}/'
         + event.notification.data.topic
-        + "?page=with:block-" + event.notification.data.blockId
-        + "#block-" + event.notification.data.blockId
-        +  "&CMP=not_b-webalert";
+        + "?CMP=not_b-webalert"
+        + "&page=with:block-" + event.notification.data.blockId
+        + "#block-" + event.notification.data.blockId;
 
     event.waitUntil(
         clients.matchAll({
