@@ -2,6 +2,7 @@
 @import common.Edition
 @import views.support.RenderClasses
 @import conf.switches.Switches
+@import conf.switches.Switches.staticBadgesSwitch
 @(faciaPage: model.PressedPage)(implicit request: RequestHeader)
 
 @defining((faciaPage.isSponsored(Some(Edition(request))),
@@ -11,15 +12,16 @@
         <div class="l-side-margins">
             <div class="@RenderClasses(Map(
                 "fc-container--sponsored" -> isSponsored,
-                "fc-container--advertisement-feature paid-content--advertisement-feature" -> isAdFeature,
-                "js-sponsored-front" -> (isSponsored || isAdFeature || isFoundationFunded)
+                "fc-container--advertisement-feature paid-content--advertisement-feature" -> isAdFeature
             ), "facia-page")"
             data-link-name="Front | @request.path"
                 @faciaPage.sponsor.map { sponsor =>
                 data-sponsor="@sponsor"
                 }
-                @faciaPage.sponsorshipType.map { sponsorshipType =>
-                data-sponsorship="@sponsorshipType"
+                @if(!staticBadgesSwitch.isSwitchedOn) {
+                    @faciaPage.sponsorshipType.map { sponsorshipType =>
+                       data-sponsorship="@sponsorshipType"
+                    }
                 }
             role="main">
 

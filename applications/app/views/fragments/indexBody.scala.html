@@ -5,6 +5,7 @@
 @import views.html.fragments.containers.facia_cards.{container, containerScaffold}
 @import views.html.fragments.pagination
 @import views.support.RenderClasses
+@import conf.switches.Switches.staticBadgesSwitch
 
 @if(index.page.metadata.id == "help/accessibility-help") {
     @containerScaffold("Preferences", "accesibility preferences") {
@@ -19,7 +20,8 @@
                 "js-sponsored-front" -> (
                     index.commercial.isSponsored(Some(Edition(request))) ||
                     index.commercial.isAdvertisementFeature ||
-                    index.commercial.isFoundationSupported
+                    index.commercial.isFoundationSupported &&
+                    !staticBadgesSwitch.isSwitchedOn
                 ),
                 "fc-container--advertisement-feature paid-content--advertisement-feature" -> index.commercial.isAdvertisementFeature
             ), "u-cf index-page"
@@ -28,8 +30,10 @@
         @index.tags.sponsor.map { sponsor =>
             data-sponsor="@sponsor"
         }
-        @index.commercial.sponsorshipType.map { sponsorshipType =>
+        @if(!staticBadgesSwitch.isSwitchedOn) {
+            @index.commercial.sponsorshipType.map { sponsorshipType =>
             data-sponsorship="@sponsorshipType"
+            }
         }
         role="main">
 
