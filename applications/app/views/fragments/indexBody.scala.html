@@ -21,7 +21,7 @@
                     index.commercial.isSponsored(Some(Edition(request))) ||
                     index.commercial.isAdvertisementFeature ||
                     index.commercial.isFoundationSupported &&
-                    staticBadgesSwitch.isSwitchedOn
+                    !staticBadgesSwitch.isSwitchedOn
                 ),
                 "fc-container--advertisement-feature paid-content--advertisement-feature" -> index.commercial.isAdvertisementFeature
             ), "u-cf index-page"
