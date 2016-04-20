@@ -10,19 +10,38 @@
     paidForContentType: Option[String] = None
 )(placeholderContent: Html)
 @import conf.switches.Switches._
+@import conf.switches.Switches.staticBadgesSwitch
 
-<div
+@if(!staticBadgesSwitch.isSwitchedOn) {
+    <div
     id="dfp-ad--@name"
-    class="js-ad-slot ad-slot ad-slot--dfp ad-slot--@name @adTypes.map{ adType =>ad-slot--@adType}.mkString(" ")@if(forceDisplay) { ad-slot--force-display}"
+    class="js-ad-slot ad-slot ad-slot--dfp ad-slot--@name @adTypes.map { adType =>ad-slot--@adType}.mkString(" ") @if(forceDisplay) { ad-slot--force-display}"
     data-link-name="ad slot @name"
-    @for(sponsor <- contentSponsor) { data-sponsor="@sponsor" }
-    @for(paidForType <- paidForContentType) { data-sponsorship="@paidForType" }
+        @for(sponsor <- contentSponsor) {
+            data-sponsor="@sponsor"
+        }
+        @for(paidForType <- paidForContentType) {
+            data-sponsorship="@paidForType"
+        }
     data-test-id="ad-slot-@name"
     data-name="@name"
-    @if(!showLabel){ data-label="false" }
-    @if(!refresh){ data-refresh="false" }
-    @if(outOfPage){ data-out-of-page="true" }
-    @sizeMapping.map{ case(breakpoint, sizes) =>
-        data-@breakpoint="@sizes.mkString("|")"
+        @if(!showLabel) {
+            data-label="false"
+        }
+        @if(!refresh) {
+            data-refresh="false"
+        }
+        @if(outOfPage) {
+            data-out-of-page="true"
+        }
+    @sizeMapping.map { case (breakpoint, sizes) =>
+        data-@breakpoint ="@sizes.mkString("|")"
     }
-    >@placeholderContent</div>
+    >@placeholderContent </div>
+} else {
+    <div
+    id="dfp-ad--@name"
+    class="ad-slot--@name @adTypes.map { adType =>ad-slot--@adType}.mkString(" ") @if(forceDisplay) { ad-slot--force-display}"
+    data-link-name="ad slot @name"
+    >@placeholderContent </div>
+}
