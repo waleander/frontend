@@ -340,6 +340,15 @@ trait FeatureSwitches {
     exposeClientSide = false
   )
 
+  val BrexitCompanionSwitch = Switch(
+    SwitchGroup.Feature,
+    "brexit-companion",
+    "When ON, items tagged with politics/brexit-companion will have visual elements added",
+    safeState = On,
+    sellByDate = new LocalDate(2017, 1, 5),
+    exposeClientSide = false
+  )
+
   // Owner: Dotcom loyalty
   val EmailInArticleGtodaySwitch = Switch(
     SwitchGroup.Feature,

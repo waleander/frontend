@@ -4,13 +4,16 @@
 @import conf.switches.Switches._
 
 @defining(
-    USElectionSwitch.isSwitchedOn &&
-    item.content.tags.tags.exists(_.id == "us-news/us-elections-2016")
-){ isUSElection =>
+    (
+        USElectionSwitch.isSwitchedOn && item.content.tags.tags.exists(_.id == "us-news/us-elections-2016"),
+        // TODO: change to brexit-companion
+        BrexitCompanionSwitch.isSwitchedOn && item.content.tags.tags.exists(_.id == "politics/eu-referendum")
+    )
+){ case(isUSElection, isBrexitCompanion) =>
     <div class="content__labels @if(isUSElection) {content__labels--us-election} @if(mvt.ABGalleryRedesignVariant.shouldShow(item.metadata.contentType)) {content__labels--gallery}">
 
         @if(isUSElection) {
-            <div class="badge-slot badge-slot--us-election">
+            <div class="badge-slot">
                 @if(isAmp) {
                     <amp-img class="badge-slot__img" src="@Configuration.static.path/sys-images/Guardian/Pix/pictures/2016/2/2/1454424596176/USElectionlogooffset.png" layout="fixed" height="33" width="33"></amp-img>
                 } else {
@@ -19,9 +22,29 @@
             </div>
         }
 
-        <div class="content__section-label">
-            <a class="content__section-label__link" data-link-name="article section" href="@LinkTo {/@item.content.sectionLabelLink}">@Html(Localisation(item.content.sectionLabelName))</a>
-        </div>
+        @if(isBrexitCompanion) {
+            <div class="content__section-label">
+                <a class="content__section-label__link" data-link-name="article section" href="@LinkTo {/@item.content.sectionLabelLink}">
+                    @if(isAmp) {
+                        <amp-img class="badge-slot__img" alt="@Html(Localisation(item.content.sectionLabelName))" src="https://uploads.guim.co.uk/2016/04/27/Brexit-header-article.png" layout="fixed" height="33" width="33"></amp-img>
+                    } else {
+                        <img class="badge-slot__img" alt="@Html(Localisation(item.content.sectionLabelName))" src="https://uploads.guim.co.uk/2016/04/27/Brexit-header-article.png"/>
+                    }
+                </a>
+            </div>
+
+            <div class="badge-slot">
+            @if(isAmp) {
+                <amp-img class="badge-slot__img" src="https://uploads.guim.co.uk/2016/04/27/lightbulb_blk_72x60_opt.png" layout="fixed" height="33" width="33"></amp-img>
+            } else {
+                <img class="badge-slot__img" src="https://uploads.guim.co.uk/2016/04/27/lightbulb_blk_72x60_opt.png"/>
+            }
+            </div>
+        } else {
+            <div class="content__section-label">
+                <a class="content__section-label__link" data-link-name="article section" href="@LinkTo {/@item.content.sectionLabelLink}">@Html(Localisation(item.content.sectionLabelName))</a>
+            </div>
+        }
 
         @item.content.blogOrSeriesTag.map { series =>
         <div class="content__series-label">
