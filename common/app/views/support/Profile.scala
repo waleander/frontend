@@ -17,6 +17,7 @@ sealed trait ElementProfile {
   def hidpi: Boolean
   def compression: Int
   def isPng: Boolean
+  def shouldImposeLogo: Boolean
 
   def elementFor(image: ImageMedia): Option[ImageAsset] = {
     val sortedCrops = image.imageCrops.sortBy(-_.width)
@@ -49,10 +50,11 @@ sealed trait ElementProfile {
         "dpr=2"
       }
     } else {""}
+    val imposedLogo = if (shouldImposeLogo) "blend=foo" else ""
     val heightParam = height.map(pixels => s"h=$pixels").getOrElse("")
     val widthParam = width.map(pixels => s"w=$pixels").getOrElse("")
 
-    val params = Seq(widthParam, heightParam, qualityparam, autoParam, sharpParam, fitParam, dprParam).filter(_.nonEmpty).mkString("&")
+    val params = Seq(widthParam, heightParam, qualityparam, autoParam, sharpParam, fitParam, dprParam, imposedLogo).filter(_.nonEmpty).mkString("&")
     s"?$params"
   }
 
@@ -64,7 +66,8 @@ case class Profile(
   override val height: Option[Int] = None,
   override val hidpi: Boolean = false,
   override val compression: Int = 95,
-  override val isPng: Boolean = false) extends ElementProfile
+  override val isPng: Boolean = false,
+  override val shouldImposeLogo: Boolean = false) extends ElementProfile
 
 object VideoProfile {
   lazy val ratioHD = new Fraction(16,9)
@@ -75,7 +78,8 @@ case class VideoProfile(
   override val height: Some[Int],
   override val hidpi: Boolean = false,
   override val compression: Int = 95,
-  override val isPng: Boolean = false) extends ElementProfile {
+  override val isPng: Boolean = false,
+  override val shouldImposeLogo: Boolean = false) extends ElementProfile {
 
   lazy val isRatioHD: Boolean = Precision.compareTo(VideoProfile.ratioHD.doubleValue, aspectRatio.doubleValue, 0.1d) == 0
 
@@ -94,7 +98,7 @@ object Item640 extends Profile(width = Some(640))
 object Item700 extends Profile(width = Some(700))
 object Video640 extends VideoProfile(width = Some(640), height = Some(360)) // 16:9
 object Video700 extends VideoProfile(width = Some(700), height = Some(394)) // 16:9
-object FacebookOpenGraphImage extends Profile(width = Some(1200))
+object FacebookOpenGraphImage extends Profile(width = Some(1200), shouldImposeLogo = true)
 object EmailArticleImage extends Profile(width = Some(640))
 
 // The imager/images.js base image.
