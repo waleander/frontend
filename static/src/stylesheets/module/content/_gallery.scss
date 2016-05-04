@@ -212,6 +212,13 @@
 }
 
 // TODO: When the time comes, remove `.new-gallery` class completely and remove old gallery styling
+.new-gallery__main-column {
+    @include mq(desktop) {
+        margin-left: gs-span(3) + $gs-gutter;
+        max-width: gs-span(8);
+    }
+}
+
 .new-gallery {
     .ad-slot--dark {
         background-color: $multimedia-support-5;
@@ -320,14 +327,6 @@
     }
 
     @include mq(desktop) {
-        .content__labels,
-        .content__meta-container,
-        .content__headline,
-        .content__standfirst {
-            margin-left: gs-span(3) + $gs-gutter;
-            max-width: gs-span(8);
-        }
-
         .content__standfirst {
             padding-bottom: 0;
             padding-top: 0;

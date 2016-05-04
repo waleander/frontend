@@ -74,7 +74,7 @@
         }
         <div class="immersive-main-media__headline-container">
             <div class="gs-container">
-                @if(!page.item.content.tags.isGallery) { <div class="content__main-column"> }
+                <div class="@if(page.item.content.tags.isGallery) { new-gallery__main-column } else { content__main-column }">
 
                     @fragments.meta.metaInline(page.item)
 
@@ -131,7 +131,7 @@
                         }
                     }
 
-                @if(!page.item.content.tags.isGallery) { </div> }
+                </div>
             </div>
         </div>
     </div>
