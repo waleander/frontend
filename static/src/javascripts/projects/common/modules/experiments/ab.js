@@ -57,8 +57,8 @@ define([
     pick,
     noop,
     merge,
-    chain,
-    YoutubeTest
+    chain
+    //YoutubeTest
 ) {
 
     var TESTS = flatten([
@@ -71,8 +71,8 @@ define([
         new Membership(),
         new LoyalAdblockingSurvey(),
         new Minute(),
-        new VideoSeriesPage(),
-        new YoutubeTest(),
+        new VideoSeriesPage()
+        //new YoutubeTest(),
     ]);
 
     var participationsKey = 'gu.ab.participations';

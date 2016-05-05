@@ -435,24 +435,20 @@ define([
         }
     }
 
+
     function init() {
         // The `hasMultipleVideosInPage` flag is temporary until the # will be fixed
         var shouldPreroll = commercialFeatures.videoPreRolls &&
             !config.page.hasMultipleVideosInPage &&
             !config.page.isAdvertisementFeature;
 
-        var ytiframe = document.createElement('ytiframe');
-        ytiframe.style.display = "none";
-        ytiframe.src = "http://www.theguardian.com/stage/video/2016/may/03/damian-lewis-antony-julius-caesar-friends-romans-countrymen-shakespeare-video";
-        document.body.appendChild(ytiframe);
-
-        if(ytiframe = true){
-            
-        } else {
-
-        }
-
-        if (config.switches.enhancedMediaPlayer) {
+        var ytpath = 'http://localhost:3000/stage/video/2016/may/03/damian-lewis-antony-julius-caesar-friends-romans-countrymen-shakespeare-video';
+        if (window.location.href === ytpath){
+            var iframewrapper = document.getElementsByClassName('yt-wrapper')[0];
+            var hideHTML5player = document.getElementsByClassName('gu-media')[0];
+            iframewrapper.innerHTML = '<iframe class="ytvideo" src="https://www.youtube.com/embed/q89MLuLSJgk?showinfo=0&modestbranding=1" frameborder="0" allowfullscreen></iframe>';
+            hideHTML5player.style.display = "none";
+        } else if (config.switches.enhancedMediaPlayer) {
             if (shouldPreroll) {
                 require(['js!//imasdk.googleapis.com/js/sdkloader/ima3.js']).then(function () {
                     initWithRaven(true);
