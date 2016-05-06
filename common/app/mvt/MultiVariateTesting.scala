@@ -43,7 +43,7 @@ object ABNewHeaderVariant extends TestDefinition(
 object ABGalleryRedesignVariant extends TestDefinition(
   variants = Nil,
   name = "ab-gallery-redesign-variant",
-  description = "Feature switch (0% test) for gallery redesign",
+  description = "Gallery redesign ab test (variant group)",
   sellByDate = new LocalDate(2016, 5, 10)
 ) {
   override def isParticipating(implicit request: RequestHeader): Boolean = {
@@ -51,6 +51,19 @@ object ABGalleryRedesignVariant extends TestDefinition(
   }
   def shouldShow(contentType: String)(implicit request: RequestHeader): Boolean = {
      isParticipating && contentType.toLowerCase == "gallery"
+  }
+}
+
+object ABGalleryRedesignControl extends TestDefinition(
+  variants = Nil,
+  name = "ab-gallery-redesign-control",
+  description = "Gallery redesign ab test (control group)",
+  sellByDate = new LocalDate(2016, 5, 10)
+) {
+  override def isParticipating(implicit request: RequestHeader): Boolean = {
+    val doesNotContainGalleryHeader = !request.headers.get("X-GU-ab-gallery-redesign").isDefined
+
+    doesNotContainGalleryHeader && switch.isSwitchedOn && ServerSideTests.isSwitchedOn
   }
 }
 
@@ -69,19 +82,20 @@ object ABIntersperseMultipleStoryPackagesStories extends TestDefinition(
   List(Variant8), // 1% of our audience
   "intersperse-multiple-story-packages-stories",
   "To test if mixing storyPackages stories (when article has more than one storyPackage) results in more clicks",
-  new LocalDate(2016, 5, 3)
+  new LocalDate(2016, 5, 17)
 )
 object ABIntersperseMultipleStoryPackagesStoriesControl extends TestDefinition(
   List(Variant9), // 1% of our audience
   "intersperse-multiple-story-packages-stories-control",
   "Control for the intersperse-multiple-story-packages-stories A/B test",
-  new LocalDate(2016, 5, 3)
+  new LocalDate(2016, 5, 17)
 )
 
 object ActiveTests extends Tests {
   val tests: Seq[TestDefinition] = List(
     ABNewHeaderVariant,
     ABGalleryRedesignVariant,
+    ABGalleryRedesignControl,
     ABHeadlinesTestControl,
     ABHeadlinesTestVariant,
     ABIntersperseMultipleStoryPackagesStories,
@@ -94,7 +108,7 @@ object ActiveTests extends Tests {
                           .map{ test => s""""${CamelCase.fromHyphenated(test.name)}" : ${test.switch.isSwitchedOn}"""}
     val newHeaderTests = List(ABNewHeaderVariant).filter(_.isParticipating)
                           .map{ test => s""""${CamelCase.fromHyphenated(test.name)}" : ${test.switch.isSwitchedOn}"""}
-    val galleryRedesignTests = List(ABGalleryRedesignVariant).filter(_.isParticipating)
+    val galleryRedesignTests = List(ABGalleryRedesignControl, ABGalleryRedesignVariant).filter(_.isParticipating)
                           .map{ test => s""""${CamelCase.fromHyphenated(test.name)}" : ${test.switch.isSwitchedOn}"""}
     val internationalEditionTests = List(InternationalEditionVariant(request)
                                       .map{ international => s""""internationalEditionVariant" : "$international" """}).flatten
