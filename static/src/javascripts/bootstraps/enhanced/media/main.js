@@ -422,12 +422,13 @@ define([
             !config.page.hasMultipleVideosInPage &&
             !config.page.isAdvertisementFeature;
 
-        var ytpath = 'http://localhost:3000/stage/video/2016/may/03/damian-lewis-antony-julius-caesar-friends-romans-countrymen-shakespeare-video';
-        if (window.location.href === ytpath){
+        var ytpath = '/stage/video/2016/may/03/damian-lewis-antony-julius-caesar-friends-romans-countrymen-shakespeare-video';
+        if (window.location.pathname === ytpath){
             var iframewrapper = document.getElementsByClassName('yt-wrapper')[0];
             var hideHTML5player = document.getElementsByClassName('gu-media')[0];
             iframewrapper.innerHTML = '<iframe class="ytvideo" src="https://www.youtube.com/embed/q89MLuLSJgk?showinfo=0&modestbranding=1" frameborder="0" allowfullscreen></iframe>';
             hideHTML5player.style.display = "none";
+            console.log('hello');
         } else if (config.switches.enhancedMediaPlayer) {
             if (shouldPreroll) {
                 require(['js!//imasdk.googleapis.com/js/sdkloader/ima3.js']).then(function () {

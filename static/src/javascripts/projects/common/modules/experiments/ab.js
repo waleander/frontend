@@ -10,11 +10,8 @@ define([
     'common/modules/experiments/tests/identity-register-membership-standfirst',
     'common/modules/experiments/tests/live-blog-chrome-notifications-internal',
     'common/modules/experiments/tests/live-blog-chrome-notifications-prod',
-    'common/modules/experiments/tests/next-in-series',
-    'common/modules/experiments/tests/membership',
     'common/modules/experiments/tests/loyal-adblocking-survey',
     'common/modules/experiments/tests/minute',
-    'common/modules/experiments/tests/video-series-page',
     'lodash/arrays/flatten',
     'lodash/arrays/zip',
     'lodash/collections/forEach',
@@ -40,11 +37,8 @@ define([
     IdentityRegisterMembershipStandfirst,
     LiveBlogChromeNotificationsInternal,
     LiveBlogChromeNotificationsProd,
-    NextInSeries,
-    Membership,
     LoyalAdblockingSurvey,
     Minute,
-    VideoSeriesPage,
     flatten,
     zip,
     forEach,
@@ -66,11 +60,8 @@ define([
         new IdentityRegisterMembershipStandfirst(),
         new LiveBlogChromeNotificationsInternal(),
         new LiveBlogChromeNotificationsProd(),
-        new NextInSeries(),
-        new Membership(),
         new LoyalAdblockingSurvey(),
-        new Minute(),
-        new VideoSeriesPage()
+        new Minute()
     ]);
 
     var participationsKey = 'gu.ab.participations';
@@ -138,7 +129,7 @@ define([
         var expired = (new Date() - new Date(test.expiry)) > 0,
             isSensitive = config.page.shouldHideAdverts;
         return ((isSensitive ? test.showForSensitive : true)
-                && test.canRun() && !expired && isTestSwitchedOn(test));
+        && test.canRun() && !expired && isTestSwitchedOn(test));
     }
 
     function getTest(id) {
@@ -327,10 +318,10 @@ define([
 
         forceSegment: function (testId, variant) {
             chain(getActiveTests()).and(filter, function (test) {
-                    return (test.id === testId);
-                }).and(forEach, function (test) {
-                    addParticipation(test, variant);
-                }).valueOf();
+                return (test.id === testId);
+            }).and(forEach, function (test) {
+                addParticipation(test, variant);
+            }).valueOf();
         },
 
         segmentUser: function () {
@@ -378,8 +369,8 @@ define([
             return eventTag && chain(getActiveTests()).and(filter, function (test) {
                     var testEvents = test.events;
                     return testEvents && some(testEvents, function (testEvent) {
-                        return startsWith(eventTag, testEvent);
-                    });
+                            return startsWith(eventTag, testEvent);
+                        });
                 }).and(map, function (test) {
                     return test.id;
                 }).valueOf();
