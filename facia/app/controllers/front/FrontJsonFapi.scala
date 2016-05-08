@@ -14,7 +14,7 @@ trait FrontJsonFapi extends Logging with ExecutionContexts {
 
   private def getAddressForPath(path: String): String = s"$bucketLocation/${path.replaceAll("""\+""","%2B")}/fapi/pressed.json"
 
-  private def parsePressedJson(j: String): Option[PressedPage] = {
+  def parsePressedJson(j: String): Option[PressedPage] = {
     val json = Json.parse(j)
     json.validate[PressedPage] match {
       case JsSuccess(page, _) => Option(page)

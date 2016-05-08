@@ -116,6 +116,20 @@ object Cached extends implicits.Dates {
   }
 }
 
+case class IfNoneMatchHeader(headerValue: String, hash: String)
+
+object IfNoneMatchHeader {
+  // Note: The W/ prefix indicates a "weak" validator (see https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.3.3)
+  // TODO could be comma separated list of hashes (see https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.26)
+  val HeaderRegex = """W/hash"(.+)"""".r
+
+  def unapply(headerValue: String): Option[IfNoneMatchHeader] = headerValue match {
+    case HeaderRegex(hash) => Some(IfNoneMatchHeader(headerValue, hash))
+    case _ => None
+  }
+
+}
+
 object NoCache {
   def apply(result: Result): Result = result.withHeaders("Cache-Control" -> "no-cache", "Pragma" -> "no-cache")
 }

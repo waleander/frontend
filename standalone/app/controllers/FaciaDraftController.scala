@@ -20,7 +20,7 @@ object FaciaDraftController extends FaciaController with RendersItemResponse {
     if (!ConfigAgent.getPathIds.contains(path))
     controllers.IndexController.renderItem(path)
     else
-    renderFrontPressResult(path)
+    renderFrontPressResultIfNecessary(path)
   }
 
   override def canRender(path: String): Boolean = ConfigAgent.getPathIds.contains(path)

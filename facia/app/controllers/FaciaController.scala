@@ -1,5 +1,9 @@
 package controllers
 
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.util.Base64
+
 import common._
 import controllers.front._
 import layout.{CollectionEssentials, FaciaContainer, Front}
@@ -45,12 +49,12 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
   }
 
   //Only used by dev-build for rending special urls such as lifeandstyle/home-and-garden
-  def renderFrontPressSpecial(path: String) = Action.async { implicit request => renderFrontPressResult(path) }
+  def renderFrontPressSpecial(path: String) = Action.async { implicit request => renderFrontPressResultIfNecessary(path) }
 
   // Needed as aliases for reverse routing
   def renderFrontJson(id: String) = renderFront(id)
 
-  def renderContainerJson(id: String) = renderContainer(id, false)
+  def renderContainerJson(id: String) = renderContainer(id, preserveLayout = false)
 
   def renderSomeFrontContainers(path: String, rawNum: String, rawOffset: String, sectionNameToFilter: String, edition: String) = Action.async { implicit request =>
 
@@ -113,7 +117,7 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
     else if (!ConfigAgent.shouldServeFront(path))
       rssRedirect(s"$path/rss")
     else
-      renderFrontPressResult(path)
+      renderFrontPressResultIfNecessary(path)
   }
 
   def rootEditionRedirect() = renderFront(path = "")
@@ -124,7 +128,7 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
     else if (!ConfigAgent.shouldServeFront(path) || request.getQueryString("page").isDefined)
       applicationsRedirect(path)
     else
-      renderFrontPressResult(path)
+      renderFrontPressResultIfNecessary(path)
   }
 
   private def shouldEditionRedirect(path: String)(implicit request: RequestHeader) = {
@@ -144,31 +148,64 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
         case None => Cached(cacheTime)(JsonComponent(JsObject(Nil)))}
   }
 
-  private[controllers] def renderFrontPressResult(path: String)(implicit request: RequestHeader) = {
-    val futureResult = frontJsonFapi.get(path).flatMap {
-      case Some(faciaPage) =>
-        successful(
-          if (request.isRss) {
-            val body = TrailsToRss.fromPressedPage(faciaPage)
-            Cached(faciaPage) {
-              RevalidatableResult(Ok(body).as("text/xml; charset=utf-8"), body)
-            }
-          }
-          else if (request.isJson)
-            Cached(faciaPage)(JsonFront(faciaPage))
-          else {
-            Cached(faciaPage) {
-              RevalidatableResult.Ok(views.html.front(faciaPage))
-            }
-          }
-        )
-      case None => successful(Cached(60)(WithoutRevalidationResult(NotFound)))}
+  private[controllers] def renderFrontPressResultIfNecessary(path: String)(implicit request: RequestHeader) = {
+    val futureResult = frontJsonFapi.getRaw(path).map {
+      case Some(rawJson) =>
+
+        // The ETag hash that the client knows about, if any
+        val requestedHash: Option[String] = request.headers.get("If-None-Match").flatMap {
+          case IfNoneMatchHeader(etag) => Some(etag.hash)
+          case _ => None
+        }
+
+        /*
+        Calculate the ETag for the response by hashing the contents of the facia json
+
+        TODO What other state should the input of the hash include? The app's build number?
+
+        TODO If we're happy with using only the json file's hash as input, we can use the ETag that we receive from S3.
+        We can also forward the If-None-Match header to S3, thus saving bandwidth.
+
+         */
+        val jsonStringMD5: String = {
+          val md = MessageDigest.getInstance("MD5")
+          Base64.getEncoder.encodeToString(md.digest(rawJson.getBytes(StandardCharsets.UTF_8)))
+        }
+
+        if (requestedHash.contains(jsonStringMD5))
+          // TODO do we need to return the ETag header again and/or any cache headers here?
+          NotModified
+        else
+          renderFrontPressResult(rawJson)
+      case None =>
+        Cached(60)(WithoutRevalidationResult(NotFound))
+    }
 
     futureResult.onFailure { case t: Throwable => log.error(s"Failed rendering $path with $t", t)}
     futureResult
   }
 
-  def renderFrontPress(path: String) = Action.async { implicit request => renderFrontPressResult(path) }
+  private def renderFrontPressResult(rawJson: String)(implicit request: RequestHeader) = {
+    frontJsonFapi.parsePressedJson(rawJson) match {
+      case Some(faciaPage) =>
+        if (request.isRss) {
+          val body = TrailsToRss.fromPressedPage(faciaPage)
+          Cached(faciaPage) {
+            RevalidatableResult(Ok(body).as("text/xml; charset=utf-8"), body)
+          }
+        }
+        else if (request.isJson)
+          Cached(faciaPage)(JsonFront(faciaPage))
+        else {
+          Cached(faciaPage) {
+            RevalidatableResult.Ok(views.html.front(faciaPage))
+          }
+        }
+      case None => Cached(60)(WithoutRevalidationResult(NotFound))
+    }
+  }
+
+  def renderFrontPress(path: String) = Action.async { implicit request => renderFrontPressResultIfNecessary(path) }
 
   def renderContainer(id: String, preserveLayout: Boolean = false) = Action.async { implicit request =>
     log.info(s"Serving collection ID: $id")
