@@ -428,7 +428,6 @@ define([
             var hideHTML5player = document.getElementsByClassName('gu-media')[0];
             iframewrapper.innerHTML = '<iframe class="ytvideo" src="https://www.youtube.com/embed/q89MLuLSJgk?showinfo=0&modestbranding=1" frameborder="0" allowfullscreen></iframe>';
             hideHTML5player.style.display = "none";
-            console.log('hello');
         } else if (config.switches.enhancedMediaPlayer) {
             if (shouldPreroll) {
                 require(['js!//imasdk.googleapis.com/js/sdkloader/ima3.js']).then(function () {
