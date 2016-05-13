@@ -3,13 +3,17 @@ package recorder
 import java.io._
 import java.nio.charset.StandardCharsets
 
+import akka.util.{CompactByteString, ByteString}
 import common.ExecutionContexts
 import conf.Configuration
 import contentapi.Response
 import org.apache.commons.codec.digest.DigestUtils
+import play.api.libs.json.{Json, JsValue}
+import play.api.libs.ws.{WSCookie, WSResponse}
 
 import scala.concurrent.Future
 import scala.io.Source
+import scala.xml.{XML, Elem}
 
 
 trait HttpRecorder[A] extends ExecutionContexts {
@@ -69,6 +73,32 @@ trait HttpRecorder[A] extends ExecutionContexts {
   private [recorder] def name(url: String, headers: Map[String, String]): String = {
     val headersString = headersFormat(headers)
     DigestUtils.sha256Hex(url +  headersString)
+  }
+}
+
+trait WsHttpRecorder[A <: WSResponse] {
+  self: HttpRecorder[A] =>
+  override def toResponse(str: String): WSResponse = toResponse(200, str)
+  def toResponse(expectedStatus: Int, str: String): WSResponse = new WSResponse {
+    override def statusText: String = "OK"
+    override def underlying[T]: T = str.asInstanceOf[T]
+    override def xml: Elem = XML.loadString(str)
+    override def body: String = str
+    override def header(key: String): Option[String] = None
+    override def cookie(name: String): Option[WSCookie] = None
+    override def bodyAsBytes: ByteString = CompactByteString(str.getBytes)
+    override def cookies: Seq[WSCookie] = Nil
+    override def status: Int = expectedStatus
+    override def json: JsValue = Json.parse(body)
+    override def allHeaders: Map[String, Seq[String]] = Map.empty
+  }
+
+  override def fromResponse(response: A): String = {
+    if (response.status == 200) {
+      response.body
+    } else {
+      s"Error:${response.status}"
+    }
   }
 }
 

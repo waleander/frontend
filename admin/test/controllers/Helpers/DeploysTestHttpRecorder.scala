@@ -6,27 +6,18 @@ import java.util
 import com.ning.http.client.uri.Uri
 import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response => ningResponse}
 import play.api.libs.ws.WSResponse
-import play.api.libs.ws.ning.NingWSResponse
-import recorder.HttpRecorder
+import recorder.{WsHttpRecorder, HttpRecorder}
 
-object DeploysTestHttpRecorder extends HttpRecorder[WSResponse] {
+object DeploysTestHttpRecorder extends HttpRecorder[WSResponse] with WsHttpRecorder[WSResponse] {
   override lazy val baseDir = new File(System.getProperty("user.dir"), "data/deploys")
 
   val errorPrefix = "Error:"
-  def toResponse(str: String) = {
+  override def toResponse(str: String) = {
     if (str.startsWith(errorPrefix)) {
-      NingWSResponse(Response("", str.replace(errorPrefix, "").toInt))
+      val status = str.replace(errorPrefix, "").toInt
+      toResponse(status, str)
     } else {
-      NingWSResponse(Response(str, 200))
-    }
-  }
-
-  def fromResponse(response: WSResponse) = {
-    if (response.status == 200) {
-      response.body
-    }
-    else {
-      errorPrefix + response.status
+      toResponse(200, str)
     }
   }
 }

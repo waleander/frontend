@@ -7,6 +7,7 @@ import model.{TeamMap, LiveBlogAgent}
 import pa.{PaClientErrorsException, Http, PaClient}
 import play.api.inject.ApplicationLifecycle
 import play.api.libs.ws.WS
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class FootballLifecycle(
@@ -78,7 +79,7 @@ object FootballClient extends PaClient with Http with Logging with ExecutionCont
   private var _http: Http = new Http {
     override def GET(urlString: String): Future[pa.Response] = {
 
-        val promiseOfResponse = WS.url(urlString).withRequestTimeout(2000).get()
+        val promiseOfResponse = WS.url(urlString).withRequestTimeout(2.seconds).get()
 
         promiseOfResponse.map{ r =>
 

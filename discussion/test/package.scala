@@ -1,6 +1,9 @@
 package test
 
+import akka.util.{CompactByteString, ByteString}
 import conf.Configuration
+import org.asynchttpclient.HttpResponseStatus
+import org.asynchttpclient.netty.NettyResponse
 import controllers.HealthCheck
 import org.scalatest.{BeforeAndAfterAll, Suites}
 import play.api.libs.ws.ning.NingWSResponse
@@ -13,8 +16,6 @@ import java.util
 import java.net.URI
 import java.io.{File, InputStream}
 import java.nio.ByteBuffer
-
-import play.api.Plugin
 import discussion.{DiscussionApi, DiscussionApiLike}
 
 private case class Resp(getResponseBody: String) extends NingResponse {
@@ -42,19 +43,8 @@ private case class Resp(getResponseBody: String) extends NingResponse {
 
 }
 
-object DiscussionApiHttpRecorder extends HttpRecorder[WSResponse] {
-
+object DiscussionApiHttpRecorder extends HttpRecorder[WSResponse] with WsHttpRecorder[WSResponse] {
   override lazy val baseDir = new File(System.getProperty("user.dir"), "data/discussion")
-
-  def toResponse(str: String) = NingWSResponse(Resp(str))
-
-  def fromResponse(response: WSResponse) = {
-    if (response.status == 200) {
-      response.body
-    } else {
-      s"Error:${response.status}"
-    }
-  }
 }
 
 class DiscussionApiStub(val wsClient: WSClient) extends DiscussionApiLike {
@@ -69,7 +59,7 @@ class DiscussionApiStub(val wsClient: WSClient) extends DiscussionApiLike {
   protected val apiTimeout = conf.Configuration.discussion.apiTimeout
 
   override protected def GET(url: String, headers: (String, String)*) = DiscussionApiHttpRecorder.load(url, Map.empty){
-    wsClient.url(url).withRequestTimeout(2000).get()
+    wsClient.url(url).withRequestTimeout(2.seconds).get()
   }
 }
 

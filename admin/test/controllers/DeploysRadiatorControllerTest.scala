@@ -10,6 +10,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import test.{ConfiguredTestSuite, WithTestWsClient}
 
+import scala.concurrent.duration._
+
 @DoNotDiscover class DeploysRadiatorControllerTest
   extends WordSpec
   with Matchers
@@ -24,7 +26,7 @@ import test.{ConfiguredTestSuite, WithTestWsClient}
     override def GET(url: String, queryString: Map[String, String] = Map.empty, headers: Map[String, String] = Map.empty) = {
       val extentedHeaders = headers + ("X-Url" -> (url + queryString.mkString))
       DeploysTestHttpRecorder.load(url, extentedHeaders) {
-        wsClient.url(url).withQueryString(queryString.toSeq: _*).withHeaders(headers.toSeq: _*).withRequestTimeout(10000).get()
+        wsClient.url(url).withQueryString(queryString.toSeq: _*).withHeaders(headers.toSeq: _*).withRequestTimeout(10.seconds).get()
       }
     }
   }

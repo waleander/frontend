@@ -11,6 +11,7 @@ import play.api.test.{FakeHeaders, FakeRequest}
 import test.{ConfiguredTestSuite, WithTestWsClient}
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 @DoNotDiscover class DeploysNotifyControllerTest
   extends WordSpec
@@ -27,7 +28,7 @@ import scala.concurrent.Future
     override def GET(url: String, queryString: Map[String, String] = Map.empty, headers: Map[String, String] = Map.empty) = {
       val extentedHeaders = headers + ("X-Url" -> (url + queryString.mkString))
       DeploysTestHttpRecorder.load(url, extentedHeaders) {
-        wsClient.url(url).withQueryString(queryString.toSeq: _*).withHeaders(headers.toSeq: _*).withRequestTimeout(10000).get()
+        wsClient.url(url).withQueryString(queryString.toSeq: _*).withHeaders(headers.toSeq: _*).withRequestTimeout(10.seconds).get()
       }
     }
   }
