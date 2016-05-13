@@ -1,12 +1,13 @@
 package filters
 
+import akka.stream.Materializer
 import common.{ExecutionContexts, Logging, StopWatch}
 import play.api.mvc.{Filter, RequestHeader, Result}
 import scala.concurrent.Future
 import scala.util.{Failure, Random, Success}
 import play.api.Logger
 
-class RequestLoggingFilter extends Filter with Logging with ExecutionContexts {
+class RequestLoggingFilter(implicit val mat: Materializer) extends Filter with Logging with ExecutionContexts {
 
   case class RequestLogger(rh: RequestHeader)(implicit internalLogger: Logger, stopWatch: StopWatch) {
     private lazy val pseudoId = Random.nextInt(Integer.MAX_VALUE)
