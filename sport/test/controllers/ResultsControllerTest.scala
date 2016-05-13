@@ -1,5 +1,6 @@
 package controllers
 
+import akka.stream.Materializer
 import football.controllers.ResultsController
 import org.scalatest.{DoNotDiscover, Matchers, WordSpec}
 import play.api.libs.json.JsValue
@@ -10,6 +11,8 @@ import test.ConfiguredTestSuite
 import scala.concurrent.Future
 
 @DoNotDiscover class ResultsControllerTest extends WordSpec with Matchers with ConfiguredTestSuite {
+
+  implicit lazy val mat: Materializer = app.materializer
 
   "GET all results" should {
     val request = FakeRequest(method = "GET", path = "/football/results.json")
