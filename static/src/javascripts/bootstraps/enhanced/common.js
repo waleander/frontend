@@ -26,6 +26,7 @@ define([
     'common/modules/commercial/donot-use-adblock',
     'common/modules/commercial/user-features',
     'common/modules/discussion/comment-count',
+    'common/modules/experiments/ab',
     'common/modules/identity/autosignin',
     'common/modules/identity/cookierefresh',
     'common/modules/navigation/navigation',
@@ -80,6 +81,7 @@ define([
     donotUseAdblock,
     userFeatures,
     CommentCount,
+    ab,
     AutoSignin,
     CookieRefresh,
     navigation,
@@ -267,7 +269,9 @@ define([
             },
 
             initDiscussion: function () {
-                if (config.switches.discussion) {
+                var showComments = !ab.isInVariant('HideEvenComments', 'hide-comments');
+                console.log("++++++++++++++ : Comment Cunts: " + showComments);
+                if (config.switches.discussion && showComments ) {
                     CommentCount.init();
                 }
             },

@@ -13,6 +13,7 @@ define([
     'common/modules/experiments/tests/participation-star-ratings',
     'common/modules/experiments/tests/clever-friend-brexit',
     'common/modules/experiments/tests/welcome-header',
+    'common/modules/experiments/tests/hide-even-comments',
     'lodash/arrays/flatten',
     'lodash/arrays/zip',
     'lodash/collections/forEach',
@@ -41,6 +42,7 @@ define([
     ParticipationStarRatings,
     CleverFriendBrexit,
     WelcomeHeader,
+    HideEvenComments,
     flatten,
     zip,
     forEach,
@@ -64,7 +66,8 @@ define([
         new Minute(),
         new ParticipationStarRatings(),
         new CleverFriendBrexit(),
-        new WelcomeHeader()
+        new WelcomeHeader(),
+        new HideEvenComments()
     ]);
 
     var participationsKey = 'gu.ab.participations';

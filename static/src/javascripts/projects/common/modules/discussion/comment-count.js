@@ -119,8 +119,7 @@ define([
         });
     }
 
-    function init() {
-        if (document.body.querySelector('[data-discussion-id]')) {
+    function init() { if (document.body.querySelector('[data-discussion-id]')) {
             getCommentCounts(document.body);
         }
 

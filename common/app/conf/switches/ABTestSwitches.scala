@@ -76,4 +76,13 @@ trait ABTestSwitches {
     sellByDate = new LocalDate(2016, 5, 19),
     exposeClientSide = true
   )
+
+  val ABHideEvenComments = Switch (
+    SwitchGroup.ABTests,
+    "ab-hide-even-comments",
+    "Hides all comments on articles with an even web-publication-date",
+     safeState = Off,
+     sellByDate = new LocalDate(2015, 5, 31),
+     exposeClientSide = true
+  )
 }
