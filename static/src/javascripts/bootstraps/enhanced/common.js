@@ -270,7 +270,6 @@ define([
 
             initDiscussion: function () {
                 var showComments = !ab.isInVariant('HideEvenComments', 'hide-comments');
-                console.log("++++++++++++++ : Comment Cunts: " + showComments);
                 if (config.switches.discussion && showComments ) {
                     CommentCount.init();
                 }

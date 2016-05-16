@@ -7,7 +7,7 @@ function(reduce) {
             return sum + ch.charCodeAt(0);
        }, 0);
 
-       console.log("+++ Code for "  + shortUrl + " " + sUrlInt)
+       //console.log("+++ Code for "  + shortUrl + " " + sUrlInt)
        return sUrlInt % 2 == 0;
     }
 

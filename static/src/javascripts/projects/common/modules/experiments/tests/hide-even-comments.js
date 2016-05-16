@@ -1,9 +1,5 @@
 define(
-    [
-        'common/utils/config'
-    ], function (
-        config
-    ) {
+    [], function () {
         return function () {
             this.id = 'HideEvenComments';
             this.start = '2016-05-15';
@@ -31,7 +27,7 @@ define(
                     test: function(){}
                 }
 
-            ]
-        }
+            ];
+        };
     }
 );

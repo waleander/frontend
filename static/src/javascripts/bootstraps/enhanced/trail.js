@@ -117,14 +117,14 @@ define([
 
     function initDiscussion() {
         var hideComments = ab.isInVariant('HideEvenComments', 'hide-comments') && config.page.revisionNumber % 2 == 0;
-        console.log(" ++++++++++++++++++++ Hide! " + hideComments);
-        if (config.switches.discussion && config.page.commentable && showComments && !hideComments ) {
+        //console.log(" ++++++++++++++++++++ Hide! " + hideComments);
+        if (config.switches.discussion && config.page.commentable && !hideComments ) {
             var el = qwery('.discussion')[0];
             if (el) {
-                console.log(" ++++++++++++++++++++ Wotcha!")
-                el.removeClass('discussion--hidden')
+                //console.log(" ++++++++++++++++++++ Wotcha!")
+                el.removeClass('discussion--hidden');
                 new DiscussionLoader().attachTo(el);
-                
+
             }
         }
     }
