@@ -48,7 +48,6 @@ object BodyCleaner {
       WitnessCleaner,
       TagLinker(article),
       TableEmbedComplimentaryToP,
-      R2VideoCleaner,
       PictureCleaner(article, amp),
       AtomsCleaner(article.content.atoms),
       DropCaps(article.tags.isComment || article.tags.isFeature, article.isImmersive),

@@ -41,7 +41,6 @@ case class DfpDataExtractor(lineItems: Seq[GuLineItem]) {
         adUnits = lineItem.targeting.adUnits map (_.path mkString "/"),
         editions = editionsTargeted(lineItem),
         countries = countriesTargeted(lineItem),
-        isR2Only = lineItem.targeting.targetsR2Only,
         targetsAdTest = lineItem.targeting.hasAdTestTargetting,
         adTestValue = lineItem.targeting.adTestValue
       )

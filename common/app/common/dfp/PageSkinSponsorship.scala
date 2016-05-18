@@ -10,7 +10,6 @@ case class PageSkinSponsorship(lineItemName: String,
                                adUnits: Seq[String],
                                editions: Seq[Edition],
                                countries: Seq[String],
-                               isR2Only: Boolean,
                                targetsAdTest: Boolean,
                                adTestValue: Option[String])
 
@@ -22,7 +21,6 @@ object PageSkinSponsorship {
       (JsPath \ "adUnits").format[Seq[String]] and
       (JsPath \ "editions").format[Seq[Edition]] and
       (JsPath \ "countries").format[Seq[String]] and
-      (JsPath \ "isR2Only").format[Boolean] and
       (JsPath \ "isAdTest").format[Boolean] and
       (JsPath \ "adTestValue").formatNullable[String]
     )(PageSkinSponsorship.apply, unlift(PageSkinSponsorship.unapply))

@@ -13,7 +13,6 @@ class PageskinAdAgentTest extends FlatSpec with Matchers {
       Seq(s"$dfpAdUnitRoot/business/front"),
       Seq(Uk),
       Seq("United Kingdom"),
-      isR2Only = false,
       targetsAdTest = false,
       None),
     PageSkinSponsorship("lineItemName2",
@@ -21,7 +20,6 @@ class PageskinAdAgentTest extends FlatSpec with Matchers {
       Seq(s"$dfpAdUnitRoot/music/front"),
       Nil,
       Nil,
-      isR2Only = false,
       targetsAdTest = false,
       None),
     PageSkinSponsorship("lineItemName3",
@@ -29,7 +27,6 @@ class PageskinAdAgentTest extends FlatSpec with Matchers {
       Seq(s"$dfpAdUnitRoot/sport"),
       Nil,
       Nil,
-      isR2Only = false,
       targetsAdTest = false,
       None),
     PageSkinSponsorship("lineItemName4",
@@ -37,7 +34,6 @@ class PageskinAdAgentTest extends FlatSpec with Matchers {
       Seq(s"$dfpAdUnitRoot/testSport/front"),
       Seq(Uk),
       Seq("United Kingdom"),
-      isR2Only = false,
       targetsAdTest = true,
       Some("6"))
   )

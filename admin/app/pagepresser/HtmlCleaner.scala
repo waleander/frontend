@@ -3,14 +3,11 @@ package pagepresser
 import com.netaporter.uri.Uri.parse
 import common.{ExecutionContexts, Logging}
 import org.jsoup.nodes.Document
-import conf.Configuration
 
 import scala.collection.JavaConversions._
 
 abstract class HtmlCleaner extends Logging with ExecutionContexts {
-  val fallbackCacheBustId = Configuration.r2Press.fallbackCachebustId
   lazy val staticRegEx = """//static.guim.co.uk/static/(\w+)/(.+)(\.\w+)$""".r("cacheBustId", "paths", "extension")
-  lazy val nonDigitRegEx = """\D+""".r
 
   def canClean(document: Document): Boolean
   def clean(document: Document): Document
@@ -39,11 +36,7 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
         val extension = link.group("extension")
         val paths = link.group("paths").split('+')
         paths.map { path =>
-          val newPath = if(nonDigitRegEx.findFirstMatchIn(cacheBustId).isEmpty) {
-            s"//static.guim.co.uk/static/$fallbackCacheBustId/$path$extension"
-          } else {
-            s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
-          }
+          val newPath = s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
           val newEl = el.clone.attr("href", newPath)
           el.after(newEl)
         }
@@ -64,11 +57,8 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
         val extension = src.group("extension")
         val paths = src.group("paths").split('+')
         paths.map { path =>
-          val newPath = if (nonDigitRegEx.findFirstMatchIn(cacheBustId).isEmpty) {
-            s"//static.guim.co.uk/static/$fallbackCacheBustId/$path$extension"
-          } else {
-            s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
-          }
+          val newPath = s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
+
           val newEl = el.clone.attr("src", newPath)
           el.after(newEl)
         }
@@ -203,11 +193,7 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
         val extension = combiner.group("extension")
         val paths = combiner.group("paths").split('+')
         paths.map { path =>
-          val newPath = if(nonDigitRegEx.findFirstMatchIn(cacheBustId).isEmpty) {
-            s"//static.guim.co.uk/static/$fallbackCacheBustId/$path$extension"
-          } else {
-            s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
-          }
+          val newPath = s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
           val newEl = el.clone.attr("href", newPath)
           el.after(newEl)
         }

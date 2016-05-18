@@ -76,21 +76,6 @@ object PullquoteCleaner extends HtmlCleaner {
   }
 }
 
-case object R2VideoCleaner extends HtmlCleaner {
-
-  override def clean(document: Document): Document = {
-
-    val legacyVideos = document.getElementsByTag("video").filter(_.hasClass("gu-video")).filter(_.parent().tagName() != "figure")
-
-    legacyVideos.foreach( videoElement => {
-      videoElement.wrap("<figure class=\"test element element-video\"></figure>")
-    })
-
-    document
-  }
-
-}
-
 case class PictureCleaner(article: Article, amp: Boolean)(implicit request: RequestHeader) extends HtmlCleaner with implicits.Numbers {
 
   def clean(body: Document): Document = {

@@ -324,15 +324,6 @@ trait FeatureSwitches {
     exposeClientSide = false
   )
 
-  val R2PagePressServiceSwitch = Switch(
-    SwitchGroup.Feature,
-    "r2-page-press-service",
-    "When ON, the R2 page press service will monitor the queue and press pages to S3",
-    safeState = On,
-    sellByDate = never,
-    exposeClientSide = false
-  )
-
   val EmailInArticleSwitch = Switch(
     SwitchGroup.Feature,
     "email-in-article",

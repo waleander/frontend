@@ -17,8 +17,7 @@ trait PageskinAdAgent {
       def targetsAdUnitAndMatchesTheEdition(sponsorship: PageSkinSponsorship) = {
         val adUnits = sponsorship.adUnits map (_.stripSuffix("/ng"))
         adUnits.contains(adUnitWithRoot) &&
-          sponsorship.editions.contains(edition) &&
-          !sponsorship.isR2Only
+          sponsorship.editions.contains(edition)
       }
 
       pageSkinSponsorships filter { sponsorship =>

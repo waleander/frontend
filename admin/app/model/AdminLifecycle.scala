@@ -20,7 +20,6 @@ trait AdminLifecycle extends GlobalSettings with Logging {
   lazy val adminPressJobHighPushRateInMinutes: Int = Configuration.faciatool.adminPressJobHighPushRateInMinutes
   lazy val adminPressJobLowPushRateInMinutes: Int = Configuration.faciatool.adminPressJobLowPushRateInMinutes
   lazy val adminRebuildIndexRateInMinutes: Int = Configuration.indexes.adminRebuildIndexRateInMinutes
-  lazy val r2PagePressRateInSeconds: Int = Configuration.r2Press.pressRateInSeconds
 
   private def scheduleJobs(): Unit = {
 
@@ -37,10 +36,6 @@ trait AdminLifecycle extends GlobalSettings with Logging {
     //every 2 minutes starting 5 seconds past the minute (e.g  13:02:05, 13:04:05)
     Jobs.schedule("FastlyCloudwatchLoadJob", "5 0/2 * * * ?") {
       FastlyCloudwatchLoadJob.run()
-    }
-
-    Jobs.scheduleEveryNSeconds("R2PagePressJob", r2PagePressRateInSeconds) {
-      R2PagePressJob.run()
     }
 
     //every 2, 17, 32, 47 minutes past the hour, on the 12th second past the minute (e.g 13:02:12, 13:17:12)
@@ -103,7 +98,6 @@ trait AdminLifecycle extends GlobalSettings with Logging {
     Jobs.deschedule("AdminLoadJob")
     Jobs.deschedule("LoadBalancerLoadJob")
     Jobs.deschedule("FastlyCloudwatchLoadJob")
-    Jobs.deschedule("R2PagePressJob")
     Jobs.deschedule("AnalyticsSanityCheckJob")
     Jobs.deschedule("FrontPressJob")
     Jobs.deschedule("RebuildIndexJob")
