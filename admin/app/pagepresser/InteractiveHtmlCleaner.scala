@@ -2,7 +2,10 @@ package pagepresser
 
 import com.netaporter.uri.Uri._
 import org.jsoup.Jsoup
-import org.jsoup.nodes.{Element, Document}
+import org.jsoup.nodes.{Document, Element}
+import play.api.Play.current
+import play.api.libs.ws.WS
+
 import scala.collection.JavaConversions._
 import scala.io.Source
 
@@ -17,6 +20,9 @@ object InteractiveHtmlCleaner extends HtmlCleaner with implicits.WSRequests {
     removeScripts(document)
     createSimplePageTracking(document)
     removeByTagName(document, "noscript")
+    // TODO: May not need to do this
+    genericiseInteractiveOutboundRefs(document),
+    inlineAllGiaScripts(document)
   }
 
   override def extractOmnitureParams(document: Document) = {
@@ -113,6 +119,54 @@ object InteractiveHtmlCleaner extends HtmlCleaner with implicits.WSRequests {
       document.head().append(html)
     }
     document
+  }
+
+  private def inlineAllGiaScripts(document: Document): Document = {
+    for (el <- document.getElementsByAttributeValue("id","js-gia")) {
+      val src = "http://" + el.attr("src").replace("https:","").replace("http:","").replace("//","")
+      for (response <- WS.url(src).get()) {
+        val newSrc = response.body.replaceAll("http:", "https:")
+        println(s"prepend ${newSrc.take(20)}")
+        el.parent().prepend(newSrc)
+        println(s"remove $src")
+        el.remove()
+      }
+    }
+    //TO DO: The above is async so returning document like this is dumb. Fix it.
+    document
+  }
+
+  // TODO: May not need to do this
+  private def genericiseInteractiveOutboundRefs(document: Document): Document = {
+    val interactiveContainer = document.getElementById("interactive-content")
+    secureElement(interactiveContainer, 1)
+    document
+  }
+
+  // TODO: May not need to do this
+  private def secureElement(element: Element, level: Int): Element = {
+    println(s"### secureElement (level$level): ${element.cssSelector()}")
+    if (element.children().nonEmpty) {
+      element.children().map(el => secureElement(el,level + 1))
+    }
+
+    println(s"### ${element.cssSelector()}")
+    for (attr <- element.attributes) {
+      println(attr.toString)
+    }
+
+    if ((element.hasAttr("href") && element.attr("href").contains("http://")) || (element.hasAttr("src") && element.attr("src").contains("http://"))) {
+      println(s"### element IN ${element.id()}\n${element.html()}")
+      if (element.hasAttr("href")) {
+        element.attr("href", element.attr("href").replace("http://", "https://"))
+      } else {
+        element.attr("src", element.attr("src").replace("http://", "https://"))
+      }
+      println("###")
+      println(s"### element OUT:  ${element.id()}\n${element.html()}")
+      println("###")
+    }
+    element
   }
 
 }
