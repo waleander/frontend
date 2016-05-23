@@ -275,7 +275,7 @@ Loader.prototype.ready = function() {
     this.initRecommend();
 
     DiscussionAnalytics.init();
-
+    
     bean.on(window, 'hashchange', function() {
         var commentId = this.getCommentIdFromHash();
         if (commentId) {
