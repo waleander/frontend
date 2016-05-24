@@ -7,13 +7,20 @@ import com.gu.identity.model.LiftJsonConfig
 import common.ExecutionContexts
 import conf.Configuration
 import net.liftweb.json._
+import play.api.libs.ws.{WSRequest, WSClient}
 import utils.SafeLogging
 import scala.concurrent.Future
 
 @Singleton
-class FormstackApi @Inject()(httpClient: WsFormstackHttp) extends ExecutionContexts with SafeLogging {
+class FormstackApi @Inject()(httpClient: WSClient) extends ExecutionContexts with SafeLogging {
 
   implicit val formats = LiftJsonConfig.formats + new JodaJsonSerializer
+
+  private def formstackGet(url: String, oauthToken: String): WSRequest =
+    httpClient
+      .url(url)
+      .withRequestTimeout(2000)
+      .withQueryString("oauth_token" -> oauthToken)
 
   def formstackUrl(formId: String) = {
     val formstackUrl = Configuration.formstack.url
@@ -21,7 +28,7 @@ class FormstackApi @Inject()(httpClient: WsFormstackHttp) extends ExecutionConte
   }
 
   def checkForm(formstackForm: FormstackForm): Future[Response[FormstackForm]] = {
-    httpClient.get(formstackUrl(formstackForm.formId), Seq("oauth_token" -> Configuration.formstack.oAuthToken)) map { response =>
+    formstackGet(formstackUrl(formstackForm.formId), Configuration.formstack.oAuthToken).get.map { response =>
         response.status match {
           case 200 =>
             logger.trace("Formstack API returned 200 for reference lookup")
