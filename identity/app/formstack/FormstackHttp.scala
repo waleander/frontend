@@ -11,7 +11,7 @@ case class FormstackHttpResponse(body: String, status: Int, statusText: String)
 
 @Singleton
 class WsFormstackHttp extends ExecutionContexts {
-  def GET(url: String, parameters: Seq[(String, String)] = Nil): Future[FormstackHttpResponse] = {
+  def get(url: String, parameters: Seq[(String, String)] = Nil): Future[FormstackHttpResponse] = {
     WS.url(url)
       .withRequestTimeout(2000)
       .withQueryString(parameters:_*)

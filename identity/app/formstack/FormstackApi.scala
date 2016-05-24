@@ -22,7 +22,7 @@ class FormstackApi @Inject()(httpClient: WsFormstackHttp) extends ExecutionConte
 
   def checkForm(formstackForm: FormstackForm): Future[Response[FormstackForm]] = {
 
-    httpClient.GET(formstackUrl(formstackForm.formId), Seq("oauth_token" -> Configuration.formstack.oAuthToken)) map {
+    httpClient.get(formstackUrl(formstackForm.formId), Seq("oauth_token" -> Configuration.formstack.oAuthToken)) map {
       case FormstackHttpResponse(body, statusCode, _) => {
         statusCode match {
           case 200 => {
