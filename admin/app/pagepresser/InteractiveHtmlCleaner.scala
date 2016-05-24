@@ -3,6 +3,7 @@ package pagepresser
 import com.netaporter.uri.Uri._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Element, Document}
+import services.S3ArchiveOriginals
 import scala.collection.JavaConversions._
 import scala.io.Source
 
@@ -13,10 +14,16 @@ object InteractiveHtmlCleaner extends HtmlCleaner with implicits.WSRequests {
   }
 
   override def clean(document: Document) = {
-    universalClean(document)
-    removeScripts(document)
-    createSimplePageTracking(document)
-    removeByTagName(document, "noscript")
+    val docPath = document.getElementsByAttributeValue("rel","canonical").attr("href").toLowerCase
+    if (docPath.contains("/ng-interactive/")) {
+      rewriteTemplate(document)
+    } else {
+      universalClean(document)
+      removeScripts(document)
+      removeByTagName(document, "noscript")
+      createSimplePageTracking(document)
+    }
+
   }
 
   override def extractOmnitureParams(document: Document) = {
@@ -84,6 +91,111 @@ object InteractiveHtmlCleaner extends HtmlCleaner with implicits.WSRequests {
       addJqueryScript(document)
     }
 
+    document
+  }
+
+  private def rewriteTemplate(document: Document): Document = {
+    val docPath = document.getElementsByAttributeValue("rel","canonical").attr("href").toLowerCase
+    if (!docPath.contains("/ng-interactive/")) {
+      document
+    } else {
+      println(s" ### ${this.getClass.getCanonicalName} RE-WRITING...")
+      S3ArchiveOriginals.get("www.theguardian.com/template/ng-interactive-template.html").map { template =>
+        val srcDoc = document.clone()
+        val templateDoc = Jsoup.parse(template)
+
+        document.head().replaceWith(templateDoc.head())
+        document.body().replaceWith(templateDoc.body())
+
+        document.title(srcDoc.title())
+
+        moveMeta(srcDoc, document)
+        moveHeadElements(srcDoc, "link", "rel", "canonical", document)
+        moveHeadElements(srcDoc, "link", "rel", "shorturl", document)
+        moveHeadElements(srcDoc, "link", "rel", "publisher", document)
+        //moveHeadElements(srcDoc, "link", "rel", "stylesheet", oldDoc)
+
+        val interactiveHost = "https://interactive.guim.co.uk/next-gen"
+        val interactivePath =  docPath
+          .stripPrefix("http:")
+          .stripPrefix("https:")
+          .stripPrefix("//")
+          .stripPrefix("www.")
+          .stripPrefix("theguardian.com")
+          .stripPrefix("theguardian.co.uk")
+          .concat("/boot.js")
+
+        val newInteractiveAttrs = Map(
+          ("data-interactive", interactiveHost + interactivePath),
+          ("data-canonical-url", interactiveHost + interactivePath),
+          ("data-alt", "Interactive content"))
+
+        rewriteElement(document, "figure", "class", "element element-interactive interactive", newInteractiveAttrs)
+
+        for (el <- document.getAllElements) {
+          if ((el.hasAttr("src") && el.attr("src").startsWith("http://")) || (el.hasAttr("href") && el.attr("href").startsWith("http://"))) {
+            if(el.hasAttr("src")) {
+              el.attr("src", el.attr("src").replaceAll("http://","https://"))
+            } else {
+              el.attr("href", el.attr("href").replaceAll("http://","https://"))
+            }
+          }
+        }
+
+        println("### RE-WRITTEN!")
+        document
+
+      }.getOrElse(document)
+    }
+  }
+
+  private def moveMeta(fromDoc: Document,
+                       toDoc: Document): Document = {
+    toDoc.getElementsByTag("meta").foreach(_.remove)
+    fromDoc.getElementsByTag("meta").foreach { el =>
+      val newMeta = toDoc.head().prependElement("meta")
+      for (attr <- el.attributes()) {
+        newMeta.attr(attr.getKey, attr.getValue)
+      }
+    }
+    toDoc
+  }
+
+  private def moveHeadElements(fromDoc: Document,
+                               tag: String,
+                               //attributes: Seq[(String, String)],
+                               attributeKey: String,
+                               attributeVal: String,
+                               toDoc: Document): Document = {
+
+    toDoc.getElementsByTag(tag).filter(el => el.hasAttr(attributeKey) && el.attr(attributeKey) == attributeVal).foreach(_.remove)
+
+    fromDoc.getElementsByAttributeValue(attributeKey, attributeVal).foreach{ el =>
+      val newEl = toDoc.head().prependElement(tag)
+      for (attr <- el.attributes()) {
+        newEl.attr(attr.getKey, attr.getValue)
+      }
+    }
+    toDoc
+  }
+
+  private def rewriteElement(document: Document,
+                             tag: String,
+                             attributeKey: String,
+                             attributeValue: String,
+                             newAttributes: Map[String,String] = Map.empty,
+                             newHtml: String = ""): Document = {
+    document.getElementsByTag(tag).filter(el => el.hasAttr(attributeKey) && el.attr(attributeKey) == attributeValue).foreach{ el =>
+      println(s"### el: ${el.cssSelector()}")
+      if (newAttributes.nonEmpty) {
+        newAttributes.foreach { attr =>
+          println(s"### attr: ${attr._1} val: ${attr._2}")
+          el.removeAttr(attr._1)
+          el.attr(attr._1, attr._2)
+        }
+      }
+      el.html(newHtml)
+    }
     document
   }
 
