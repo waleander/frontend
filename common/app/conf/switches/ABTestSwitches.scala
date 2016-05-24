@@ -50,12 +50,12 @@ trait ABTestSwitches {
     exposeClientSide = true
   )
 
-  val ABParticipationLowFricMusic = Switch(
+  val ABParticipationLowFricMusicV1 = Switch(
     SwitchGroup.ABTests,
-    "ab-participation-low-fric-music",
+    "ab-participation-low-fric-music-v1",
     "AB test switch to insert low friction participation into music",
     safeState = Off,
-    sellByDate = new LocalDate(2016, 6, 15),
+    sellByDate = new LocalDate(2016, 6, 7),
     exposeClientSide = true
   )
 
@@ -136,7 +136,7 @@ trait ABTestSwitches {
     "ab-video-controls-on-main-media",
     "Show video controls on main media.",
     safeState = Off,
-    sellByDate = new LocalDate(2016, 5, 26),
+    sellByDate = new LocalDate(2016, 5, 27),
     exposeClientSide = true
   )
 }
