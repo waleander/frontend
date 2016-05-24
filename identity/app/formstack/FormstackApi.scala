@@ -21,13 +21,11 @@ class FormstackApi @Inject()(httpClient: WsFormstackHttp) extends ExecutionConte
   }
 
   def checkForm(formstackForm: FormstackForm): Future[Response[FormstackForm]] = {
-
-    httpClient.get(formstackUrl(formstackForm.formId), Seq("oauth_token" -> Configuration.formstack.oAuthToken)) map {
-      case FormstackHttpResponse(body, statusCode, _) => {
-        statusCode match {
-          case 200 => {
+    httpClient.get(formstackUrl(formstackForm.formId), Seq("oauth_token" -> Configuration.formstack.oAuthToken)) map { response =>
+        response.status match {
+          case 200 =>
             logger.trace("Formstack API returned 200 for reference lookup")
-            val json = parse(body)
+            val json: JValue = parse(response.body)
             (for {
               formId <- (json \ "id").extractOpt[String]
               inactive <- (json \ "inactive").extractOpt[Boolean]
@@ -40,24 +38,19 @@ class FormstackApi @Inject()(httpClient: WsFormstackHttp) extends ExecutionConte
                 Left(List(Error("Invalid form", "This is not a valid form", 404)))
               }
             }).getOrElse {
-              logger.warn(s"200 received from Formstack for '${formstackForm.formId}', but response was invalid $body")
+              logger.warn(s"200 received from Formstack for '${formstackForm.formId}', but response was invalid $response.body")
               Left(List(Error("Invalid Formstack API response", "")))
             }
-          }
-          case 405 => {
+          case 405 =>
             logger.warn("405 returned while checking formstack reference")
             Left(List(Error("Invalid form reference", "Invalid form reference", 405)))
-          }
-          case 404 => {
-            logger.warn(s"Attempted to load bad formstack reference (404) $body")
+          case 404 =>
+            logger.warn(s"Attempted to load bad formstack reference (404) $response.body")
             Left(List(Error("Form not found", "Form not found", 404)))
-          }
-          case _ => {
-            logger.warn(s"Unexpected error getting info for formstack reference. Status code $statusCode, body $body")
-            Left(List(Error("Form error", "Unexpected error retrieving form info", statusCode)))
-          }
+          case _ =>
+            logger.warn(s"Unexpected error getting info for formstack reference. Status code ${response.status}, body $response.body")
+            Left(List(Error("Form error", "Unexpected error retrieving form info", response.status)))
         }
       }
     }
-  }
 }

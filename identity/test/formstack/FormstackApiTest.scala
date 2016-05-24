@@ -7,6 +7,7 @@ import org.mockito.Mockito._
 import org.mockito.Matchers.any
 import client.Parameters
 import client.connection.HttpResponse
+import play.api.libs.ws.WSResponse
 import scala.concurrent.Future
 import common.ExecutionContexts
 
@@ -21,7 +22,10 @@ class FormstackApiTest extends path.FreeSpec with ShouldMatchers with MockitoSug
   "the checkForm method" - {
     "returns the validated form if the API says it is ok" in {
       val formstackForm = FormstackForm("123456", "abcdef", None)
-      val response = FormstackHttpResponse(validBody, 200, "ok")
+      val response = mock[WSResponse]
+      when(response.body).thenReturn(validBody)
+      when(response.status).thenReturn(200)
+      when(response.statusText).thenReturn("ok")
       when(httpClient.get(any[String], any())) thenReturn Future.successful(response)
 
       formstackApi.checkForm(formstackForm).map {
@@ -32,7 +36,10 @@ class FormstackApiTest extends path.FreeSpec with ShouldMatchers with MockitoSug
 
     "returns an error if the form is not active" in {
       val formstackForm = FormstackForm("123456", "abcdef", None)
-      val response = FormstackHttpResponse(inactiveBody, 200, "ok")
+      val response = mock[WSResponse]
+      when(response.body).thenReturn(inactiveBody)
+      when(response.status).thenReturn(200)
+      when(response.statusText).thenReturn("ok")
       when(httpClient.get(any[String], any())) thenReturn Future.successful(response)
 
       formstackApi.checkForm(formstackForm).map {
@@ -43,7 +50,10 @@ class FormstackApiTest extends path.FreeSpec with ShouldMatchers with MockitoSug
 
     "returns an error if the API responds poorly" in {
       val formstackForm = FormstackForm("123456", "abcdef", None)
-      val response = FormstackHttpResponse("", 405, "Method not allowed")
+      val response = mock[WSResponse]
+      when(response.body).thenReturn("")
+      when(response.status).thenReturn(405)
+      when(response.statusText).thenReturn("Method not allowed")
       when(httpClient.get(any[String], any())) thenReturn Future.successful(response)
 
       formstackApi.checkForm(formstackForm).map {
