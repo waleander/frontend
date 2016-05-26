@@ -2,6 +2,8 @@ package pagepresser
 
 import org.jsoup.nodes.Document
 
+import scala.concurrent.Future
+
 object SimpleHtmlCleaner extends HtmlCleaner {
 
   override def canClean(document: Document) = {
@@ -9,7 +11,7 @@ object SimpleHtmlCleaner extends HtmlCleaner {
     document.getElementById("interactive-content") == null
   }
 
-  override def clean(document: Document) = {
+  override def clean(document: Document) = Future {
     universalClean(document)
     removeScripts(document)
     createSimplePageTracking(document)

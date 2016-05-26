@@ -25,7 +25,7 @@ object PollsHtmlCleaner extends HtmlCleaner with implicits.WSRequests {
     document.getElementsByAttribute("data-poll-url").nonEmpty
   }
 
-  override def clean(document: Document) = {
+  override def clean(document: Document) = Future {
     universalClean(document)
     removeScripts(document)
     createSimplePageTracking(document)

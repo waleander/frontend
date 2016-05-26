@@ -6,6 +6,7 @@ import org.jsoup.nodes.Document
 import conf.Configuration
 
 import scala.collection.JavaConversions._
+import scala.concurrent.Future
 
 abstract class HtmlCleaner extends Logging with ExecutionContexts {
   val fallbackCacheBustId = Configuration.r2Press.fallbackCachebustId
@@ -13,7 +14,7 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
   lazy val nonDigitRegEx = """\D+""".r
 
   def canClean(document: Document): Boolean
-  def clean(document: Document): Document
+  def clean(document: Document): Future[Document]
 
   protected def universalClean(document: Document): Document = {
     removeAds(document)
@@ -216,4 +217,41 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
     }
     document
   }
+
+  protected def addJqueryScript(document: Document): Document = {
+    log.info("Adding JQuery script")
+
+    val jqScript = """
+    <script type="text/javascript" charset="utf-8" src="https://pasteup.guim.co.uk/js/lib/jquery/1.8.1/jquery.min.js"></script>
+    <script type="text/javascript">
+    var jQ = jQuery.noConflict();
+    jQ.ajaxSetup({ cache: true });
+  </script>"""
+    document.head().prepend(jqScript)
+    document
+  }
+
+  protected def addRequireJsScript(document: Document): Document = {
+    log.info("Adding RequireJS")
+    val rqScript = """
+    <script type="text/javascript" charset="utf-8" src="https://pasteup.guim.co.uk/js/lib/requirejs/2.1.5/require.min.js"
+          data-main="https://static.guim.co.uk/static/6d5811c93d9b815024b5a6c3ec93a54be18e52f0/common/scripts/main.js"
+          data-modules="gu/author-twitter-handles"
+          data-callback=""
+          id="require-js">
+    </script>""".stripMargin
+    document.head().prepend(rqScript)
+    document
+  }
+
+  protected def removeInsecureScripts(document: Document): Document = {
+    document.getElementsByTag("script").foreach{ scriptEl =>
+      if (scriptEl.hasAttr("src") && scriptEl.attr("src").startsWith("http:")){
+        log.info(s"Remove insecure script: src ${scriptEl.attr("src")}")
+        scriptEl.remove()
+      }
+    }
+    document
+  }
+
 }

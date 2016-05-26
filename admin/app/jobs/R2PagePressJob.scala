@@ -7,7 +7,7 @@ import common._
 import conf.Configuration
 import conf.switches.Switches.R2PagePressServiceSwitch
 import org.jsoup.Jsoup
-import pagepresser.{SimpleHtmlCleaner, InteractiveHtmlCleaner, PollsHtmlCleaner}
+import pagepresser._
 import play.api.libs.json._
 import play.api.libs.ws.WS
 import services.{S3Archive, S3ArchiveOriginals, PagePresses}
@@ -82,13 +82,15 @@ object R2PagePressJob extends ExecutionContexts with Logging {
   private def pressAsUrl(urlIn: String): String = urlIn.replace("https://", "").replace("http://","")
 
   private def parseAndClean(originalDocSource: String): Future[String] = {
-    val cleaners = Seq(PollsHtmlCleaner, InteractiveHtmlCleaner, SimpleHtmlCleaner)
     val archiveDocument = Jsoup.parse(originalDocSource)
-    val doc: Document = cleaners.filter(_.canClean(archiveDocument))
-      .map(_.clean(archiveDocument))
-      .headOption
-      .getOrElse(archiveDocument)
-    Future.successful(doc.toString)
+    val theCleaner = Seq(PollsHtmlCleaner, InteractiveHtmlCleaner, NextGenInteractiveHtmlCleaner, SimpleHtmlCleaner)
+      .find(_.canClean(archiveDocument))
+      .getOrElse(SimpleHtmlCleaner)
+
+    for {
+      doc <- theCleaner.clean(archiveDocument)
+    } yield doc.toString
+
   }
 
   private def S3ArchivePutAndCheck(pressUrl: String, cleanedHtml: String) = {
