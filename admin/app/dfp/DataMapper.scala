@@ -3,9 +3,13 @@ package dfp
 import com.google.api.ads.dfp.axis.v201508._
 import common.dfp._
 import dfp.ApiHelper.{isPageSkin, optJavaInt, toJodaTime, toSeq}
+import scala.language.postfixOps
 
 // These mapping functions use libraries that are only available in admin to create common DFP data models.
 object DataMapper {
+
+  // DFP calls can return nulls, including Array return types
+  def nullToOption[T](response: T): Option[T] = Option(response)
 
   def toGuAdUnit(dfpAdUnit: AdUnit): GuAdUnit = {
     val ancestors = toSeq(dfpAdUnit.getParentPath)
@@ -64,19 +68,19 @@ object DataMapper {
         dfpLocation.getDisplayName
       )
 
-      Option(dfpTargeting.getGeoTargeting) flatMap { geoTargeting =>
-        Option(locations(geoTargeting)) map (_.map(toGeoTarget).toSeq)
+      nullToOption(dfpTargeting.getGeoTargeting) flatMap { geoTargeting =>
+        nullToOption(locations(geoTargeting)) map (_.map(toGeoTarget).toSeq)
       } getOrElse Nil
     }
     val geoTargetsIncluded = geoTargets(_.getTargetedLocations)
     val geoTargetsExcluded = geoTargets(_.getExcludedLocations)
 
     GuTargeting(
-      adUnitsIncluded = Option(dfpTargeting.getInventoryTargeting) map toIncludedGuAdUnits getOrElse Nil,
-      adUnitsExcluded = Option(dfpTargeting.getInventoryTargeting) map toExcludedGuAdUnits getOrElse Nil,
+      adUnitsIncluded = nullToOption(dfpTargeting.getInventoryTargeting) map toIncludedGuAdUnits getOrElse Nil,
+      adUnitsExcluded = nullToOption(dfpTargeting.getInventoryTargeting) map toExcludedGuAdUnits getOrElse Nil,
       geoTargetsIncluded,
       geoTargetsExcluded,
-      customTargetSets = Option(dfpTargeting.getCustomTargeting) map toCustomTargetSets getOrElse Nil
+      customTargetSets = nullToOption(dfpTargeting.getCustomTargeting) map toCustomTargetSets getOrElse Nil
     )
   }
 
@@ -90,7 +94,7 @@ object DataMapper {
 
     val placeholders = for (placeholder <- dfpLineItem.getCreativePlaceholders) yield {
       val size = placeholder.getSize
-      val targeting = Option(placeholder.getTargetingName).flatMap(creativeTargeting)
+      val targeting = nullToOption(placeholder.getTargetingName).flatMap(creativeTargeting)
       GuCreativePlaceholder(AdSize(size.getWidth, size.getHeight), targeting)
     }
 
@@ -125,14 +129,14 @@ object DataMapper {
       parameterType = param.getClass.getSimpleName.stripSuffix("CreativeTemplateVariable"),
       label = param.getLabel,
       isRequired = param.getIsRequired,
-      description = Option(param.getDescription)
+      description = nullToOption(param.getDescription)
     )
 
     GuCreativeTemplate(
       id = dfpCreativeTemplate.getId,
       name = dfpCreativeTemplate.getName,
       description = dfpCreativeTemplate.getDescription,
-      parameters = Option(dfpCreativeTemplate.getVariables).map { params =>
+      parameters = nullToOption(dfpCreativeTemplate.getVariables).map { params =>
         (params map toParameter).toSeq
       }.getOrElse(Nil),
       snippet = dfpCreativeTemplate.getSnippet,
