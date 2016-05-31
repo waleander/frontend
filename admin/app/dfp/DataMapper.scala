@@ -144,31 +144,23 @@ object DataMapper {
     )
   }
 
-  def toGuTemplateCreative(dfpCreative: TemplateCreative): GuCreative = {
-
-    def arg(variableValue: BaseCreativeTemplateVariableValue): (String, String) = {
-      val exampleAssetUrl =
-        "https://tpc.googlesyndication.com/pagead/imgad?id=CICAgKCT8L-fJRABGAEyCCXl5VJTW9F8"
-      val argValue = variableValue match {
-        case s: StringCreativeTemplateVariableValue =>
-          Option(s.getValue) getOrElse ""
-        case u: UrlCreativeTemplateVariableValue =>
-          Option(u.getValue) getOrElse ""
-        case _: AssetCreativeTemplateVariableValue =>
-          exampleAssetUrl
-        case other => "???"
-      }
-      variableValue.getUniqueName -> argValue
-    }
-
+  def toGuCreative(dfpCreative: Creative, templateId: Option[Long] = None, sslScanResult: Option[String] = None): GuCreative = {
     GuCreative(
       id = dfpCreative.getId,
       name = dfpCreative.getName,
       lastModified = toJodaTime(dfpCreative.getLastModifiedDateTime),
-      args = Option(dfpCreative.getCreativeTemplateVariableValues).map(_.map(arg)).map(_.toMap).getOrElse(Map.empty),
-      templateId = Some(dfpCreative.getCreativeTemplateId),
+      templateId = templateId,
+      sslScanResult = sslScanResult,
       snippet = None,
       previewUrl = Some(dfpCreative.getPreviewUrl)
     )
+  }
+
+  def toGuTemplateCreative(dfpCreative: TemplateCreative): GuCreative = {
+    toGuCreative(dfpCreative, Some(dfpCreative.getCreativeTemplateId.toLong))
+  }
+
+  def toGuThirdPartyCreative(dfpCreative: ThirdPartyCreative): GuCreative = {
+    toGuCreative(dfpCreative, None, Some(dfpCreative.getSslScanResult.getValue))
   }
 }

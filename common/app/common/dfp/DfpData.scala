@@ -404,8 +404,8 @@ case class GuCreative(
   id: Long,
   name: String,
   lastModified: DateTime,
-  args: Map[String, String],
   templateId: Option[Long],
+  sslScanResult: Option[String],
   snippet: Option[String],
   previewUrl: Option[String]
 )
@@ -428,8 +428,8 @@ object GuCreative {
         "id" -> creative.id,
         "name" -> creative.name,
         "lastModified" -> creative.lastModified,
-        "args" -> creative.args,
         "templateId" -> creative.templateId,
+        "sslScanResult" -> creative.sslScanResult,
         "snippet" -> creative.snippet,
         "previewUrl" -> creative.previewUrl
       )
@@ -440,8 +440,8 @@ object GuCreative {
     (JsPath \ "id").read[Long] and
       (JsPath \ "name").read[String] and
       (JsPath \ "lastModified").read[DateTime] and
-      (JsPath \ "args").read[Map[String, String]] and
       (JsPath \ "templateId").readNullable[Long] and
+      (JsPath \ "sslScanResult").readNullable[String] and
       (JsPath \ "snippet").readNullable[String] and
       (JsPath \ "previewUrl").readNullable[String]
     ) (GuCreative.apply _)
