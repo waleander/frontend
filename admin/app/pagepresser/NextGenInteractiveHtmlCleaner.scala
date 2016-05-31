@@ -4,6 +4,7 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import play.api.Play.current
 import play.api.libs.ws.WS
+import services.S3ArchiveOriginals
 
 import scala.collection.JavaConversions._
 import scala.concurrent.Future
@@ -26,48 +27,52 @@ object NextGenInteractiveHtmlCleaner extends HtmlCleaner with implicits.WSReques
       .replaceAll("http(s)?://www.theguardian.com","")
       .toLowerCase
 
-    val ngTemplate = loadNextGenPreview(previewUrl)
+    val ngPreviewDoc = loadNextGenPreview(previewUrl)
 
-    ngTemplate.map{ tpl =>
-      println(s"### ${this.getClass.getCanonicalName} RE-WRITING...")
+    ngPreviewDoc.map{ previewResponse =>
+      println("### RE-WRITING...")
 
-      val srcDoc = document.clone()
-      val templateDoc = Jsoup.parse(tpl.body)
+      val ngTemplateDocUrl = "www.theguardian.com/template/ng-interactive-template.html"
 
-      document.head().replaceWith(templateDoc.head())
-      document.body().replaceWith(templateDoc.body())
-      document.title(srcDoc.title())
-      moveMeta(srcDoc, document)
-//    moveHeadElements(srcDoc, "link", "rel", "canonical", document)
-//    moveHeadElements(srcDoc, "link", "rel", "shorturl", document)
-//    moveHeadElements(srcDoc, "link", "rel", "publisher", document)
-//    moveHeadElements(srcDoc, "link", "rel", "stylesheet", document)
+      val newDoc = S3ArchiveOriginals.get(ngTemplateDocUrl).map { template =>
+        val ngOutputTemplateDoc = Jsoup.parse(template)
+        val srcDoc = document.clone()
+        val previewDoc = Jsoup.parse(previewResponse.body)
+
+        document.head().replaceWith(ngOutputTemplateDoc.head())
+        document.body().replaceWith(ngOutputTemplateDoc.body())
+        document.title(srcDoc.title())
+        moveMeta(srcDoc, document)
+
+        val interactiveElement = "content__main-column--interactive"
+
+        previewDoc.getElementsByTag("div").filter(_.className().contains(interactiveElement)).foreach{ el =>
+          document.getElementsByTag("div").filter(_.className().contains(interactiveElement)).foreach(_.replaceWith(el))
+        }
+
+        document
+
+      }.getOrElse(document)
 
       // global replace all urls with https:
-      val securedDoc = Jsoup.parse(securedSource(document.html()))
+      val securedDoc = Jsoup.parse(secureSource(newDoc.html()))
 
       document.head().replaceWith(securedDoc.head())
       document.body().replaceWith(securedDoc.body())
 
       addJqueryScript(document)
-//    addRequireJsScript(document)
+      //    addRequireJsScript(document)
       universalClean(document)
       removeByTagName(document, "noscript")
       removeInsecureScripts(document)
 
-      println(s"### ${this.getClass.getCanonicalName} RE-WRITTEN!")
+      println("### RE-WRITTEN!")
       document
     }
   }
 
-  private def securedSource(src: String): String = {
+  private def secureSource(src: String): String = {
     src.replaceAllLiterally(""""//""", """"https://""").replaceAllLiterally("'//", "'https://").replaceAllLiterally("http://", "https://")
-  }
-
-  private def getChildElementsOf(document: Document, tag: String, attributeKey: String, attributeVal: String) = {
-    document.getElementsByTag(tag).filter { el =>
-      el.hasAttr(attributeKey) && el.attr(attributeKey) == attributeVal
-    }.flatMap(_.children())
   }
 
   private def moveMeta(fromDoc: Document,
@@ -76,25 +81,7 @@ object NextGenInteractiveHtmlCleaner extends HtmlCleaner with implicits.WSReques
     fromDoc.getElementsByTag("meta").foreach { el =>
       val newMeta = toDoc.head().prependElement("meta")
       for (attr <- el.attributes()) {
-        newMeta.attr(attr.getKey, securedSource(attr.getValue))
-      }
-    }
-    toDoc
-  }
-
-  private def moveHeadElements(fromDoc: Document,
-                               tag: String,
-                               //attributes: Seq[(String, String)],
-                               attributeKey: String,
-                               attributeVal: String,
-                               toDoc: Document): Document = {
-
-    //toDoc.getElementsByTag(tag).filter(el => el.hasAttr(attributeKey) && el.attr(attributeKey) == attributeVal).foreach(_.remove)
-
-    fromDoc.getElementsByAttributeValue(attributeKey, attributeVal).foreach{ el =>
-      val newEl = toDoc.head().prependElement(tag)
-      for (attr <- el.attributes()) {
-        newEl.attr(attr.getKey, securedSource(attr.getValue))
+        newMeta.attr(attr.getKey, secureSource(attr.getValue))
       }
     }
     toDoc
