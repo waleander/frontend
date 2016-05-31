@@ -1,6 +1,6 @@
 package dfp
 
-import common.dfp.{GuAdUnit, GuCreativeTemplate}
+import common.dfp.{GuAdUnit,GuCreative, GuCreativeTemplate}
 import common.{LifecycleComponent, AkkaAsync, ExecutionContexts, Jobs}
 import play.api.inject.ApplicationLifecycle
 
@@ -86,6 +86,12 @@ class DfpDataCacheLifecycle(appLifecycle: ApplicationLifecycle)(implicit ec: Exe
       val name: String = "DFP-Creative-Templates-Update"
       val interval: Int = 15
       def run() = CreativeTemplateAgent.refresh()
+    },
+
+    new Job[Seq[GuCreative]] {
+      val name: String = "DFP-Insecure-Creatives-Update"
+      val interval: Int = 60
+      def run() = InsecureCreativeAgent.refresh()
     },
 
     new Job[Unit] {
