@@ -2,7 +2,7 @@ package pagepresser
 
 import com.netaporter.uri.Uri.parse
 import common.{ExecutionContexts, Logging}
-import org.jsoup.nodes.Document
+import org.jsoup.nodes.{Element, Document}
 import conf.Configuration
 
 import scala.collection.JavaConversions._
@@ -27,6 +27,42 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
     repairStaticLinks(document)
     repairStaticSources(document)
     deComboLinks(document)
+  }
+
+  protected def addJqueryScript(document: Document): Document = {
+    log.info("Adding JQuery script")
+
+    val jqScript = """
+    <script type="text/javascript" charset="utf-8" src="https://pasteup.guim.co.uk/js/lib/jquery/1.8.1/jquery.min.js"></script>
+    <script type="text/javascript">
+    var jQ = jQuery.noConflict();
+    jQ.ajaxSetup({ cache: true });
+  </script>"""
+    document.head().prepend(jqScript)
+    document
+  }
+
+  protected def addRequireJsScript(document: Document): Document = {
+    log.info("Adding RequireJS")
+    val rqScript = """
+    <script type="text/javascript" charset="utf-8" src="https://pasteup.guim.co.uk/js/lib/requirejs/2.1.5/require.min.js"
+          data-main="https://static.guim.co.uk/static/6d5811c93d9b815024b5a6c3ec93a54be18e52f0/common/scripts/main.js"
+          data-modules="gu/author-twitter-handles"
+          data-callback=""
+          id="require-js">
+    </script>""".stripMargin
+    document.head().prepend(rqScript)
+    document
+  }
+
+  protected def removeInsecureScripts(document: Document): Document = {
+    document.getElementsByTag("script").foreach{ scriptEl =>
+      if (scriptEl.hasAttr("src") && scriptEl.attr("src").startsWith("http:")){
+        log.info(s"Remove insecure script: src ${scriptEl.attr("src")}")
+        scriptEl.remove()
+      }
+    }
+    document
   }
 
   def repairStaticLinks(document: Document): Document = {
@@ -188,14 +224,28 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
     document
   }
 
+  private def elementContainsCombo(el: Element): Boolean = {
+    val comboPath = "combo.guim.co.uk"
+    val attr = if(el.hasAttr("href")){
+      el.attr("href")
+    } else if (el.hasAttr("src")) {
+      el.attr("src")
+    } else {
+      ""
+    }
+    attr.contains(comboPath)
+  }
+
   def deComboLinks(document: Document): Document = {
-    document.getAllElements.filter { el =>
-      el.hasAttr("href") && el.attr("href").contains("combo.guim.co.uk")
-    }.foreach { el =>
+    document.getAllElements.filter(elementContainsCombo).foreach { el =>
 
       val combinerRegex = """//combo.guim.co.uk/(\w+)/(.+)(\.\w+)$""".r("cacheBustId", "paths", "extension")
       val microAppRegex = """^m-(\d+)~(.+)""".r
-      val href = el.attr("href")
+      val href = if (el.hasAttr("href")) {
+        el.attr("href")
+      } else {
+        el.attr("src")
+      }
       val combiner = combinerRegex.findFirstMatchIn(href)
 
       combiner.foreach { combiner =>
@@ -208,7 +258,11 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
           } else {
             s"//static.guim.co.uk/static/$cacheBustId/$path$extension"
           }
-          val newEl = el.clone.attr("href", newPath)
+          val newEl = if (el.hasAttr("href")) {
+            el.clone.attr("href", newPath)
+          } else {
+            el.clone.attr("src", newPath)
+          }
           el.after(newEl)
         }
         el.remove()
