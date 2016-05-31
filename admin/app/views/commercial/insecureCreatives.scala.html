@@ -1,0 +1,26 @@
+@(env: String, creatives: Seq[common.dfp.GuCreative])(implicit request: RequestHeader)
+@import model.{SimplePage, MetaData}
+
+@main(
+    SimplePage(MetaData.make("commercial-insecure-creatives", "admin", "Commercial Insecure Creatives", "Commercial Insecure Creatives"))
+) { } {
+
+    <div class="l-side-margins">
+        <div class="facia-container facia-container--layout-front">
+
+            <div class="facia-container__inner">
+                <h1>Insecure Creativess</h1>
+                <p>This dashboard is to help track non HTTPS compliant creatives so that they can be altered to be made HTTPS compliant.</p>
+            </div>
+
+            <div class="facia-container__inner">
+                <h2>Creatives</h2>
+                <ul>
+                    @for(creative <- creatives) {
+                    <li><a href="#@creative.name">@creative.name</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}

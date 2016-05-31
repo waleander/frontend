@@ -5,7 +5,7 @@ import common.{ExecutionContexts, Logging}
 import conf.Configuration
 import conf.Configuration.environment
 import controllers.AuthLogging
-import dfp.{CreativeTemplateAgent, DfpApi}
+import dfp.{CreativeTemplateAgent, InsecureCreativeAgent, DfpApi}
 import model._
 import ophan.SurgingContentAgent
 import play.api.libs.json.{JsString, Json}
@@ -70,6 +70,11 @@ object CommercialController extends Controller with Logging with AuthLogging wit
       soFar :+ template.copy(creatives = creatives.filter(_.templateId.get == template.id).sortBy(_.name))
     }.sortBy(_.name)
     NoCache(Ok(views.html.commercial.templates(environment.stage, templates)))
+  }
+
+  def renderInsecureCreatives = AuthActions.AuthActionTest { implicit request =>
+    val creatives = InsecureCreativeAgent.get
+    NoCache(Ok(views.html.commercial.insecureCreatives(environment.stage, creatives)))
   }
 
   def renderAdTests = AuthActions.AuthActionTest { implicit request =>

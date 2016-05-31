@@ -4,7 +4,7 @@ import com.google.api.ads.dfp.axis.utils.v201508.StatementBuilder
 import com.google.api.ads.dfp.axis.v201508._
 import common.Logging
 import common.dfp.{GuAdUnit, GuCreative, GuCreativeTemplate, GuLineItem}
-import dfp.DataMapper.{toGuAdUnit, toGuCreativeTemplate, toGuLineItem, toGuTemplateCreative}
+import dfp.DataMapper.{toGuAdUnit, toGuCreativeTemplate, toGuLineItem, toGuTemplateCreative, toGuCreative}
 import org.joda.time.DateTime
 
 object DfpApi extends Logging {
@@ -69,6 +69,15 @@ object DfpApi extends Logging {
 
     withDfpSession {
       _.creativeTemplates(stmtBuilder) map toGuCreativeTemplate filterNot (_.isForApps)
+    }
+  }
+
+  def readInsecureThirdPartyCreatives(): Seq[GuCreative] = {
+
+    val stmtBuilder = new StatementBuilder()
+
+    withDfpSession {
+      _.creatives.get(stmtBuilder) collect { case creative: ThirdPartyCreative => creative } map (toGuCreative(_, None))
     }
   }
 
