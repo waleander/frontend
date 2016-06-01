@@ -2,7 +2,7 @@ package dfp
 
 import com.google.api.ads.dfp.axis.v201508._
 import common.Logging
-import org.joda.time.{DateTime => JodaDateTime, DateTimeZone}
+import org.joda.time.{DateTimeZone, DateTime => JodaDateTime}
 
 private[dfp] object ApiHelper extends Logging {
 
@@ -36,6 +36,6 @@ private[dfp] object ApiHelper extends Logging {
 
   def toSeq[A](as: Array[A]): Seq[A] = Option(as) map (_.toSeq) getOrElse Nil
 
-  //noinspection IfElseToOption
-  def optJavaInt(i: java.lang.Integer): Option[Int] = if (i == null) None else Some(i)
+  // DFP calls can return nulls (including Array return types), this wrapped makes them null-safe
+  def nullToOption[T](t: T): Option[T] = Option(t)
 }

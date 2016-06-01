@@ -2,14 +2,12 @@ package dfp
 
 import com.google.api.ads.dfp.axis.v201508._
 import common.dfp._
-import dfp.ApiHelper.{isPageSkin, optJavaInt, toJodaTime, toSeq}
+import dfp.ApiHelper.{isPageSkin, nullToOption, toJodaTime, toSeq}
+
 import scala.language.postfixOps
 
 // These mapping functions use libraries that are only available in admin to create common DFP data models.
 object DataMapper {
-
-  // DFP calls can return nulls, including Array return types
-  def nullToOption[T](response: T): Option[T] = Option(response)
 
   def toGuAdUnit(dfpAdUnit: AdUnit): GuAdUnit = {
     val ancestors = toSeq(dfpAdUnit.getParentPath)
@@ -63,7 +61,7 @@ object DataMapper {
 
       def toGeoTarget(dfpLocation: Location) = GeoTarget(
         dfpLocation.getId,
-        optJavaInt(dfpLocation.getCanonicalParentId),
+        nullToOption(dfpLocation.getCanonicalParentId),
         dfpLocation.getType,
         dfpLocation.getDisplayName
       )
