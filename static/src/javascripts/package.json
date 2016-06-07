@@ -1,0 +1,11 @@
+{
+  "name": "theguardian.com",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The JS app for theguardian.com. These packages are for bundling to the client, not building etc.",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "lodash-amd": "^4.13.1"
+  }
+}

@@ -14,6 +14,7 @@ module.exports = function (grunt, options) {
                 fastdom:              'components/fastdom/index',
                 fence:                'components/fence/fence',
                 lodash:               'components/lodash-amd',
+                'lodash-4':           'node_modules/lodash-amd', // can be renamed once all v2 has gone
                 picturefill:          'projects/common/utils/picturefill',
                 Promise:              'components/when/Promise',
                 qwery:                'components/qwery/qwery',
