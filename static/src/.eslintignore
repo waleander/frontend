@@ -4,6 +4,7 @@
 
 **/stylesheets
 **/javascripts/bower_components
+**/javascripts/node_modules
 **/javascripts/components
 **/javascripts/vendor
 **/javascripts/polyfills
