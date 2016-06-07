@@ -115,6 +115,7 @@ class DfpDataCacheLifecycle(appLifecycle: ApplicationLifecycle)(implicit ec: Exe
       CreativeTemplateAgent.refresh()
       DfpTemplateCreativeCacheJob.run()
       CustomTargetingKeyValueJob.run()
+      InsecureCreativeAgent.refresh()
     }
   }
 }
