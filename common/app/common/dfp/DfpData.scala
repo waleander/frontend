@@ -422,29 +422,7 @@ object GuCreative {
     (mapById(old) ++ mapById(recent)).values.toSeq
   }
 
-  implicit val writes = new Writes[GuCreative] {
-    def writes(creative: GuCreative): JsValue = {
-      Json.obj(
-        "id" -> creative.id,
-        "name" -> creative.name,
-        "lastModified" -> creative.lastModified,
-        "templateId" -> creative.templateId,
-        "sslScanResult" -> creative.sslScanResult,
-        "snippet" -> creative.snippet,
-        "previewUrl" -> creative.previewUrl
-      )
-    }
-  }
-
-  implicit val reads: Reads[GuCreative] = (
-    (JsPath \ "id").read[Long] and
-      (JsPath \ "name").read[String] and
-      (JsPath \ "lastModified").read[DateTime] and
-      (JsPath \ "templateId").readNullable[Long] and
-      (JsPath \ "sslScanResult").readNullable[String] and
-      (JsPath \ "snippet").readNullable[String] and
-      (JsPath \ "previewUrl").readNullable[String]
-    ) (GuCreative.apply _)
+  implicit val formats: Format[GuCreative] = Json.format[GuCreative]
 }
 
 case class GuCreativeTemplate(id: Long,
