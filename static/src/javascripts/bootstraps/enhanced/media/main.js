@@ -13,6 +13,7 @@ define([
     'common/utils/url',
     'common/utils/ajax',
     'common/modules/analytics/beacon',
+    'common/modules/audio/enhanced-audio',
     'common/modules/commercial/build-page-targeting',
     'common/modules/commercial/commercial-features',
     'common/modules/component',
@@ -43,6 +44,7 @@ define([
     urlUtils,
     ajax,
     beacon,
+    EnhancedAudio,
     buildPageTargeting,
     commercialFeatures,
     Component,
@@ -368,6 +370,8 @@ define([
                                 resolve();
                             }
                         } else {
+                            new EnhancedAudio(player);
+                            
                             player.playlist({
                                 mediaType: 'audio',
                                 continuous: false
