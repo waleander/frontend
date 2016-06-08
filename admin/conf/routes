@@ -3,7 +3,7 @@
 # ~~~~
 
 
-GET         /_healthcheck                                                                           controllers.HealthCheck.healthcheck()
+GET         /_healthcheck                                                                           controllers.HealthCheck.healthCheck()
 
 # authentication endpoints
 GET         /login                                                                                  controllers.admin.OAuthLoginController.login
@@ -12,16 +12,30 @@ GET         /oauth2callback                                                     
 GET         /logout                                                                                 controllers.admin.OAuthLoginController.logout
 
 # static files
-GET         /public/*file                                                                           controllers.Assets.at(path="/public", file)
+GET         /assets/admin/lib/*file                                                                 controllers.admin.UncachedWebAssets.at(file)
+GET         /assets/admin/*file                                                                     controllers.admin.UncachedAssets.at(file)
 GET         /assets/*path                                                                           dev.DevAssetsController.at(path)
 
 ##################### NOTE ############################
 #all endpoints below this line should be authenticated#
 #######################################################
 
-#Index page
+# Index page
 GET         /                                                                                       controllers.admin.AdminIndexController.index()
 GET         /admin                                                                                  controllers.admin.AdminIndexController.admin()
+
+# Facia Press
+GET         /press                                                                                  controllers.FrontPressController.press()
+POST        /press/all                                                                              controllers.FrontPressController.queueAllFrontsForPress()
+POST        /press/high                                                                             controllers.FrontPressController.queueHighFrequencyFrontsForPress()
+POST        /press/standard                                                                         controllers.FrontPressController.queueStandardFrequencyFrontsForPress()
+POST        /press/low                                                                              controllers.FrontPressController.queueLowFrequencyFrontsForPress()
+
+# R2 Press
+GET         /press/r2                                                                               controllers.admin.R2PressController.pressForm()
+POST        /press/r2                                                                               controllers.admin.R2PressController.press()
+GET         /press/r2/batchupload                                                                   controllers.admin.R2PressController.pressForm()
+POST        /press/r2/batchupload                                                                   controllers.admin.R2PressController.batchUpload()
 
 # API endpoint proxying for https
 GET         /api/proxy/*path                                                                        controllers.admin.Api.proxy(path, callback)
@@ -29,42 +43,57 @@ GET         /api/tag                                                            
 GET         /api/item/*path                                                                         controllers.admin.Api.item(path, callback)
 GET         /json/proxy/*absUrl                                                                     controllers.admin.Api.json(absUrl)
 
+GET         /images/clear                                                                           controllers.cache.ImageDecacheController.renderImageDecacheForm()
+POST        /images/clear                                                                           controllers.cache.ImageDecacheController.decache()
+
+GET         /page/clear                                                                             controllers.cache.PageDecacheController.renderPageDecacheForm()
+POST        /page/clear                                                                             controllers.cache.PageDecacheController.decache()
+
 # Ophan proxying for https
 GET         /ophan/pageviews/*path                                                                  controllers.admin.OphanApiController.pageViews(path)
 GET         /ophan/pageviews                                                                        controllers.admin.OphanApiController.platformPageViews()
 GET         /ophan/ads/render-time                                                                  controllers.admin.OphanApiController.adsRenderTime()
 
-#Development endpoints
+# Development endpoints
 GET         /dev/switchboard                                                                        controllers.admin.SwitchboardController.renderSwitchboard()
+GET         /dev/switchboard-plista                                                                 controllers.admin.SwitchboardPlistaController.renderSwitchboard()
+
 POST        /dev/switchboard                                                                        controllers.admin.SwitchboardController.save()
+POST        /dev/switchboard-plista                                                                 controllers.admin.SwitchboardPlistaController.save()
 
 # Analytics
 GET         /analytics/abtests                                                                      controllers.admin.AnalyticsController.abtests()
 GET         /analytics/confidence                                                                   controllers.admin.AnalyticsConfidenceController.renderConfidence()
-GET         /analytics/google-referrers                                                             controllers.admin.GoogleReferrerController.renderGoogleReferrerDashboard()
-GET         /analytics/content/gallery                                                              controllers.admin.ContentPerformanceController.renderGalleryDashboard()
-GET         /analytics/content/liveblog                                                             controllers.admin.ContentPerformanceController.renderLiveBlogDashboard()
 GET         /analytics/content/video                                                                controllers.admin.ContentPerformanceController.renderVideoEncodingsDashboard()
-GET         /analytics/omniture/segments/:rsid                                                      controllers.admin.OmnitureReportController.getSegments(rsid)
-GET         /analytics/omniture/*reportName                                                         controllers.admin.OmnitureReportController.getReport(reportName)
+GET         /analytics/quality                                                                      controllers.admin.AnalyticsController.renderQuality()
+
+GET         /analytics/headlines-test                                                               controllers.admin.MetricsController.renderHeadlinesTest()
+
+# Facia
+GET         /deduped                                                                                controllers.admin.WhatIsDeduped.index()
+GET         /deduped/*path                                                                          controllers.admin.WhatIsDeduped.dedupedFor(path)
 
 # Commercial
-GET         /analytics/commercial                                                                   controllers.admin.CommercialController.renderCommercial()
-GET         /analytics/commercial/specialadunits                                                    controllers.admin.CommercialController.renderSpecialAdUnits()
-GET         /analytics/commercial/sponsorships                                                      controllers.admin.CommercialController.renderPaidForTags()
-GET         /analytics/commercial/pageskins                                                         controllers.admin.CommercialController.renderPageskins()
-GET         /analytics/commercial/surging                                                           controllers.admin.CommercialController.renderSurgingContent()
-GET         /analytics/commercial/im-sponsorships                                                   controllers.admin.CommercialController.renderInlineMerchandisingTargetedTags()
-GET         /analytics/commercial/templates                                                         controllers.admin.CommercialController.renderCreativeTemplates()
-GET         /analytics/commercial/sponsored-containers                                              controllers.admin.CommercialController.sponsoredContainers()
-GET         /commercialtools/adunits/toapprove                                                      controllers.admin.CommercialAdUnitController.renderToApprove()
-POST        /commercialtools/adunits/toapprove                                                      controllers.admin.CommercialAdUnitController.approve()
-GET         /admin/commercial/fluid250                                                              controllers.admin.CommercialController.renderFluidAds()
-GET         /analytics/commercial/adtests                                                           controllers.admin.CommercialController.renderAdTests()
-GET         /admin/commercial/dfp/flush/view                                                        controllers.admin.commercial.DfpDataController.renderCacheFlushPage()
-GET         /admin/commercial/dfp/flush                                                             controllers.admin.commercial.DfpDataController.flushCache()
-GET         /admin/commercial/radiator                                                              controllers.admin.CommercialController.renderCommercialRadiator()
-
+GET         /commercial                                                                             controllers.admin.CommercialController.renderCommercialMenu()
+GET         /commercial/specialadunits                                                              controllers.admin.CommercialController.renderSpecialAdUnits()
+GET         /commercial/sponsorships                                                                controllers.admin.CommercialController.renderPaidForTags()
+GET         /commercial/pageskins                                                                   controllers.admin.CommercialController.renderPageskins()
+GET         /commercial/surging                                                                     controllers.admin.CommercialController.renderSurgingContent()
+GET         /commercial/inline-merchandising                                                        controllers.admin.CommercialController.renderInlineMerchandisingTargetedTags()
+GET         /commercial/high-merchandising                                                          controllers.admin.CommercialController.renderHighMerchandisingTargetedTags()
+GET         /commercial/templates                                                                   controllers.admin.CommercialController.renderCreativeTemplates()
+GET         /commercial/fluid250                                                                    controllers.admin.CommercialController.renderFluidAds()
+GET         /commercial/adtests                                                                     controllers.admin.CommercialController.renderAdTests()
+GET         /commercial/keyvalues                                                                   controllers.admin.CommercialController.renderKeyValues()
+GET         /commercial/keyvalues/csv/*key                                                          controllers.admin.CommercialController.renderKeyValuesCsv(key)
+GET         /commercial/dfp/flush/view                                                              controllers.admin.commercial.DfpDataController.renderCacheFlushPage()
+GET         /commercial/dfp/flush                                                                   controllers.admin.commercial.DfpDataController.flushCache()
+GET         /commercial/radiator                                                                    controllers.admin.CommercialController.renderCommercialRadiator()
+GET         /commercial/slot/:slotName                                                              controllers.admin.commercial.SlotController.viewSlot(slotName)
+GET         /commercial/adops/takeovers-empty-mpus                                                  controllers.admin.commercial.TakeoverWithEmptyMPUsController.viewList()
+GET         /commercial/adops/takeovers-empty-mpus/create                                           controllers.admin.commercial.TakeoverWithEmptyMPUsController.viewForm()
+POST        /commercial/adops/takeovers-empty-mpus/create                                           controllers.admin.commercial.TakeoverWithEmptyMPUsController.create()
+POST        /commercial/adops/takeovers-empty-mpus/remove                                           controllers.admin.commercial.TakeoverWithEmptyMPUsController.remove(takeoverStr)
 
 # Metrics
 GET         /metrics/loadbalancers                                                                  controllers.admin.MetricsController.renderLoadBalancers()
@@ -82,9 +111,16 @@ GET         /radiator                                                           
 GET         /radiator/pingdom                                                                       controllers.admin.RadiatorController.pingdom()
 GET         /radiator/commit/*hash                                                                  controllers.admin.RadiatorController.commitDetail(hash)
 
+GET         /deploys-radiator/api/deploys                                                           controllers.admin.DeploysRadiatorController.getDeploys(pageSize: Option[String], projectName: Option[String], stage: Option[String])
+GET         /deploys-radiator/api/builds/:number                                                    controllers.admin.DeploysRadiatorController.getBuild(number)
+GET         /deploys-radiator                                                                       controllers.admin.DeploysRadiatorController.renderDeploysRadiator()
+
+POST        /deploys-notify/api/builds/:number/notify                                               controllers.admin.DeploysNotifyController.notifyStep(number)
+
 # Redirects
 GET         /redirects                                                                              controllers.admin.RedirectController.redirect()
 POST        /redirect-post                                                                          controllers.admin.RedirectController.redirectPost()
+POST        /redirect-batch-post                                                                    controllers.admin.RedirectController.redirectBatchPost()
 
 # Sport troubleshooter
 GET         /troubleshoot/football                                                                  controllers.admin.SportTroubleshooterController.renderFootballTroubleshooter()

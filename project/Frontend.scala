@@ -5,50 +5,52 @@ import sbt.Keys._
 import play.Play.autoImport._
 import PlayKeys._
 import play._
+import play.sbt._
+import play.sbt.routes.RoutesKeys
 import play.twirl.sbt.Import._
 import com.typesafe.sbt.web.Import._
 import Dependencies._
 
 object Frontend extends Build with Prototypes {
 
-  val common = application("common").settings(
+  val common = library("common").settings(
     libraryDependencies ++= Seq(
       akkaAgent,
       apacheCommonsMath3,
-      awsSdk,
+      awsCore,
+      awsCloudwatch,
+      awsDynamodb,
+      awsS3,
+      awsSns,
+      awsSts,
+      awsSqs,
       contentApiClient,
-      crosswordsApiClient,
-      faciaScalaClient,
       filters,
-      flexibleContentBlockToText,
-      flexibleContentBodyParser,
-      googleSheetsApi,
       guardianConfiguration,
-      jacksonCore,
-      jacksonMapper,
+      jodaConvert,
+      jodaTime,
       jSoup,
       liftJson,
       playGoogleAuth,
-      panDomainAuth,
       quartzScheduler,
       rome,
       romeModules,
       scalaCheck,
       scalajTime,
-      scalaTestPlus,
       scalaz,
-      shadeMemcached,
-      snappyJava,
       ws,
-      faciaFapiScalaClient
+      faciaFapiScalaClient,
+      dispatchTest,
+      closureCompiler,
+      jerseyCore,
+      jerseyClient,
+      cssParser,
+      w3cSac,
+      logback,
+      kinesisLogbackAppender
     )
   ).settings(
       mappings in TestAssets ~= filterAssets
-  )
-
-  val crosswordsRouting: Seq[Def.Setting[_]] = Seq(
-    routesImport += "bindables._",
-    routesImport += "com.gu.crosswords.api.client.models.{Type => CrosswordType}"
   )
 
   private def filterAssets(testAssets: Seq[(File, String)]) = testAssets.filterNot{ case (file, fileName) =>
@@ -69,7 +71,6 @@ object Frontend extends Build with Prototypes {
   val article = application("article").dependsOn(commonWithTests).aggregate(common)
   val applications = application("applications")
     .dependsOn(commonWithTests)
-    .settings(crosswordsRouting: _*)
     .aggregate(common)
 
   val archive = application("archive").dependsOn(commonWithTests).aggregate(common)
@@ -85,9 +86,10 @@ object Frontend extends Build with Prototypes {
     )
   )
 
-  val image = application("image")
-
   val discussion = application("discussion").dependsOn(commonWithTests).aggregate(common).settings(
+    libraryDependencies ++= Seq(
+      scalaUri
+    ),
     TwirlKeys.templateImports ++= Seq("discussion._", "discussion.model._")
   )
 
@@ -95,30 +97,32 @@ object Frontend extends Build with Prototypes {
 
   val diagnostics = application("diagnostics").dependsOn(commonWithTests).aggregate(common).settings(
     libraryDependencies ++= Seq(
-      uaDetectorResources,
-      openCsv
+      uaDetectorResources
     )
   )
 
   val admin = application("admin").dependsOn(commonWithTests).aggregate(common).settings(
     libraryDependencies ++= Seq(
-      postgres,
       paClient,
       dfpAxis,
-      anorm,
-      jdbc
+      bootstrap,
+      jquery,
+      jqueryui,
+      lodash,
+      react,
+      awsElasticloadbalancing,
+      awsSes,
+      scalaUri
     ),
-    routesImport += "bindables._",
-    routesImport += "org.joda.time.LocalDate"
+    RoutesKeys.routesImport += "bindables._",
+    RoutesKeys.routesImport += "org.joda.time.LocalDate"
   )
 
-  val faciaTool = application("facia-tool").dependsOn(commonWithTests).aggregate(common).settings(
+  val faciaPress = application("facia-press").dependsOn(commonWithTests).settings(
     libraryDependencies ++= Seq(
-      playJsonVariants
+      awsKinesis
     )
   )
-
-  val faciaPress = application("facia-press").dependsOn(commonWithTests)
 
   val identity = application("identity").dependsOn(commonWithTests).aggregate(common).settings(
     libraryDependencies ++= Seq(
@@ -132,15 +136,18 @@ object Frontend extends Build with Prototypes {
       commonsHttpClient,
       slf4jExt,
       exactTargetClient,
-      nScalaTime
+      nScalaTime,
+      dispatch,
+      libPhoneNumber
     )
   )
 
   val commercial = application("commercial").dependsOn(commonWithTests).aggregate(common)
+      .settings(libraryDependencies ++= List(shadeMemcached))
 
   val onward = application("onward").dependsOn(commonWithTests).aggregate(common)
 
-  val weather = application("weather")
+  val adminJobs = application("admin-jobs")
     .dependsOn(commonWithTests)
     .aggregate(common)
 
@@ -158,13 +165,11 @@ object Frontend extends Build with Prototypes {
       admin,
       commercial,
       onward,
-      weather
-    ).settings(crosswordsRouting: _*)
-
-  val faciaEndToEnd = application("facia-end-to-end")
-    .dependsOn(commonWithTests)
-    .dependsOn(facia, faciaTool, faciaPress)
-    .aggregate(common, facia, faciaTool, faciaPress)
+      adminJobs
+    ).settings(
+      RoutesKeys.routesImport += "bindables._",
+      javaOptions in Runtime += "-Dconfig.file=dev-build/conf/dev-build.application.conf"
+    )
 
   // this app has a very limited set.
   // it is designed to get all other services (e.g. onwards) from PROD
@@ -175,27 +180,20 @@ object Frontend extends Build with Prototypes {
     sport,
     commercial,
     onward,
-    weather
+    adminJobs
   )
 
-  val preview = application("preview").dependsOn(withTests(common), standalone).settings(
-    routesImport += "scala.language.reflectiveCalls"
+  val preview = application("preview").dependsOn(commonWithTests, standalone).settings(
+    RoutesKeys.routesImport += "scala.language.reflectiveCalls"
   )
 
-  val trainingPreview = application("training-preview").dependsOn(withTests(common), standalone).settings(
-    routesImport += "scala.language.reflectiveCalls"
+  val trainingPreview = application("training-preview").dependsOn(commonWithTests, standalone).settings(
+    RoutesKeys.routesImport += "scala.language.reflectiveCalls"
   )
 
   val integrationTests = Project("integrated-tests", file("integrated-tests"))
     .settings(frontendCompilationSettings:_*)
     .settings(frontendIntegrationTestsSettings:_*)
-
-  val pngResizer = application("png-resizer")
-    .dependsOn(commonWithTests)
-    .aggregate(common)
-    .settings(
-      libraryDependencies += im4java
-    )
 
   val rss = application("rss")
     .dependsOn(commonWithTests)
@@ -204,13 +202,10 @@ object Frontend extends Build with Prototypes {
   val main = root().aggregate(
     common,
     facia,
-    faciaTool,
     faciaPress,
     article,
     applications,
     sport,
-    image,
-    pngResizer,
     discussion,
     router,
     diagnostics,
@@ -222,6 +217,6 @@ object Frontend extends Build with Prototypes {
     preview,
     trainingPreview,
     rss,
-    weather
+    adminJobs
   )
 }

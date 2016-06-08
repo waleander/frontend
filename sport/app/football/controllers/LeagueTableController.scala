@@ -2,6 +2,7 @@ package football.controllers
 
 import common._
 import conf._
+import conf.switches.Switches
 import feed.Competitions
 import play.api.mvc.{ Action, Controller }
 import model._
@@ -19,6 +20,7 @@ case class TablesPage(
 object LeagueTableController extends Controller with Logging with CompetitionTableFilters with ExecutionContexts {
 
     val tableOrder = Seq(
+        "Euro 2016",
         "Premier League",
         "La Liga",
         "Bundesliga",
@@ -115,7 +117,7 @@ object LeagueTableController extends Controller with Logging with CompetitionTab
 
     }.getOrElse(
       if(request.isJson) {
-        JsonNotFound()
+        Cached(60)(JsonNotFound())
       } else {
         Redirect("/football/tables")
       }
@@ -143,7 +145,7 @@ object LeagueTableController extends Controller with Logging with CompetitionTab
     }
     response.getOrElse {
       if(request.isJson) {
-        JsonNotFound()
+        Cached(60)(JsonNotFound())
       } else {
         Redirect("/football/tables")
       }

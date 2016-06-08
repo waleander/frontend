@@ -1,17 +1,19 @@
 package common.editions
 
+import java.util.Locale
+
 import common._
 import common.editions.Uk._
 import org.joda.time.DateTimeZone
-import contentapi.QueryDefaults
 import common.NavItem
 
 object Us extends Edition(
   id = "US",
   displayName = "US edition",
   timezone = DateTimeZone.forID("America/New_York"),
-  lang = "en-us"
-) with QueryDefaults {
+  locale = Locale.forLanguageTag("en-us"),
+  networkFrontId = "us"
+) {
 
   implicit val US = Us
 
@@ -51,10 +53,10 @@ object Us extends Edition(
     energy,
     pollution
   )
-
   override val navigation: Seq[NavItem] = {
     Seq(
       NavItem(home),
+      NavItem(usElection2016),
       NavItem(us),
       NavItem(world, worldLocalNav),
       NavItem(opinion),
@@ -65,17 +67,18 @@ object Us extends Edition(
       NavItem(lifeandstyle, Seq(foodanddrink, healthandwellbeing, loveAndSex, family, women, homeAndGarden)),
       NavItem(fashion),
       NavItem(business, businessLocalNav),
-      NavItem(travel, Seq(usaTravel, europetravel, uktravel)),
+      NavItem(travel, Seq(usaTravel, europetravel, uktravel, skiingTravel)),
       NavItem(environment, environmentLocalNav),
       NavItem(science),
       NavItem(media),
-      NavItem(crosswords),
+      NavItem(crosswords, crosswordsLocalNav),
       NavItem(video)
     )
   }
 
   override def briefNav: Seq[NavItem] = Seq(
     NavItem(home),
+    NavItem(usElection2016),
     NavItem(us),
     NavItem(world, worldLocalNav),
     NavItem(opinion),
@@ -87,7 +90,6 @@ object Us extends Edition(
     NavItem(fashion),
     NavItem(business, Seq(markets, companies)),
     NavItem(travel, Seq(usaTravel, europetravel, uktravel)),
-    NavItem(environment, environmentLocalNav),
-    NavItem(science)
+    NavItem(environment, environmentLocalNav)
   )
 }

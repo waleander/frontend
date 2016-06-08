@@ -1,9 +1,9 @@
 package common
 
-import org.scalatest.FlatSpec
-import org.scalatest.Matchers
+import org.scalatest.{DoNotDiscover, FlatSpec, Matchers}
 import play.api.Play
-import common.editions.Uk
+import common.editions.{Au, Us, International, Uk}
+import play.api.mvc.RequestHeader
 import test._
 import play.api.test.FakeRequest
 
@@ -12,10 +12,19 @@ class LinkToTest extends FlatSpec with Matchers with implicits.FakeRequests {
   Play.unsafeApplication
 
   implicit val edition = Uk
+  implicit val editions = Seq(Uk,Us,Au)
   implicit val request = FakeRequest("GET", "/")
 
   object TestLinkTo extends LinkTo {
     override lazy val host = "http://www.foo.com"
+  }
+
+  object TheGuardianLinkTo extends LinkTo {
+    override lazy val host = "http://www.theguardian.com"
+  }
+
+  object TestAmpLinkTo extends AmpLinkTo {
+    override lazy val host = "https://amp.theguardian.com"
   }
 
   "LinkTo" should "leave 'other' urls unchanged" in {
@@ -57,9 +66,59 @@ class LinkToTest extends FlatSpec with Matchers with implicits.FakeRequests {
     TestLinkTo("/football/rss", edition) should be ("http://www.foo.com/football/rss")
   }
 
-  object TestCanonicalLink extends CanonicalLink {
-    override lazy val scheme = "http"
+  it should "be https on https-enabled sections whether editionalised or not" in {
+    for (ed <- editions) {
+      TheGuardianLinkTo("/info/hello", ed) should be ("https://www.theguardian.com/info/hello")
+      TheGuardianLinkTo("http://www.theguardian.com/info", ed) should be ("https://www.theguardian.com/info")
+      TheGuardianLinkTo("/info/foo", ed) should be ("https://www.theguardian.com/info/foo")
+      TheGuardianLinkTo("http://www.theguardian.com/technology", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/technology")
+      TheGuardianLinkTo("/technology", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/technology")
+      TheGuardianLinkTo("/technology/hello", ed) should be (s"https://www.theguardian.com/technology/hello")
+      TheGuardianLinkTo("/business", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/business")
+      TheGuardianLinkTo("/business/hello", ed) should be (s"https://www.theguardian.com/business/hello")
+      TheGuardianLinkTo("https://www.theguardian.com/us/sport", ed) should be (s"https://www.theguardian.com/us/sport")
+      TheGuardianLinkTo("http://www.theguardian.com/us/sport", ed) should be (s"https://www.theguardian.com/us/sport")
+      TheGuardianLinkTo("/us/sport", ed) should be (s"https://www.theguardian.com/us/sport")
+      TheGuardianLinkTo("/sport", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/sport")
+      TheGuardianLinkTo("/sport/hello", ed) should be (s"https://www.theguardian.com/sport/hello")
+      TheGuardianLinkTo("/football", ed) should be (s"https://www.theguardian.com/football")
+      TheGuardianLinkTo("/football/hello", ed) should be (s"https://www.theguardian.com/football/hello")
+      TheGuardianLinkTo("/culture", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/culture")
+      TheGuardianLinkTo("/culture/hello", ed) should be (s"https://www.theguardian.com/culture/hello")
+      TheGuardianLinkTo("/film", ed) should be (s"https://www.theguardian.com/${ed.id.toLowerCase}/film")
+      TheGuardianLinkTo("/film/hello", ed) should be (s"https://www.theguardian.com/film/hello")
+      TheGuardianLinkTo("/tv-and-radio", ed) should be (s"https://www.theguardian.com/tv-and-radio")
+      TheGuardianLinkTo("/tv-and-radio/hello", ed) should be (s"https://www.theguardian.com/tv-and-radio/hello")
+      TheGuardianLinkTo("/music", ed) should be (s"https://www.theguardian.com/music")
+      TheGuardianLinkTo("/music/hello", ed) should be (s"https://www.theguardian.com/music/hello")
+      TheGuardianLinkTo("/books", ed) should be (s"https://www.theguardian.com/books")
+      TheGuardianLinkTo("/books/hello", ed) should be (s"https://www.theguardian.com/books/hello")
+      TheGuardianLinkTo("/artanddesign", ed) should be (s"https://www.theguardian.com/artanddesign")
+      TheGuardianLinkTo("/artanddesign/hello", ed) should be (s"https://www.theguardian.com/artanddesign/hello")
+      TheGuardianLinkTo("/stage", ed) should be (s"https://www.theguardian.com/stage")
+      TheGuardianLinkTo("/stage/hello", ed) should be (s"https://www.theguardian.com/stage/hello")
+      TheGuardianLinkTo("/membership", ed) should be (s"https://www.theguardian.com/membership")
+      TheGuardianLinkTo("/membership/hello", ed) should be (s"https://www.theguardian.com/membership/hello")
+    }
   }
+
+  it should "be https to amp" in {
+    TestAmpLinkTo("/law/2015/oct/08/jeremy-corbyn-rejects-formal-privy-council-induction-by-queen", edition) should be ("https://amp.theguardian.com/law/2015/oct/08/jeremy-corbyn-rejects-formal-privy-council-induction-by-queen")
+  }
+
+  it should "correctly editionalise the International front" in {
+    TheGuardianLinkTo("/", International) should be ("http://www.theguardian.com/international")
+  }
+
+  it should "correctly link editionalised sections to the UK version for the International edition" in {
+    // Only the front page is different in the international edition, the others go to UK...
+    TheGuardianLinkTo("/culture", International) should be ("https://www.theguardian.com/uk/culture")
+    TheGuardianLinkTo("/sport", International) should be ("https://www.theguardian.com/uk/sport")
+  }
+
+
+
+  object TestCanonicalLink extends CanonicalLink
 
   "CanonicalLink" should "be the gatekeeper for significant parameters" in {
     /*
@@ -86,22 +145,33 @@ class LinkToTest extends FlatSpec with Matchers with implicits.FakeRequests {
   }
 
   it should "create a simple canonical url" in {
-    TestCanonicalLink(TestRequest("/foo").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo")
+    TestCanonicalLink(TestRequest("/foo").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo")
   }
 
   it should "ignore insignificant params" in {
-    TestCanonicalLink(TestRequest("/foo?view=mobile").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo")
+    TestCanonicalLink(TestRequest("/foo?view=mobile").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo")
   }
 
   it should "include significant params" in {
-    TestCanonicalLink(TestRequest("/foo?page=3").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo?page=3")
-    TestCanonicalLink(TestRequest("/foo?index=2").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo?index=2")
-    TestCanonicalLink(TestRequest("/foo?page=3&index=1").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo?index=1&page=3")
-    TestCanonicalLink(TestRequest("/foo?page=3&random=55&index=1").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo?index=1&page=3")
+    TestCanonicalLink(TestRequest("/foo?page=3").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo?page=3")
+    TestCanonicalLink(TestRequest("/foo?index=2").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo?index=2")
+    TestCanonicalLink(TestRequest("/foo?page=3&index=1").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo?index=1&page=3")
+    TestCanonicalLink(TestRequest("/foo?page=3&random=55&index=1").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo?index=1&page=3")
   }
 
   it should "escape params" in {
-    TestCanonicalLink(TestRequest("/foo?page=http://www.theguardian.com").withHost("www.somewhere.com")) should be ("http://www.somewhere.com/foo?page=http%3A%2F%2Fwww.theguardian.com")
+    TestCanonicalLink(TestRequest("/foo?page=http://www.theguardian.com").withHost("www.somewhere.com"), "http://www.somewhere.com/foo") should be ("http://www.somewhere.com/foo?page=http%3A%2F%2Fwww.theguardian.com")
+  }
+
+  it should "link to http explicitly for amp articles" in {
+    val result = TestCanonicalLink(TestRequest("/law/2015/oct/08/jeremy-corbyn-rejects-formal-privy-council-induction-by-queen/amp").withHost("www.theguardian.com"), "http://www.theguardian.com/law/2015/oct/08/jeremy-corbyn-rejects-formal-privy-council-induction-by-queen")
+    result should be("http://www.theguardian.com/law/2015/oct/08/jeremy-corbyn-rejects-formal-privy-council-induction-by-queen")
+  }
+
+
+  it should "link to https for all paths and editions" in {
+    val result = TestCanonicalLink(TestRequest("/uk/technology").withHost("http://www.theguardian.com").withHeaders("X-Gu-Edition" -> Us.id), "https://www.theguardian.com/uk/technology")
+    result should be("https://www.theguardian.com/uk/technology")
   }
 
 }

@@ -1,16 +1,19 @@
 package services
 
 import akka.util.Timeout
-import com.gu.facia.api.models.CollectionConfig
+import com.gu.facia.api.models.{CommercialPriority, EditorialPriority, FrontPriority, TrainingPriority}
+import com.gu.facia.client.ApiClient
 import com.gu.facia.client.models.{ConfigJson => Config, FrontJson => Front}
 import common._
 import conf.Configuration
+import conf.switches.Switches
 import fronts.FrontsApi
+import model.pressed.CollectionConfig
 import model.{FrontProperties, SeoDataJson}
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.json.Json
-import play.api.{Application, GlobalSettings}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
@@ -20,8 +23,18 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
   implicit val alterTimeout: Timeout = Configuration.faciatool.configBeforePressTimeout.millis
   private lazy val configAgent = AkkaAgent[Option[Config]](None)
 
+  def getClient: ApiClient = {
+    if (Switches.FaciaPressCrossAccountStorage.isSwitchedOn) {
+      log.info("Config agent is using cross account client")
+      FrontsApi.crossAccountClient
+    } else {
+      log.info("Config agent is using same account client")
+      FrontsApi.amazonClient
+    }
+  }
+
   def refresh() = {
-    val futureConfig = FrontsApi.amazonClient.config
+    val futureConfig = getClient.config
     futureConfig.onComplete {
       case Success(config) => log.info(s"Successfully got config")
       case Failure(t) => log.error(s"Getting config failed with $t", t)
@@ -34,7 +47,7 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
   }
 
   def refreshAndReturn(): Future[Option[Config]] =
-    FrontsApi.amazonClient.config
+    getClient.config
       .flatMap(config => configAgent.alter{_ => Option(config)})
       .fallbackTo{
       log.warn("Falling back to current ConfigAgent contents on refreshAndReturn")
@@ -57,17 +70,24 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
     }).toSeq
   }
 
+  def getCanonicalIdForFront(frontId: String): Option[String] = {
+    val config = configAgent.get()
+    val canonicalCollectionMap = config.map (_.fronts.mapValues(front => front.canonical.orElse(front.collections.headOption))).getOrElse(Map.empty)
+
+    canonicalCollectionMap.get(frontId).flatten
+  }
+
   def getConfigForId(id: String): Option[List[CollectionConfigWithId]] = {
     val config = configAgent.get()
     config.flatMap(_.fronts.get(id).map(_.collections))
       .map(_.flatMap(collectionId => getConfig(collectionId).map(collectionConfig => CollectionConfigWithId(collectionId, collectionConfig))))
   }
 
-  def getConfig(id: String): Option[CollectionConfig] = configAgent.get().flatMap(_.collections.get(id).map(CollectionConfig.fromCollectionJson))
+  def getConfig(id: String): Option[CollectionConfig] = configAgent.get().flatMap(_.collections.get(id).map(CollectionConfig.make))
 
   def getConfigAfterUpdates(id: String): Future[Option[CollectionConfig]] =
     configAgent.future()
-      .map(_.flatMap(_.collections.get(id)).map(CollectionConfig.fromCollectionJson))
+      .map(_.flatMap(_.collections.get(id)).map(CollectionConfig.make))
 
     def getAllCollectionIds: List[String] = {
     val config = configAgent.get()
@@ -89,6 +109,18 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
     )
   }
 
+  def getFrontPriorityFromConfig(pageId: String): Option[FrontPriority] = {
+    configAgent.get() flatMap {
+      _.fronts.get(pageId) map {
+        _.priority match {
+          case Some("commercial") => CommercialPriority
+          case Some("training") => TrainingPriority
+          case _ => EditorialPriority
+        }
+      }
+    }
+  }
+
   def fetchFrontProperties(id: String): FrontProperties = {
     val frontOption: Option[Front] = configAgent.get().flatMap(_.fronts.get(id))
 
@@ -98,7 +130,8 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
       imageWidth = frontOption.flatMap(_.imageWidth).map(_.toString),
       imageHeight = frontOption.flatMap(_.imageHeight).map(_.toString),
       isImageDisplayed = frontOption.flatMap(_.isImageDisplayed).getOrElse(false),
-      editorialType = None // value found in Content API
+      editorialType = None, // value found in Content API
+      activeBrandings = None // value found in Content API
     )
   }
 
@@ -121,23 +154,20 @@ trait ConfigAgentTrait extends ExecutionContexts with Logging {
 
 object ConfigAgent extends ConfigAgentTrait
 
-trait ConfigAgentLifecycle extends GlobalSettings {
+class ConfigAgentLifecycle(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext) extends LifecycleComponent {
 
-  override def onStart(app: Application) {
-    super.onStart(app)
-
+  appLifecycle.addStopHook { () => Future {
     Jobs.deschedule("ConfigAgentJob")
-    Jobs.schedule("ConfigAgentJob", "0 * * * * ?") {
+  }}
+
+  override def start() = {
+    Jobs.deschedule("ConfigAgentJob")
+    Jobs.schedule("ConfigAgentJob", "18 * * * * ?") {
       ConfigAgent.refresh()
     }
 
     AkkaAsync {
       ConfigAgent.refresh()
     }
-  }
-
-  override def onStop(app: Application) {
-    Jobs.deschedule("ConfigAgentJob")
-    super.onStop(app)
   }
 }

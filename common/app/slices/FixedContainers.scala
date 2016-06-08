@@ -1,21 +1,25 @@
 package slices
 
-import model.Content
 import conf.Configuration
+import model.pressed.PressedContent
 
 object TagContainers {
+
   import ContainerDefinition.{ofSlices => slices}
 
-  val allTagPage = slices(
-    QuarterQuarterQuarterQuarter,
-    TlTlTl,
-    TlTlTl,
-    TlTlTl,
-    TlTlTl,
-    TlTlTl,
-    TlTlTl,
-    TlTlMpu
-  )
+  def allTagPageSlices(n: Int) = n match {
+    case 1 => slices(FullMedia100)
+    case 2 => slices(HalfHalf2)
+    case 3 => slices(TTT)
+    case _ => slices(QuarterQuarterQuarterQuarter,
+      TlTlTl,
+      TlTlTl,
+      TlTlTl,
+      TlTlTl,
+      TlTlTl,
+      TlTlTl,
+      TlTlMpu)
+  }
 
   val tagPage = slices(
     HalfQQ,
@@ -47,12 +51,15 @@ object FixedContainers {
   val fixedSmallSlowII = slices(HalfHalf)
   val fixedSmallSlowIV = slices(QuarterQuarterQuarterQuarter)
   val fixedSmallSlowVI = slices(TTTL4)
+  val fixedSmallSlowVThird = slices(QuarterQuarterHl3)
   val fixedMediumSlowVI = slices(ThreeQuarterQuarter, QuarterQuarterQuarterQuarter)
   val fixedMediumSlowVII = slices(HalfQQ, QuarterQuarterQuarterQuarter)
-  val fixedMediumSlowVIII = slices(TTMpu, TlTlTl)
-  val fixedMediumSlowXIIMpu = slices(TTT, TlTlMpu)
+  val fixedMediumSlowVIII = slices(Seq(TTMpu, TlTlTl), slicesWithoutMpu = Seq(TTT, TlTlTl))
+  val fixedMediumSlowXIIMpu = slices(Seq(TTT, TlTlMpu), slicesWithoutMpu = Seq(TTT, TlTlTl))
   val fixedMediumFastXI = slices(HalfQQ, Ql2Ql2Ql2Ql2)
   val fixedMediumFastXII = slices(QuarterQuarterQuarterQuarter, Ql2Ql2Ql2Ql2)
+
+  val frontsOnArticles = slices(QuarterQuarterQlQl)
 
   val fastIndexPageMpuII = slices(TTMpu)
   val fastIndexPageMpuIV = slices(TTlMpu)
@@ -73,23 +80,19 @@ object FixedContainers {
 
   val all: Map[String, ContainerDefinition] = Map(
     ("fixed/small/slow-I", slices(FullMedia75)),
-    ("fixed/small/slow-II", slices(HalfHalf)),
     ("fixed/small/slow-III", slices(HalfQQ)),
     ("fixed/small/slow-IV", fixedSmallSlowIV),
     ("fixed/small/slow-V-half", slices(Hl4Half)),
-    ("fixed/small/slow-V-third", slices(QuarterQuarterHl3)),
-    ("fixed/small/slow-V-mpu", slices(TTlMpu)),
-    ("fixed/small/slow-VI", fixedSmallSlowVI),
+    ("fixed/small/slow-V-third", fixedSmallSlowVThird),
+    ("fixed/small/slow-V-mpu", slices(Seq(TTlMpu),
+      slicesWithoutMpu = Seq(QuarterQuarterQuarterQuarter))),
     ("fixed/small/fast-VIII", slices(QuarterQuarterQlQl)),
-    ("fixed/small/fast-X", slices(QuarterQlQlQl)),
     ("fixed/medium/slow-VI", fixedMediumSlowVI),
     ("fixed/medium/slow-VII", fixedMediumSlowVII),
-    ("fixed/medium/slow-VIII", fixedMediumSlowVIII),
     ("fixed/medium/slow-XII-mpu", fixedMediumSlowXIIMpu),
     ("fixed/medium/fast-XI", fixedMediumFastXI),
     ("fixed/medium/fast-XII", fixedMediumFastXII),
     ("fixed/large/slow-XIV", slices(ThreeQuarterQuarter, QuarterQuarterQuarterQuarter, Ql2Ql2Ql2Ql2)),
-    ("fixed/large/fast-XV", slices(HalfQQ, Ql3Ql3Ql3Ql3)),
     ("fixed/thrasher", thrasher)
   ) ++ (if (Configuration.faciatool.showTestContainers) Map(
     ("all-items/not-for-production", slices(FullMedia100, FullMedia75, FullMedia50, HalfHalf, QuarterThreeQuarter, ThreeQuarterQuarter, Hl4Half, HalfQuarterQl2Ql4, TTTL4, Ql3Ql3Ql3Ql3))
@@ -103,14 +106,15 @@ object DynamicContainers {
   val all: Map[String, DynamicContainer] = Map(
     ("dynamic/fast", DynamicFast),
     ("dynamic/slow", DynamicSlow),
-    ("dynamic/package", DynamicPackage)
+    ("dynamic/package", DynamicPackage),
+    ("dynamic/slow-mpu", DynamicSlowMPU(omitMPU = false))
   )
 
-  def apply(collectionType: Option[String], items: Seq[Content]): Option[ContainerDefinition] = {
+  def apply(collectionType: Option[String], items: Seq[PressedContent]): Option[ContainerDefinition] = {
     for {
       typ <- collectionType
       dynamicContainer <- all.get(typ)
-      definition <- dynamicContainer.containerDefinitionFor(items.map(Story.fromContent))
+      definition <- dynamicContainer.containerDefinitionFor(items.map(Story.fromFaciaContent))
     } yield definition
   }
 }

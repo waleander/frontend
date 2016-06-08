@@ -1,9 +1,10 @@
 package common.editions
 
+import java.util.Locale
+
 import common.editions.Uk._
 import org.joda.time.DateTimeZone
 import common._
-import contentapi.QueryDefaults
 import common.NavItem
 
 //This object exists to be used with ItemTrailblockDescription and is not a real edition like the others.
@@ -13,9 +14,9 @@ object Au extends Edition(
   id = "AU",
   displayName = "Australia edition",
   DateTimeZone.forID("Australia/Sydney"),
-  lang = "en-au"
-)
-  with QueryDefaults {
+  locale = Locale.forLanguageTag("en-au"),
+  networkFrontId = "au"
+) {
 
   implicit val AU = Au
 
@@ -35,6 +36,7 @@ object Au extends Edition(
   override val navigation: Seq[NavItem] = {
     Seq(
       NavItem(home),
+      NavItem(auElection2016),
       NavItem(australia),
       NavItem(world, Seq(uk, us, asia, europeNews, americas, africa, middleEast)),
       NavItem(opinion),
@@ -45,17 +47,18 @@ object Au extends Edition(
       NavItem(lifeandstyle, Seq(foodanddrink, healthandwellbeing, loveAndSex, family, women)),
       NavItem(fashion),
       NavItem(economy, economyLocalNav),
-      NavItem(travel, Seq(australasiaTravel, asiaTravel, uktravel, europetravel, usTravel)),
+      NavItem(travel, Seq(australasiaTravel, asiaTravel, uktravel, europetravel, usTravel, skiingTravel)),
       NavItem(media),
-      NavItem(environment, Seq(cities, globalDevelopment)),
+      NavItem(environment, Seq(cities, globalDevelopment, ausustainablebusiness)),
       NavItem(science),
-      NavItem(crosswords),
+      NavItem(crosswords, crosswordsLocalNav),
       NavItem(video)
     )
   }
 
   override val briefNav: Seq[NavItem] = Seq(
     NavItem(home),
+    NavItem(auElection2016),
     NavItem(australia),
     NavItem(world, Seq(uk, us, asia, europeNews, americas, africa, middleEast)),
     NavItem(opinion),
@@ -65,9 +68,10 @@ object Au extends Edition(
     NavItem(culture, cultureLocalNav),
     NavItem(lifeandstyle, Seq(foodanddrink, healthandwellbeing, loveAndSex, family, women)),
     NavItem(fashion),
-    NavItem(economy, economyLocalNav),
-    NavItem(travel, Seq(australasiaTravel, asiaTravel, uktravel, europetravel, usTravel)),
+    // add back when the AU election is over
+    // NavItem(economy, economyLocalNav),
+    // NavItem(travel, Seq(australasiaTravel, asiaTravel, uktravel, europetravel, usTravel)),
     NavItem(media),
-    NavItem(environment, Seq(cities, globalDevelopment))
+    NavItem(environment, Seq(cities, globalDevelopment, ausustainablebusiness))
   )
 }

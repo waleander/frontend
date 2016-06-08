@@ -1,11 +1,10 @@
-/* global videojs, guardian */
+/* global guardian */
 define([
     'bean',
     'bonzo',
     'qwery',
     'videojs',
     'videojsembed',
-    'common/utils/_',
     'common/utils/$',
     'common/utils/config',
     'common/utils/defer-to-analytics',
@@ -17,14 +16,15 @@ define([
     'common/modules/video/fullscreener',
     'common/views/svgs',
     'text!common/views/ui/loading.html',
-    'text!common/views/media/titlebar.html'
+    'text!common/views/media/titlebar.html',
+    'lodash/functions/debounce',
+    'common/modules/video/videojs-options'
 ], function (
     bean,
     bonzo,
     qwery,
     videojs,
     videojsembed,
-    _,
     $,
     config,
     deferToAnalytics,
@@ -36,8 +36,10 @@ define([
     fullscreener,
     svgs,
     loadingTmpl,
-    titlebarTmpl
-    ) {
+    titlebarTmpl,
+    debounce,
+    videojsOptions
+) {
 
     function initLoadingSpinner(player) {
         player.loadingSpinner.contentEl().innerHTML = loadingTmpl;
@@ -114,7 +116,7 @@ define([
 
             bonzo(el).addClass('vjs');
 
-            player = createVideoPlayer(el, {
+            player = createVideoPlayer(el, videojsOptions({
                 controls: true,
                 autoplay: !!window.location.hash && window.location.hash === '#autoplay',
                 preload: 'metadata', // preload='none' & autoplay breaks ad loading on chrome35
@@ -124,7 +126,7 @@ define([
                         location: 'https://embed.theguardian.com/embed/video/' + guardian.config.page.pageId
                     }
                 }
-            });
+            }));
 
             //Location of this is important
             events.handleInitialMediaError(player);
@@ -154,11 +156,10 @@ define([
                         events.bindContentEvents(player);
                     });
 
-                    omniture.go();
                 }
             });
 
-            mouseMoveIdle = _.debounce(function () { player.removeClass('vjs-mousemoved'); }, 500);
+            mouseMoveIdle = debounce(function () { player.removeClass('vjs-mousemoved'); }, 500);
 
             // built in vjs-user-active is buggy so using custom implementation
             player.on('mousemove', function () {

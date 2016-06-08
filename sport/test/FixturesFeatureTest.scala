@@ -23,9 +23,6 @@ import tools.MatchListFeatureTools
 
         And("I should not see today's live matches")
         assertNotFixture(matches, "Arsenal", "Spurs")
-
-        And("Team form should be shown with matches")
-        $(".football-team__form").size() should be($(".football-match__team").size())
       }
     }
 
@@ -36,7 +33,7 @@ import tools.MatchListFeatureTools
 
         When("I click the 'Next' fixtures link")
 
-        findFirst("[data-link-name=next]").click()
+        scrollToElementAndClick("[data-link-name=next]", browser)
 
         Then("I should see the next set of upcoming matches")
         val matches = $(".football-teams")

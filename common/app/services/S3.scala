@@ -1,25 +1,23 @@
 package services
 
-import com.gu.googleauth.UserIdentity
-import com.gu.pandomainauth.model.User
-import conf.{Switches, Configuration}
-import common.Logging
-import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.s3.model._
-import com.amazonaws.services.s3.model.CannedAccessControlList.{Private, PublicRead}
-import com.amazonaws.util.StringInputStream
-import scala.io.{Codec, Source}
-import org.joda.time.DateTime
-import play.Play
-import play.api.libs.ws.{WSRequestHolder, WS}
+import java.io._
+import java.util.zip.GZIPOutputStream
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import sun.misc.BASE64Encoder
+
 import com.amazonaws.auth.AWSSessionCredentials
-import common.S3Metrics.S3ClientExceptionsMetric
-import com.gu.googleauth.UserIdentity
-import java.util.zip.GZIPOutputStream
-import java.io._
+import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.model.CannedAccessControlList.{Private, PublicRead}
+import com.amazonaws.services.s3.model._
+import com.amazonaws.util.StringInputStream
+import common.Logging
+import conf.Configuration
+import org.joda.time.DateTime
+import play.Play
+import play.api.libs.ws.{WS, WSRequest}
+import sun.misc.BASE64Encoder
+
+import scala.io.{Codec, Source}
 
 trait S3 extends Logging {
 
@@ -36,6 +34,7 @@ trait S3 extends Logging {
 
       val request = new GetObjectRequest(bucket, key)
       val result = client.getObject(request)
+      log.info(s"S3 got ${result.getObjectMetadata.getContentLength} bytes from ${result.getKey}")
 
       // http://stackoverflow.com/questions/17782937/connectionpooltimeoutexception-when-iterating-objects-in-s3
       try {
@@ -43,7 +42,6 @@ trait S3 extends Logging {
       }
       catch {
         case e: Exception =>
-          S3ClientExceptionsMetric.increment()
           throw e
       }
       finally {
@@ -55,7 +53,6 @@ trait S3 extends Logging {
         None
       }
       case e: Exception => {
-        S3ClientExceptionsMetric.increment()
         throw e
       }
     }
@@ -113,7 +110,6 @@ trait S3 extends Logging {
       client.foreach(_.putObject(request))
     } catch {
       case e: Exception =>
-        S3ClientExceptionsMetric.increment()
         throw e
     }
   }
@@ -130,7 +126,6 @@ trait S3 extends Logging {
       client.foreach(_.putObject(request))
     } catch {
       case e: Exception =>
-        S3ClientExceptionsMetric.increment()
         throw e
     }
   }
@@ -157,45 +152,6 @@ object S3FrontsApi extends S3 {
   def getDraftFapiPressedKeyForPath(path: String): String =
     s"$location/pressed/draft/$path/fapi/pressed.json"
 
-  def getSchema = get(s"$location/schema.json")
-  def getMasterConfig: Option[String] = get(s"$location/config/config.json")
-  def getBlock(id: String) = get(s"$location/collection/$id/collection.json")
-  def listConfigsIds: List[String] = getConfigIds(s"$location/config/")
-  def listCollectionIds: List[String] = getCollectionIds(s"$location/collection/")
-  def putCollectionJson(id: String, json: String) = {
-    val putLocation: String = s"$location/collection/$id/collection.json"
-    if (Switches.FaciaToolPutPrivate.isSwitchedOn) {
-      putPrivate(putLocation, json, "application/json")}
-    else {
-      putPublic(putLocation, json, "application/json")}}
-
-  def archive(id: String, json: String, identity: User) = {
-    val now = DateTime.now
-    putPrivate(s"$location/history/collection/${now.year.get}/${"%02d".format(now.monthOfYear.get)}/${"%02d".format(now.dayOfMonth.get)}/$id/${now}.${identity.email}.json", json, "application/json")
-  }
-
-  def putMasterConfig(json: String) =
-    putPublic(s"$location/config/config.json", json, "application/json")
-
-  def archiveMasterConfig(json: String, identity: User) = {
-    val now = DateTime.now
-    putPublic(s"$location/history/config/${now.year.get}/${"%02d".format(now.monthOfYear.get)}/${"%02d".format(now.dayOfMonth.get)}/${now}.${identity.email}.json", json, "application/json")
-  }
-
-  private def getListing(prefix: String, dropText: String): List[String] = {
-    import scala.collection.JavaConversions._
-    val summaries = client.map(_.listObjects(bucket, prefix).getObjectSummaries.toList).getOrElse(Nil)
-    summaries
-      .map(_.getKey.split(prefix))
-      .filter(_.nonEmpty)
-      .map(_.last)
-      .filterNot(_.endsWith("/"))
-      .map(_.split(dropText).head)
-  }
-
-  def getConfigIds(prefix: String): List[String] = getListing(prefix, "/config.json")
-  def getCollectionIds(prefix: String): List[String] = getListing(prefix, "/collection.json")
-
   def putLivePressedJson(path: String, json: String) =
     putPrivateGzipped(getLivePressedKeyForPath(path), json, "application/json")
 
@@ -209,10 +165,7 @@ object S3FrontsApi extends S3 {
     putPrivateGzipped(getDraftFapiPressedKeyForPath(path), json, "application/json")
 
   def getPressedLastModified(path: String): Option[String] =
-      if (Switches.FaciaServerNewFormat.isSwitchedOn)
-        getLastModified(getLiveFapiPressedKeyForPath(path)).map(_.toString)
-      else
-        getLastModified(getLivePressedKeyForPath(path)).map(_.toString)
+    getLastModified(getLiveFapiPressedKeyForPath(path)).map(_.toString)
 }
 
 trait SecureS3Request extends implicits.Dates with Logging {
@@ -221,9 +174,9 @@ trait SecureS3Request extends implicits.Dates with Logging {
   val frontendBucket: String = Configuration.aws.bucket
   val frontendStore: String = Configuration.frontend.store
 
-  def urlGet(id: String): WSRequestHolder = url("GET", id)
+  def urlGet(id: String): WSRequest = url("GET", id)
 
-  private def url(httpVerb: String, id: String): WSRequestHolder = {
+  private def url(httpVerb: String, id: String): WSRequest = {
 
     val headers = Configuration.aws.credentials.map(_.getCredentials).map{ credentials =>
       val sessionTokenHeaders: Seq[(String, String)] = credentials match {
@@ -273,7 +226,7 @@ trait SecureS3Request extends implicits.Dates with Logging {
 object SecureS3Request extends SecureS3Request
 
 object S3Archive extends S3 {
- override lazy val bucket = "aws-frontend-archive"
+ override lazy val bucket = if (Configuration.environment.isNonProd) "aws-frontend-archive-code" else "aws-frontend-archive"
  def getHtml(path: String) = get(path)
 }
 
@@ -281,4 +234,8 @@ object S3Infosec extends S3 {
   override lazy val bucket = "aws-frontend-infosec"
   val key = "blocked-email-domains.txt"
   def getBlockedEmailDomains = get(key)
+}
+
+object S3ArchiveOriginals extends S3 {
+  override lazy val bucket = if (Configuration.environment.isNonProd) "aws-frontend-archive-code-originals" else "aws-frontend-archive-originals"
 }

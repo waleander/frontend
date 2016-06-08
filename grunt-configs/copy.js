@@ -1,20 +1,20 @@
-module.exports = function(grunt, options) {
+module.exports = function (grunt, options) {
     return {
         'javascript': {
             files: [
                 {
                     expand: true,
-                    cwd: 'static/public/javascripts/components',
+                    cwd: 'static/public/javascripts',
                     src: ['**/*.js'],
-                    dest: options.staticTargetDir + 'javascripts/components'
+                    dest: options.staticTargetDir + 'javascripts'
                 },
                 {
                     expand: true,
                     cwd: 'static/src/javascripts/vendor',
                     src: [
-                        'formstack-interactive/0.1/boot.js',
-                        'vast-client.js',
-                        'stripe/stripe.min.js'
+                        'formstack-interactive/**/*',
+                        'prebid/**/*',
+                        'stripe/**/*'
                     ],
                     dest: options.staticTargetDir + 'javascripts/vendor'
                 },
@@ -22,33 +22,11 @@ module.exports = function(grunt, options) {
                     expand: true,
                     cwd: 'static/src/javascripts/vendor',
                     src: [
-                        '**/*'
+                        'foresee/**/*'
                     ],
                     dest: options.staticHashDir + 'javascripts/vendor'
-                },
-                {
-                    expand: true,
-                    cwd: options.requirejsDir,
-                    src: [
-                        'core.js',
-                        'core.js.map',
-                        'bootstraps/app.js',
-                        'bootstraps/app.js.map',
-                        'bootstraps/commercial.js',
-                        'bootstraps/commercial.js.map',
-                        'components/curl/curl-domReady.js'
-                    ],
-                    dest: options.staticTargetDir + 'javascripts'
                 }
             ]
-        },
-        css: {
-            files: [{
-                expand: true,
-                cwd: 'static/src/stylesheets',
-                src: ['**/*.scss'],
-                dest: options.staticTargetDir + 'stylesheets'
-            }]
         },
         images: {
             files: [{
@@ -66,12 +44,13 @@ module.exports = function(grunt, options) {
                 dest: options.staticTargetDir + 'flash'
             }]
         },
-        headCss: {
+        inlineCss: {
             files: [{
                 expand: true,
                 cwd: options.staticTargetDir + 'stylesheets',
-                src: ['**/head*.css'],
-                dest: 'common/conf/assets'
+                src: ['**/head*.css', 'inline/**/*.css'],
+                flatten: true,
+                dest: 'common/conf/assets/inline-stylesheets'
             }]
         },
         headJs: {
@@ -84,9 +63,9 @@ module.exports = function(grunt, options) {
                 }
             ]
         },
-        // assets.map must go where Play can find it from resources at runtime.
+        // asset maps must go where Play can find it from resources at runtime.
         // Everything else goes into frontend-static bundling.
-        assetMap: {
+        assetMaps: {
             files: [{
                 expand: true,
                 cwd: options.staticHashDir + 'assets',

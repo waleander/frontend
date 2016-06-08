@@ -1,17 +1,20 @@
 define([
-    'common/utils/_',
-    'common/utils/$',
+    'bonzo',
     'common/utils/config',
-    'common/utils/template',
-    'text!common/views/commercial/ad-slot.html'
+    'lodash/collections/map',
+    'lodash/objects/assign',
+    'lodash/objects/isArray',
+    'lodash/objects/transform'
 ], function (
-    _,
     $,
     config,
-    template,
-    adSlotTpl
+    map,
+    assign,
+    isArray,
+    transform
 ) {
-
+    var fabricTopSlot = '88,71';
+    var fluidSlot = config.switches.fluidAdverts ? '|fluid' : '';
     var adSlotDefinitions = {
         right: {
             sizeMappings: {
@@ -39,22 +42,22 @@ define([
         },
         inline1: {
             sizeMappings: {
-                mobile:             '1,1|300,50|300,250',
-                'mobile-landscape': '1,1|300,50|320,50|300,250',
+                mobile:             '1,1|300,250|' + fabricTopSlot + fluidSlot,
+                'mobile-landscape': '1,1|300,250|' + fabricTopSlot + fluidSlot,
+                tablet:             '1,1|300,250' + fluidSlot
+            }
+        },
+        inline: {
+            sizeMappings: {
+                mobile:             '1,1|300,250',
+                'mobile-landscape': '1,1|300,250',
                 tablet:             '1,1|300,250'
             }
         },
-        inline2: {
+        mostpop: {
             sizeMappings: {
-                mobile:             '1,1|300,50',
-                'mobile-landscape': '1,1|300,50|320,50',
-                tablet:             '1,1|300,250'
-            }
-        },
-        inline3: {
-            sizeMappings: {
-                mobile:             '1,1|300,50',
-                'mobile-landscape': '1,1|300,50|320,50',
+                mobile:             '1,1|300,250',
+                'mobile-landscape': '1,1|300,250',
                 tablet:             '1,1|300,250'
             }
         },
@@ -90,52 +93,79 @@ define([
             sizeMappings: {
                 mobile:  '1,1|300,250'
             }
+        },
+        'top-above-nav': {
+            sizeMappings: {
+                desktop: '1,1|88,70|728,90|940,230|900,250|970,250|' + fabricTopSlot
+            }
         }
     };
 
-    return function (name, types, series, keywords, slotTarget) {
-        var attrName,
-            slotName = slotTarget ? slotTarget : name,
+    function createAdSlotElement(name, attrs, classes) {
+        return $(document.createElement('div'))
+            .attr({
+                'id': 'dfp-ad--' + name,
+                'data-link-name': 'ad slot ' + name,
+                'data-test-id': 'ad-slot-' + name,
+                'data-name': name
+            })
+            .attr(attrs)
+            .addClass('js-ad-slot ad-slot ad-slot--dfp ' + classes.join(' '));
+
+    }
+
+    return function (name, slotTypes, series, keywords, slotTarget) {
+        var slotName = slotTarget ? slotTarget : name,
+            attributes = {},
             definition,
-            dataAttrs,
+            classes = [],
             $adSlot;
 
-        definition = (slotName.match(/^inline-extra/)) ? adSlotDefinitions.inline1 : adSlotDefinitions[slotName];
+        definition = adSlotDefinitions[slotName] || adSlotDefinitions.inline;
+        name = definition.name || name;
+
         if (config.page.hasPageSkin && slotName === 'merchandising-high') {
             definition.sizeMappings.wide = '1,1';
         }
-        dataAttrs  = {
-            label:   definition.label !== undefined ? definition.label : true,
-            refresh: definition.refresh !== undefined ? definition.refresh : true
-        };
-        $adSlot = $.create(template(
-            adSlotTpl,
-            {
-                name: definition.name || name,
-                // badges now append their index to the name
-                normalisedName: (definition.name || name).replace(/((?:ad|fo|sp)badge).*/, '$1'),
-                types: types ? _.map((_.isArray(types) ? types : [types]), function (type) {
-                    return ' ad-slot--' + type;
-                }).join('') : '',
-                sizeMappings: _.map(_.pairs(definition.sizeMappings), function (size) {
-                    return ' data-' + size[0] + '="' + size[1] + '"';
-                }).join('')
-            })
-        );
-        for (attrName in dataAttrs) {
-            if (dataAttrs[attrName] === false) {
-                $adSlot.attr('data-' + attrName, 'false');
-            }
+
+        assign(attributes, definition.sizeMappings);
+
+        if (definition.label === false) {
+            attributes.label = 'false';
         }
+
+        if (definition.refresh === false) {
+            attributes.refresh = 'false';
+        }
+
         if (slotTarget) {
-            $adSlot.attr('data-slot-target', slotTarget);
+            attributes['slot-target'] = slotTarget;
         }
+
         if (series) {
-            $adSlot.attr('data-series', series);
+            attributes.series = series;
         }
+
         if (keywords) {
-            $adSlot.attr('data-keywords', keywords);
+            attributes.keywords = keywords;
         }
+
+        if (slotTypes) {
+            classes = map((isArray(slotTypes) ? slotTypes : [slotTypes]), function (type) {
+                return 'ad-slot--' + type;
+            });
+        }
+
+        classes.push('ad-slot--' + name.replace(/((?:ad|fo|sp)badge).*/, '$1'));
+
+        $adSlot = createAdSlotElement(
+            name,
+            transform(attributes, function (result, size, key) {
+                result['data-' + key] = size;
+            }, {}),
+            classes
+        );
+
         return $adSlot[0];
     };
 

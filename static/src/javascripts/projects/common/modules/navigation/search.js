@@ -1,21 +1,24 @@
 define([
     'bean',
     'fastdom',
-    'common/utils/_',
     'common/utils/$',
-    'common/utils/config'
+    'common/utils/config',
+    'common/utils/detect',
+    'common/utils/mediator',
+    'lodash/functions/throttle'
 ], function (
     bean,
     fastdom,
-    _,
     $,
-    config
+    config,
+    detect,
+    mediator,
+    throttle
 ) {
 
     var Search = function () {
 
         var searchLoader,
-            enabled,
             gcsUrl,
             resultSetSize,
             container,
@@ -23,18 +26,36 @@ define([
 
         if (config.switches.googleSearch && config.page.googleSearchUrl && config.page.googleSearchId) {
 
-            enabled = true;
             gcsUrl = config.page.googleSearchUrl + '?cx=' + config.page.googleSearchId;
             resultSetSize = config.page.section === 'identity' ? 3 : 10;
 
-            searchLoader = _.throttle(function () {
+            searchLoader = throttle(function () {
                 self.load();
             });
 
             bean.on(document, 'click', '.js-search-toggle', function (e) {
                 searchLoader();
+
+                // Make sure search is always in the correct state
+                self.checkResults();
                 self.focusSearchField();
                 e.preventDefault();
+                mediator.emit('modules:search');
+            });
+
+            bean.on(document, 'keydown', '.gsc-input', function () {
+                fastdom.read(function () {
+                    var $autoCompleteObject = $('.gssb_c'),
+                        searchFromTop       = $autoCompleteObject.css('top'),
+                        windowOffset        = $(window).scrollTop();
+
+                    fastdom.write(function () {
+                        $autoCompleteObject.css({
+                            'top': parseInt(searchFromTop, 10) + windowOffset,
+                            'z-index': '1030'
+                        });
+                    });
+                });
             });
 
             bean.on(document, 'click', '.search-results', function (e) {
@@ -53,7 +74,6 @@ define([
         };
 
         this.load = function () {
-            /* jscs:disable disallowDanglingUnderscores */
             var s,
                 x;
 
@@ -82,7 +102,7 @@ define([
                             '<gcse:searchbox></gcse:searchbox>' +
                         '</div>' +
                         '<div class="search-results" data-link-name="search">' +
-                            '<gcse:searchresults webSearchResultSetSize="' + resultSetSize + '"></gcse:searchresults>' +
+                            '<gcse:searchresults webSearchResultSetSize="' + resultSetSize + '" linkTarget="_self"></gcse:searchresults>' +
                         '</div>';
                 });
 

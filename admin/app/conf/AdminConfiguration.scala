@@ -1,7 +1,7 @@
 package conf
 
 import com.gu.conf.ConfigurationFactory
-import conf.Configuration.OAuthCredentials
+import conf.Configuration.OAuthCredentialsWithMultipleCallbacks
 
 case class OmnitureCredentials(userName: String, secret: String)
 
@@ -21,12 +21,15 @@ object AdminConfiguration {
     lazy val cricketExplorer = "http://developer.press.net/io-docs"
   }
 
-  lazy val configKey = configuration.getStringProperty("admin.config.file").getOrElse(throw new RuntimeException("Config file name is not setup"))
-  lazy val switchesKey = configuration.getStringProperty("switches.file").getOrElse(throw new RuntimeException("Switches file name is not setup"))
   lazy val topStoriesKey = configuration.getStringProperty("top-stories.config").getOrElse(throw new RuntimeException("Top Stories file name is not setup"))
 
   object fastly {
     lazy val key = configuration.getStringProperty("fastly.key").getOrElse(throw new RuntimeException("Fastly key not configured"))
+    lazy val serviceId = configuration.getStringProperty("fastly.serviceId").getOrElse(throw new RuntimeException("Fastly service id not configured"))
+  }
+
+  object imgix {
+    lazy val key = configuration.getStringProperty("imgix.key").getOrElse(throw new RuntimeException("Imgix key not configured"))
   }
 
   object dfpApi {
@@ -36,12 +39,11 @@ object AdminConfiguration {
     lazy val appName = configuration.getStringProperty("api.dfp.applicationName")
   }
 
-  lazy val oauthCredentials: Option[OAuthCredentials] =
+  lazy val oauthCredentials: Option[OAuthCredentialsWithMultipleCallbacks] =
       for {
         oauthClientId <- configuration.getStringProperty("admin.oauth.clientid")
         oauthSecret <- configuration.getStringProperty("admin.oauth.secret")
-        oauthCallback <- configuration.getStringProperty("admin.oauth.callback")
-      } yield OAuthCredentials(oauthClientId, oauthSecret, oauthCallback)
+      } yield OAuthCredentialsWithMultipleCallbacks(oauthClientId, oauthSecret, configuration.getStringPropertiesSplitByComma("admin.oauth.callbacks"))
 
   lazy val omnitureCredentials: Option[OmnitureCredentials] =
     for {

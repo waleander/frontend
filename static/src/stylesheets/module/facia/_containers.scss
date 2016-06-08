@@ -1,3 +1,5 @@
+@import 'container--video';
+
 .fc-container--first {
     margin-top: 0;
     padding-top: 0;
@@ -12,7 +14,7 @@
 
     @include mq(leftCol) {
         .fc-container__header__title {
-            border-top: 1px solid colour(news-accent);
+            border-top: 1px solid $news-accent;
             padding-top: $gs-baseline / 4;
         }
 
@@ -38,7 +40,8 @@
 }
 
 .fc-container--outbrain {
-    background-color: colour(neutral-8);
+    background-color: $neutral-8;
+    display: none;
 }
 
 .fc-container--thrasher {
@@ -46,7 +49,7 @@
     margin-top: 0;
     margin-bottom: $gs-baseline * 2;
     padding-bottom: 0;
-    background: colour(neutral-7);
+    background: $neutral-7;
 
     .fc-container__inner {
         border-top: 0;
@@ -92,11 +95,6 @@
 
     .fc-item {
         margin: 0;
-        overflow: auto;
         width: 100%;
-    }
-
-    .ipad-no-thrashers & {
-        display: none;
     }
 }

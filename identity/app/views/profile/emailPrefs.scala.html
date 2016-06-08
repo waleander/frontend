@@ -1,4 +1,4 @@
-@(page: model.MetaData, emailPrefsForm: Form[EmailPrefsData], formActionUrl: String, emailSubscriptions: EmailSubscriptions)(implicit request: RequestHeader)
+@(page: model.Page, emailPrefsForm: Form[EmailPrefsData], formActionUrl: String, emailSubscriptions: EmailSubscriptions)(implicit request: RequestHeader, messages: play.api.i18n.Messages)
 
 @import views.html.fragments.form.{checkboxField, radioField}
 @import form.IdFormHelpers._
@@ -13,7 +13,9 @@
                 "email-subscription--first" -> row.isFirst))">
                 @if(subscription.subscribedTo){<input type="hidden" name="emailSubscription[@row.rowNum]" value="@subscription.listId" />}
                 <div class="email-subscription__name">@subscription.name</div>
-                <div class="email-subscription__description">@subscription.description</div>
+
+                <div class="email-subscription__description">@subscription.description @if(subscription.exampleUrl.isDefined){<br><a href="@subscription.exampleUrl" target="preview-email-@subscription.listId">See the latest email</a>}</div>
+
                 <div class="email-subscription__meta u-cf">
                     <button class="email-subscription__button"
                             data-link-name="@if(subscription.subscribedTo){Unsubscribe}else{Subscribe} to @subscription.name"
@@ -22,7 +24,10 @@
                             value="@if(subscription.subscribedTo){unsubscribe-}@subscription.listId">
                         @if(subscription.subscribedTo){Unsubscribe}else{Subscribe}
                     </button>
-                    <div class="email-subscription__frequency"><i class="i i-clock-light-grey"></i>@subscription.frequency</div>
+                    <div class="email-subscription__frequency">
+                        @fragments.inlineSvg("clock", "icon", List("inline-icon--light-grey"))
+                        @subscription.frequency
+                    </div>
                 </div>
             </div>
         }
@@ -39,7 +44,7 @@
               <div class="form__error">@emailPrefsForm.globalErrors.map(_.message).mkString(", ")</div>
             }
             <div class="email-subscriptions">
-                @List("news", "sport", "culture", "lifestyle", "comment").zipWithIndex.map { case(theme, index) =>
+                @List("news", "sport", "culture", "lifestyle", "comment", "guardian favourites").zipWithIndex.map { case(theme, index) =>
                   @emailListCategoryList(theme, emailSubscriptions.subscriptions.filter(_.theme == theme), index == 0)
                 }
             </div>
@@ -61,18 +66,7 @@
                                 We recommend HTML emails.
                             </div>
 
-                            @radioField(emailPrefsForm("htmlPreference"), List("HTML" -> "HTML (images and text)", "Text" -> "Text"))(nonInputFields)
-
-                        </li>
-
-                        <li class="form-field @if((emailPrefsForm("statusFields.receiveGnmMarketing").errors ++ emailPrefsForm("statusFields.receive3rdPartyMarketing").errors).nonEmpty) {form-field--error}">
-                            <label class="label">Would you like to receive information from the Guardian and their partners?</label>
-                            <div class="form-field__note">The Guardian and their partners would like to occasionally send you information about their products, services and events.</div>
-
-                            <div class="form-fields-group">
-                                @checkboxField(Checkbox(emailPrefsForm("statusFields.receiveGnmMarketing"), '_label -> "Receive email from Guardian News and Media Ltd."))(nonInputFields)
-                                @checkboxField(Checkbox(emailPrefsForm("statusFields.receive3rdPartyMarketing"), '_label -> "Receive email from other organisations"))(nonInputFields)
-                            </div>
+                            @radioField(emailPrefsForm("htmlPreference"), List("HTML" -> "HTML (images and text)", "Text" -> "Text"))(nonInputFields, messages)
 
                         </li>
 
@@ -84,6 +78,9 @@
                 </div>
 
             </fieldset>
+            <ul class="nav nav--registration identity-section" data-link-name="Email prefs footer">
+                <li class="nav__item"><a class="nav__link" href="@controllers.routes.EditProfileController.displayPrivacyForm" data-link-name="Privacy and marketing settings">Privacy &amp; marketing settings</a></li>
+            </ul>
 
         </form>
     </div>

@@ -1,26 +1,21 @@
 package controllers
 
-import common.ExecutionContexts
-import model.Cached
-import play.api.mvc.{Action, Controller}
+import common.{JsonComponent, Edition, ExecutionContexts, Logging}
+import conf.Static
+import model.Cached.RevalidatableResult
+import model._
+import play.api.mvc.{Action, Controller, RequestHeader, Result}
+import play.api.libs.json.{JsArray, JsString, JsObject}
 
-object WebAppController extends Controller with ExecutionContexts {
+import scala.concurrent.Future
+
+object WebAppController extends Controller with ExecutionContexts with Logging {
 
   def serviceWorker() = Action { implicit request =>
-    Cached(3600) {
-      conf.Switches.NotificationsSwitch.isSwitchedOn match {
-        case true => Ok(templates.js.serviceWorker())
-        case false => NotFound
-      }
-    }
+    Cached(60) { RevalidatableResult.Ok(templates.js.serviceWorker()) }
   }
 
-  def manifest() = Action {
-    Cached(3600) {
-      conf.Switches.NotificationsSwitch.isSwitchedOn match {
-        case true => Ok(templates.js.webAppManifest())
-        case false => NotFound
-      }
-    }
+  def manifest() = Action { implicit request =>
+    Cached(3600) { RevalidatableResult.Ok(templates.js.webAppManifest()) }
   }
 }

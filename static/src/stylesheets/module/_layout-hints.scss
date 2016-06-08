@@ -19,13 +19,13 @@
 }
 
 @mixin pull-quote {
+    @include fs-headline(4);
     float: left;
     margin-top: 0;
     margin-right: 24px;
-    @include fs-headline(4);
     font-weight: 200;
     font-style: normal;
-    color: colour(neutral-2);
+    color: $neutral-2;
 
     @if ($svg-support) {
         &:before {
@@ -156,10 +156,10 @@ figure {
 }
 
 // Articles can have the feature tone applied, but it's not always primary tone
-.has-feature-showcase-picture .media-primary.media-primary--showcase {
+.has-feature-showcase-element .media-primary.media-primary--showcase {
     margin-left: 0;
     margin-right: 0;
-    z-index: 2; // Put the image on top of the left and right layout borders
+    z-index: 2; // Put the showcase element on top of the left and right layout borders
     position: relative;
 
     @include mq(leftCol) {

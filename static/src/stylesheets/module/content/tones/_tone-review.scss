@@ -2,17 +2,17 @@
 
 @include tone-content(
     review, // $tone
-    darken(colour(review-background), 10%), // $tonal__header-background
-    colour(neutral-6), // $tonal__header-text
-    colour(review-accent), // $tonal__header-link
+    darken($review-background, 10%), // $tonal__header-background
+    $neutral-6, // $tonal__header-text
+    $review-accent, // $tonal__header-link
     200, // $tonal__headline-weight
     #ffffff, // $tonal__headline-colour
-    colour(review-accent), // $tonal__headline-accent
-    colour(review-background), // $tonal__standfirst-background
+    $review-accent, // $tonal__headline-accent
+    $review-background, // $tonal__standfirst-background
     #ffffff, // $tonal__standfirst-text
     #ffffff, // $tonal__standfirst-link
     #ffffff, // $tonal__article-background
-    darken(colour(review-background), 10%) // $tonal__article-link
+    darken($review-background, 10%) // $tonal__article-link
 );
 
 .tonal--tone-review {
@@ -20,7 +20,7 @@
     @include stars($width: 18px, $margin-top: -($gs-baseline * 1.5), $margin-bottom: $gs-baseline * 1.5, $margin-right: 2px);
 
     .stars {
-        @include mq(tablet) {
+        @include mq(leftCol) {
             margin-top: -($gs-baseline * 2.5);
         }
     }

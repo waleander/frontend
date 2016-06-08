@@ -1,53 +1,35 @@
 package services
 
-import com.gu.facia.api.models._
+import com.gu.contentapi.client.model.v1.Content
+import com.gu.facia.api.{models => fapi}
 import com.gu.facia.api.utils.{ContentProperties, ResolvedMetaData, ItemKicker}
 import com.gu.facia.client.models.TrailMetaData
+import model.pressed.PressedContent
 
 object FaciaContentConvert {
-  def frontentContentToFaciaContent(frontendContent: model.Content, maybeCollectionConfig: Option[CollectionConfig] = None): FaciaContent = {
-    val trailMetaData = frontendContent.apiContent.metaData.getOrElse(TrailMetaData.empty)
-    val cardStyle = com.gu.facia.api.utils.CardStyle(frontendContent.delegate, trailMetaData)
-    val resolvedMetaData = ResolvedMetaData.fromContentAndTrailMetaData(frontendContent.apiContent.delegate, trailMetaData, cardStyle)
-    val contentApiContent = frontendContent.apiContent.delegate
+  def contentToFaciaContent(content: Content): PressedContent = {
+    val frontendContent = model.Content(content)
+    val trailMetaData = TrailMetaData.empty
+    val cardStyle = com.gu.facia.api.utils.CardStyle(content, trailMetaData)
+    val resolvedMetaData = ResolvedMetaData.fromContentAndTrailMetaData(content, trailMetaData, cardStyle)
 
-    frontendContent match {
-      case snap: model.Snap =>
-        LinkSnap(
-          id = snap.id,
-          maybeFrontPublicationDate = None,
-          snapType = snap.snapType.getOrElse("link"),
-          snapUri = snap.snapUri,
-          snapCss = snap.snapCss,
-          headline = Option(snap.headline),
-          href = snap.href,
-          trailText = snap.trailText,
-          group = snap.group.getOrElse("0"),
-          image = FaciaImage.getFaciaImage(Option(snap.delegate), trailMetaData, resolvedMetaData),
-          ContentProperties.fromResolvedMetaData(resolvedMetaData),
-          byline = snap.byline,
-          kicker = ItemKicker.fromContentAndTrail(Option(contentApiContent), trailMetaData, resolvedMetaData, maybeCollectionConfig)
-        )
-      case other =>
-        CuratedContent(
-          content = frontendContent.apiContent.delegate,
-          maybeFrontPublicationDate = None,
-          supportingContent = frontendContent.apiContent.supporting.map(FaciaContentConvert.frontentContentToFaciaContent(_, maybeCollectionConfig)),
-          cardStyle = com.gu.facia.api.utils.CardStyle(frontendContent.delegate, trailMetaData),
-          headline = frontendContent.headline,
-          href = Option(frontendContent.id),
-          trailText = frontendContent.trailText,
-          group = frontendContent.group.getOrElse("0"),
-          image = FaciaImage.getFaciaImage(Option(frontendContent.delegate), trailMetaData, resolvedMetaData),
-          ContentProperties.fromResolvedMetaData(resolvedMetaData),
-          frontendContent.byline,
-          kicker = ItemKicker.fromContentAndTrail(Option(contentApiContent), trailMetaData, resolvedMetaData, maybeCollectionConfig),
-          embedType = frontendContent.snapType,
-          embedUri = frontendContent.snapUri,
-          embedCss = frontendContent.snapCss)}
+    val curated = fapi.CuratedContent(
+      content = content,
+      maybeFrontPublicationDate = None,
+      supportingContent = Nil,
+      cardStyle = com.gu.facia.api.utils.CardStyle(content, trailMetaData),
+      headline = frontendContent.trail.headline,
+      href = Option(content.id),
+      trailText = frontendContent.fields.trailText,
+      group = "0",
+      image = fapi.FaciaImage.getFaciaImage(Some(content), trailMetaData, resolvedMetaData),
+      ContentProperties.fromResolvedMetaData(resolvedMetaData),
+      frontendContent.trail.byline,
+      kicker = ItemKicker.fromContentAndTrail(Some(content), trailMetaData, resolvedMetaData, None),
+      embedType = None,
+      embedUri = None,
+      embedCss = None)
 
-
+    PressedContent.make(curated)
   }
-
-  def frontentContentToFaciaContent(frontendContent: model.Content): FaciaContent = frontentContentToFaciaContent(frontendContent, None)
 }

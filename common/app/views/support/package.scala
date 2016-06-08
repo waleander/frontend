@@ -1,23 +1,23 @@
 package views.support
 
-import com.gu.facia.api.models.{LinkSnap, FaciaContent}
-import common._
-import model._
+import java.text.DecimalFormat
 
+import common._
+import model.Cached.WithoutRevalidationResult
+import model._
+import model.pressed.PressedContent
 import org.apache.commons.lang.StringEscapeUtils
-import org.joda.time.{LocalDate, DateTime}
 import org.joda.time.format.DateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone, LocalDate}
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.safety.{ Whitelist, Cleaner }
+import org.jsoup.safety.{Cleaner, Whitelist}
 import play.api.libs.json.Json._
 import play.api.libs.json.Writes
-import play.api.mvc.RequestHeader
-import play.api.mvc.Result
+import play.api.mvc.{RequestHeader, Result}
 import play.twirl.api.Html
+
 import scala.collection.JavaConversions._
-import java.text.DecimalFormat
-import implicits.FaciaContentImplicits._
 
 /**
  * Encapsulates previous and next urls
@@ -74,14 +74,14 @@ object ContributorLinks {
       case (t, tag) =>
         t.replaceFirst(tag.name,
         s"""<span itemscope="" itemtype="http://schema.org/Person" itemprop="author">
-           |  <a rel="author" class="tone-colour" itemprop="url name" data-link-name="auto tag link"
-           |    href="${LinkTo("/"+tag.id)}">${tag.name}</a></span>""".stripMargin)
+           |  <a rel="author" class="tone-colour" itemprop="sameAs" data-link-name="auto tag link"
+           |    href="${LinkTo("/"+tag.id)}"><span itemprop="name">${tag.name}</span></a></span>""".stripMargin)
     }
   }
   def apply(html: Html, tags: Seq[Tag])(implicit request: RequestHeader): Html = apply(html.body, tags)
 }
 
-object `package` extends Formats {
+object `package` {
 
   def withJsoup(html: Html)(cleaners: HtmlCleaner*): Html = withJsoup(html.body) { cleaners: _* }
 
@@ -90,10 +90,10 @@ object `package` extends Formats {
     Html(cleanedHtml.body.html)
   }
 
-  def getTagContainerDefinition(page: MetaData) = {
-    if (page.isContributorPage) {
+  def getTagContainerDefinition(page: ContentPage) = {
+    if (page.item.tags.isContributorPage) {
       slices.TagContainers.contributorTagPage
-    } else if (page.keywords.nonEmpty) {
+    } else if (page.item.tags.keywords.nonEmpty) {
       slices.TagContainers.keywordPage
     } else {
       slices.TagContainers.tagPage
@@ -124,13 +124,16 @@ object AuFriendlyFormat {
 }
 
 object Format {
-  def apply(date: DateTime, pattern: String)(implicit request: RequestHeader): String = {
-    apply(date, Edition(request), pattern)
+  def apply(date: DateTime, pattern: String, tzOverride: Option[DateTimeZone] = None)(implicit request: RequestHeader): String = {
+    apply(date, Edition(request), pattern, tzOverride)
   }
 
-  def apply(date: DateTime, edition: Edition, pattern: String): String = {
-    val timezone = edition.timezone
-    date.toString(DateTimeFormat.forPattern(pattern).withZone(timezone))
+  def apply(date: DateTime, edition: Edition, pattern: String, tzOverride: Option[DateTimeZone]): String = {
+    val timeZone = tzOverride match {
+      case Some(tz) => tz
+      case _ => edition.timezone
+    }
+    date.toString(DateTimeFormat.forPattern(pattern).withZone(timeZone))
   }
 
   def apply(date: LocalDate, pattern: String)(implicit request: RequestHeader): String = this(date.toDateTimeAtStartOfDay, pattern)(request)
@@ -145,7 +148,7 @@ object cleanTrailText {
 }
 
 object StripHtmlTags {
-  def apply(html: String): String = Jsoup.clean(html, Whitelist.none())
+  def apply(html: String): String = Jsoup.clean(html, "", Whitelist.none())
 }
 
 object StripHtmlTagsAndUnescapeEntities{
@@ -171,13 +174,19 @@ object TableEmbedComplimentaryToP extends HtmlCleaner {
 object RenderOtherStatus {
   def gonePage(implicit request: RequestHeader) = {
     val canonicalUrl: Option[String] = Some(s"/${request.path.drop(1).split("/").head}")
-    model.Page(request.path, "news", "This page has been removed", "GFE:Gone", maybeCanonicalUrl = canonicalUrl)
+    SimplePage(MetaData.make(
+      id = request.path,
+      section = Some(SectionSummary.fromId("news")),
+      webTitle = "This page has been removed",
+      analyticsName = "GFE:Gone",
+      canonicalUrl
+    ))
   }
 
   def apply(result: Result)(implicit request: RequestHeader) = result.header.status match {
     case 404 => NoCache(NotFound)
     case 410 if request.isJson => Cached(60)(JsonComponent(gonePage, "status" -> "GONE"))
-    case 410 => Cached(60)(Ok(views.html.expired(gonePage)))
+    case 410 => Cached(60)(WithoutRevalidationResult(Ok(views.html.expired(gonePage))))
     case _ => result
   }
 }
@@ -190,9 +199,9 @@ object RenderClasses {
 }
 
 object SnapData {
-  def apply(faciaContent: FaciaContent): String = generateDataAttributes(faciaContent).mkString(" ")
+  def apply(faciaContent: PressedContent): String = generateDataAttributes(faciaContent).mkString(" ")
 
-  private def generateDataAttributes(faciaContent: FaciaContent): Iterable[String] =
-    faciaContent.embedType.filter(_.nonEmpty).map(t => s"data-snap-type=$t") ++
-    faciaContent.embedUri.filter(_.nonEmpty).map(t => s"data-snap-uri=$t")
+  private def generateDataAttributes(faciaContent: PressedContent): Iterable[String] =
+    faciaContent.properties.embedType.filter(_.nonEmpty).map(t => s"data-snap-type=$t") ++
+    faciaContent.properties.embedUri.filter(_.nonEmpty).map(t => s"data-snap-uri=$t")
 }

@@ -2,7 +2,6 @@ define([
     'bean',
     'bonzo',
     'qwery',
-    'common/utils/_',
     'common/utils/$',
     'common/utils/ajax',
     'common/utils/config',
@@ -14,17 +13,22 @@ define([
     'common/modules/component',
     'common/modules/ui/blockSharing',
     'common/modules/ui/images',
+    'common/views/svgs',
     'text!common/views/content/block-sharing.html',
     'text!common/views/content/button.html',
     'text!common/views/content/endslate.html',
     'text!common/views/content/loader.html',
     'text!common/views/content/share-button.html',
-    'text!common/views/content/share-button-mobile.html'
+    'text!common/views/content/share-button-mobile.html',
+    'lodash/collections/map',
+    'lodash/functions/throttle',
+    'lodash/collections/forEach',
+    'common/utils/chain',
+    'common/utils/load-css-promise'
 ], function (
     bean,
     bonzo,
     qwery,
-    _,
     $,
     ajax,
     config,
@@ -36,12 +40,18 @@ define([
     Component,
     blockSharing,
     imagesModule,
+    svgs,
     blockSharingTpl,
     buttonTpl,
     endslateTpl,
     loaderTpl,
     shareButtonTpl,
-    shareButtonMobileTpl
+    shareButtonMobileTpl,
+    map,
+    throttle,
+    forEach,
+    chain,
+    loadCssPromise
 ) {
 
     function GalleryLightbox() {
@@ -133,14 +143,17 @@ define([
             shareItems = [{
                 'text': 'Facebook',
                 'css': 'facebook',
+                'icon': svgs('shareFacebook', ['icon']),
                 'url': 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(blockShortUrl + '/sfb#img-' + i)
             }, {
                 'text': 'Twitter',
                 'css': 'twitter',
+                'icon': svgs('shareTwitter', ['icon']),
                 'url': 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(config.page.webTitle) + '&url=' + encodeURIComponent(blockShortUrl + '/stw#img-' + i)
             }, {
                 'text': 'Pinterest',
                 'css': 'pinterest',
+                'icon': svgs('sharePinterest', ['icon']),
                 'url': encodeURI('http://www.pinterest.com/pin/create/button/?description=' + config.page.webTitle + '&url=' + blockShortUrl + '&media=' + urlPrefix + img.src)
             }];
 
@@ -151,8 +164,8 @@ define([
             caption: img.caption,
             credit: img.displayCredit ? img.credit : '',
             blockShortUrl: blockShortUrl,
-            shareButtons: _.map(shareItems, template.bind(null, shareButtonTpl)).join(''),
-            shareButtonsMobile: _.map(shareItems, template.bind(null, shareButtonMobileTpl)).join('')
+            shareButtons: map(shareItems, template.bind(null, shareButtonTpl)).join(''),
+            shareButtonsMobile: map(shareItems, template.bind(null, shareButtonMobileTpl)).join('')
         });
     };
 
@@ -176,7 +189,7 @@ define([
             this.translateContent(this.index, dx, updateTime);
         }.bind(this);
 
-        bean.on(this.$swipeContainer[0], 'touchmove', _.throttle(touchMove, updateTime, {trailing: false}));
+        bean.on(this.$swipeContainer[0], 'touchmove', throttle(touchMove, updateTime, {trailing: false}));
 
         bean.on(this.$swipeContainer[0], 'touchend', function () {
             var direction;
@@ -225,13 +238,15 @@ define([
 
     GalleryLightbox.prototype.loadSurroundingImages = function (index, count) {
 
-        var imageContent, $img, $parent;
-        _([-1, 0, 1]).map(function (i) { return index + i === 0 ? count - 1 : (index - 1 + i) % count; })
-            .each(function (i) {
+        var imageContent, $img;
+        chain([-1, 0, 1]).and(
+            map,
+            function (i) { return index + i === 0 ? count - 1 : (index - 1 + i) % count; }
+        ).and(forEach, function (i) {
                 imageContent = this.images[i];
                 $img = bonzo(this.$images[i]);
                 if (!$img.attr('src')) {
-                    $parent = $img.parent()
+                    $img.parent()
                         .append(bonzo.create(loaderTpl));
 
                     $img.attr('src', imageContent.src);
@@ -282,9 +297,10 @@ define([
                     this.images = json.images;
                     this.$countEl.text(this.images.length);
 
-                    var imagesHtml = _(this.images)
-                        .map(function (img, i) { return this.generateImgHTML(img, i + 1); }.bind(this))
-                        .join('');
+                    var imagesHtml = chain(this.images).and(
+                        map,
+                        function (img, i) { return this.generateImgHTML(img, i + 1); }.bind(this)
+                    ).join('').value();
 
                     this.$contentEl.html(imagesHtml);
 
@@ -336,8 +352,7 @@ define([
                 mediator.off('window:resize', this.resize);
             },
             events: {
-                'next': function (interactionType) {
-                    this.trackInteraction(interactionType + ':next');
+                'next': function () {
                     this.pulseButton(this.nextBtn);
                     if (this.index === this.images.length) { // last img
                         if (this.showEndslate) {
@@ -351,8 +366,7 @@ define([
                         this.reloadState = true;
                     }
                 },
-                'prev': function (interactionType) {
-                    this.trackInteraction(interactionType + ':previous');
+                'prev': function () {
                     this.pulseButton(this.prevBtn);
                     if (this.index === 1) { // first img
                         if (this.showEndslate) {
@@ -400,14 +414,12 @@ define([
                 mediator.off('window:resize', this.resize);
             },
             events: {
-                'next': function (interactionType) {
-                    this.trackInteraction(interactionType + ':next');
+                'next': function () {
                     this.pulseButton(this.nextBtn);
                     this.index = 1;
                     this.state = 'image';
                 },
-                'prev': function (interactionType) {
-                    this.trackInteraction(interactionType + ':previous');
+                'prev': function () {
                     this.pulseButton(this.prevBtn);
                     this.index = this.images.length;
                     this.state = 'image';
@@ -499,45 +511,43 @@ define([
         }
     };
 
-    GalleryLightbox.prototype.trackInteraction = function (str) {
-        mediator.emit('module:clickstream:interaction', str);
-    };
-
     function bootstrap() {
-        if ('lightboxImages' in config.page && config.page.lightboxImages.images.length > 0) {
-            var lightbox,
-                galleryId,
-                match,
-                galleryHash = window.location.hash,
-                images = config.page.lightboxImages,
-                res;
+        loadCssPromise.then(function () {
+            if ('lightboxImages' in config.page && config.page.lightboxImages.images.length > 0) {
+                var lightbox,
+                    galleryId,
+                    match,
+                    galleryHash = window.location.hash,
+                    images = config.page.lightboxImages,
+                    res;
 
-            bean.on(document.body, 'click', '.js-gallerythumbs', function (e) {
-                e.preventDefault();
+                bean.on(document.body, 'click', '.js-gallerythumbs', function (e) {
+                    e.preventDefault();
 
-                var $el = bonzo(e.currentTarget),
-                    galleryHref = $el.attr('href') || $el.attr('data-gallery-url'),
-                    galleryHrefParts = galleryHref.split('#img-'),
-                    parsedGalleryIndex = parseInt(galleryHrefParts[1], 10),
-                    galleryIndex = isNaN(parsedGalleryIndex) ? 1 : parsedGalleryIndex;// 1-based index
+                    var $el = bonzo(e.currentTarget),
+                        galleryHref = $el.attr('href') || $el.attr('data-gallery-url'),
+                        galleryHrefParts = galleryHref.split('#img-'),
+                        parsedGalleryIndex = parseInt(galleryHrefParts[1], 10),
+                        galleryIndex = isNaN(parsedGalleryIndex) ? 1 : parsedGalleryIndex;// 1-based index
+                    lightbox = lightbox || new GalleryLightbox();
+
+                    lightbox.loadGalleryfromJson(images, galleryIndex);
+                });
+
                 lightbox = lightbox || new GalleryLightbox();
-
-                lightbox.loadGalleryfromJson(images, galleryIndex);
-            });
-
-            lightbox = lightbox || new GalleryLightbox();
-            galleryId = '/' + config.page.pageId;
-            match = /\?index=(\d+)/.exec(document.location.href);
-            if (match) { // index specified so launch lightbox at that index
-                url.pushUrl(null, document.title, galleryId, true); // lets back work properly
-                lightbox.loadGalleryfromJson(images, parseInt(match[1], 10));
-            } else {
-                res = /^#(?:img-)?(\d+)$/.exec(galleryHash);
-                if (res) {
-                    lightbox.loadGalleryfromJson(images, parseInt(res[1], 10));
+                galleryId = '/' + config.page.pageId;
+                match = /\?index=(\d+)/.exec(document.location.href);
+                if (match) { // index specified so launch lightbox at that index
+                    url.pushUrl(null, document.title, galleryId, true); // lets back work properly
+                    lightbox.loadGalleryfromJson(images, parseInt(match[1], 10));
+                } else {
+                    res = /^#(?:img-)?(\d+)$/.exec(galleryHash);
+                    if (res) {
+                        lightbox.loadGalleryfromJson(images, parseInt(res[1], 10));
+                    }
                 }
             }
-        }
+        });
     }
 
     return {

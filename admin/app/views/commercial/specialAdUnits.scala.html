@@ -1,9 +1,9 @@
-@(env: String, specialAdUnits: Seq[(String, String)])
+@(env: String, specialAdUnits: Seq[(String, String)])(implicit request: RequestHeader)
 @import tools.DfpLink
 
 @admin_main("Commercial", env, isAuthed = true, hasCharts = true) {
 
-<link rel="stylesheet" type="text/css" href="@routes.Assets.at("css/commercial.css")">
+<link rel="stylesheet" type="text/css" href="@controllers.admin.routes.UncachedAssets.at("css/commercial.css")">
 
 <h1>Special Ad Units</h1>
 

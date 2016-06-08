@@ -1,19 +1,21 @@
 package conf
 
-import common.PaMetrics._
 import common._
 import feed.Competitions
 import model.{TeamMap, LiveBlogAgent}
-import pa.{Http, PaClient}
-import play.api.{Application => PlayApp, Plugin}
+import pa.{PaClientErrorsException, Http, PaClient}
+import play.api.inject.ApplicationLifecycle
 import play.api.libs.ws.WS
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
-class FootballStatsPlugin(app: PlayApp) extends Plugin with ExecutionContexts {
+class FootballLifecycle(appLifeCycle: ApplicationLifecycle)(implicit ec: ExecutionContext) extends LifecycleComponent {
 
-  def scheduleJobs() {
-    Competitions.competitionIds.zipWithIndex map { case (id, index) =>
+  appLifeCycle.addStopHook { () => Future {
+    descheduleJobs()
+  }}
+
+  private def scheduleJobs() {
+    Competitions.competitionIds.zipWithIndex foreach { case (id, index) =>
       //stagger fixtures and results refreshes to avoid timeouts
       val seconds = index * 5 % 60
       val minutes = index * 5 / 60 % 5
@@ -39,18 +41,9 @@ class FootballStatsPlugin(app: PlayApp) extends Plugin with ExecutionContexts {
     Jobs.schedule("TeamMapRefreshJob", "0 0/10 * * * ?") {
       TeamMap.refresh()
     }
-
-    // Have all these run once at load, then on the scheduled times
-    AkkaAsync.after(5.seconds){
-      val competitionUpdate = Competitions.refreshCompetitionData()
-      competitionUpdate.onSuccess { case _ => Competitions.competitionIds.foreach(Competitions.refreshCompetitionAgent) }
-      Competitions.refreshMatchDay()
-      LiveBlogAgent.refresh()
-      TeamMap.refresh()
-    }
   }
 
-  def descheduleJobs() {
+  private def descheduleJobs() {
     Competitions.competitionIds map { id =>
       Jobs.deschedule(s"CompetitionAgentRefreshJob_$id")
     }
@@ -60,13 +53,17 @@ class FootballStatsPlugin(app: PlayApp) extends Plugin with ExecutionContexts {
     Jobs.deschedule("TeamMapRefreshJob")
   }
 
-  override def onStart() {
+  override def start(): Unit = {
     descheduleJobs()
     scheduleJobs()
-  }
 
-  override def onStop() {
-    descheduleJobs()
+    AkkaAsync {
+      val competitionUpdate = Competitions.refreshCompetitionData()
+      competitionUpdate.onSuccess { case _ => Competitions.competitionIds.foreach(Competitions.refreshCompetitionAgent) }
+      Competitions.refreshMatchDay()
+      LiveBlogAgent.refresh()
+      TeamMap.refresh()
+    }
   }
 }
 
@@ -74,20 +71,14 @@ object FootballClient extends PaClient with Http with Logging with ExecutionCont
 
   import play.api.Play.current
 
-  override lazy val base = Configuration.pa.host
+  override lazy val base = SportConfiguration.pa.host
 
   private var _http: Http = new Http {
     override def GET(urlString: String): Future[pa.Response] = {
-        val start = System.currentTimeMillis()
+
         val promiseOfResponse = WS.url(urlString).withRequestTimeout(2000).get()
-        promiseOfResponse.onComplete( r => PaApiHttpTimingMetric.recordDuration(System.currentTimeMillis() - start))
 
         promiseOfResponse.map{ r =>
-
-          r.status match {
-            case 200 => PaApiHttpOkMetric.increment()
-            case _ => PaApiHttpErrorMetric.increment()
-          }
 
           //this feed has a funny character at the start of it http://en.wikipedia.org/wiki/Zero-width_non-breaking_space
           //I have reported to PA, but just trimming here so we can carry on development
@@ -99,15 +90,19 @@ object FootballClient extends PaClient with Http with Logging with ExecutionCont
   def http = _http
   def http_=(delegateHttp: Http) = _http = delegateHttp
 
-  lazy val apiKey = Configuration.pa.apiKey
+  lazy val apiKey = SportConfiguration.pa.apiKey
 
   override def GET(urlString: String): Future[pa.Response] = {
     _http.GET(urlString)
   }
+
+  def logErrors[T]: PartialFunction[Throwable, T] = {
+    case e: PaClientErrorsException =>
+      log.error(s"Football Client errors: ${e.getMessage}")
+      throw e
+  }
+
 }
 
-object HealthCheck extends AllGoodHealthcheckController(
-  9013,
-  "/football/live",
-  "/football/premierleague/results"
-)
+
+

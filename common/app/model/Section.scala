@@ -1,34 +1,80 @@
 package model
 
-import com.gu.contentapi.client.model.{ Section => ApiSection }
+import campaigns.PersonalInvestmentsCampaign
+import com.gu.contentapi.client.model.v1.{Section => ApiSection}
+import common.commercial.{BrandHunter, Branding}
 import common.{Edition, Pagination}
-import dfp.DfpAgent
-import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.json.{JsBoolean, JsString, JsValue}
 
-case class Section(private val delegate: ApiSection, override val pagination: Option[Pagination] = None)
-  extends MetaData with AdSuffixHandlingForFronts with KeywordSponsorshipHandling {
+object Section {
+  def make(section: ApiSection, pagination: Option[Pagination] = None): Section = {
+    val id: String = section.id
+    val webTitle: String = section.webTitle
+    val adUnitSuffix = AdSuffixHandlingForFronts.extractAdUnitSuffixFrom(id, id)
 
-  def isEditionalised = delegate.editions.length > 1
+    val keywordIds: Seq[String] = frontKeywordIds(id)
+    val keywordSponsorship = KeywordSponsorshipHandling(id, adUnitSuffix, keywordIds)
 
-  lazy val section: String = id
+    val javascriptConfigOverrides: Map[String, JsValue] = Map(
+        "keywords" -> JsString(webTitle),
+        "keywordIds" -> JsString(keywordIds.mkString(",")),
+        "hasSuperStickyBanner" -> JsBoolean(PersonalInvestmentsCampaign.isRunning(keywordIds)),
+        "isAdvertisementFeature" -> JsBoolean(keywordSponsorship.isAdvertisementFeature)
+      )
 
-  lazy val id: String = delegate.id
-  override lazy val webUrl: String = delegate.webUrl
-  lazy val webTitle: String = delegate.webTitle
+    val metadata = MetaData (
+      id,
+      webUrl = section.webUrl,
+      url = SupportedUrl(section),
+      section = Some(SectionSummary.fromCapiSection(section)),
+      pagination = pagination,
+      webTitle = webTitle,
+      analyticsName = s"GFE:$id",
+      adUnitSuffix = adUnitSuffix,
+      contentType = "Section",
+      isFront = true,
+      rssPath = Some(s"/$id/rss"),
+      iosType = id match {
+        case "crosswords" => None
+        case _ => Some("front")
+      },
+      javascriptConfigOverrides = javascriptConfigOverrides
+    )
 
-  lazy val keywordIds: Seq[String] = frontKeywordIds(id)
+    Section(
+      metadata,
+      keywordSponsorship,
+      isEditionalised = section.editions.length > 1,
+      activeBrandings = section.activeSponsorships map (_ map Branding.make(section.webTitle))
+    )
+  }
+}
 
-  override lazy val isFront = true
+case class Section private (
+  override val metadata: MetaData,
+  keywordSponsorship: KeywordSponsorshipHandling,
+  isEditionalised: Boolean,
+  activeBrandings: Option[Seq[Branding]]
+  ) extends StandalonePage {
 
-  override lazy val url: String = SupportedUrl(delegate)
+  override def branding(edition: Edition): Option[Branding] = {
+    BrandHunter.findBranding(metadata.section.flatMap(_.activeBrandings), edition, publicationDate = None)
+  }
+}
 
-  override lazy val analyticsName = s"GFE:$section"
+case class SectionSummary(
+  id: String,
+  activeBrandings: Option[Seq[Branding]]
+)
 
-  override lazy val rssPath = Some(s"/$id/rss")
+object SectionSummary {
 
-  override lazy val metaData: Map[String, JsValue] = super.metaData ++ Map(
-    "keywords" -> JsString(webTitle),
-    "keywordIds" -> JsString(keywordIds.mkString(",")),
-    "contentType" -> JsString("Section")
-  )
+  def fromCapiSection(section: ApiSection): SectionSummary = {
+    SectionSummary(
+      id = section.id,
+      activeBrandings = section.activeSponsorships map (_ map Branding.make(section.webTitle))
+    )
+  }
+
+  def fromId(sectionId: String): SectionSummary = SectionSummary(id = sectionId, activeBrandings = None)
 }

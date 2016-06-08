@@ -1,0 +1,226 @@
+package common.dfp
+
+import common.{Edition, Logging}
+import model.Tag
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+
+
+object InlineMerchandisingTagSet {
+  implicit val jsonReads = Json.reads[InlineMerchandisingTagSet]
+
+  implicit val inlineMerchandisingTagSetWrites = new Writes[InlineMerchandisingTagSet] {
+    def writes(tagSet: InlineMerchandisingTagSet): JsValue = {
+      Json.obj(
+        "keywords" -> tagSet.keywords,
+        "series" -> tagSet.series,
+        "contributors" -> tagSet.contributors
+      )
+    }
+  }
+
+}
+
+case class InlineMerchandisingTagSet(keywords: Set[String] = Set.empty, series: Set[String] = Set.empty, contributors: Set[String] = Set.empty) {
+
+  private def hasTagId(tags: Set[String], tagId: String): Boolean = tagId.split('/').lastOption exists { endPart =>
+    tags contains endPart
+  }
+
+  def hasTag(tag: Tag): Boolean = tag.properties.tagType match {
+    case "Keyword" => hasTagId(keywords, tag.id)
+    case "Series" => hasTagId(series, tag.id)
+    case "Contributor" => hasTagId(contributors, tag.id)
+    case _ => false
+  }
+
+  def nonEmpty: Boolean = keywords.nonEmpty || series.nonEmpty || contributors.nonEmpty
+}
+
+
+object InlineMerchandisingTargetedTagsReport {
+  implicit val jsonReads = Json.reads[InlineMerchandisingTargetedTagsReport]
+
+  implicit val inlineMerchandisingTargetedTagsReportWrites =
+    new Writes[InlineMerchandisingTargetedTagsReport] {
+      def writes(report: InlineMerchandisingTargetedTagsReport): JsValue = {
+        Json.obj(
+          "updatedTimeStamp" -> report.updatedTimeStamp,
+          "targetedTags" -> report.targetedTags
+        )
+      }
+    }
+}
+
+case class InlineMerchandisingTargetedTagsReport(updatedTimeStamp: String, targetedTags: InlineMerchandisingTagSet)
+
+object InlineMerchandisingTargetedTagsReportParser extends Logging {
+  def apply(jsonString: String): Option[InlineMerchandisingTargetedTagsReport] = {
+    val json = Json.parse(jsonString)
+    json.validate[InlineMerchandisingTargetedTagsReport] match {
+      case s: JsSuccess[InlineMerchandisingTargetedTagsReport] => Some(s.get)
+      case e: JsError => log.error("Errors: " + JsError.toJson(e).toString()); None
+    }
+  }
+}
+
+object HighMerchandisingLineItems {
+  implicit val lineItemFormat = Json.format[HighMerchandisingLineItem]
+  implicit val lineItemsFormat = Json.format[HighMerchandisingLineItems]
+}
+
+case class HighMerchandisingLineItems(items: Seq[HighMerchandisingLineItem] = Seq.empty) {
+  val sortedItems = items.sortBy(_.name)
+}
+
+case class HighMerchandisingLineItem(
+  name: String,
+  id: Long,
+  tags: Seq[String],
+  adUnitsIncluded: Seq[GuAdUnit],
+  adUnitsExcluded: Seq[GuAdUnit],
+  customTargetSet: Seq[CustomTargetSet]
+  ) {
+
+  val customTargets = customTargetSet.flatMap(_.targets)
+  val editions = customTargets.filter( _.name == "edition").flatMap(_.values).distinct
+  val urls = customTargets.filter( _.name == "url").flatMap(_.values).distinct
+  val isRunOfNetwork = adUnitsIncluded.isEmpty || (adUnitsIncluded.exists(_.isRunOfNetwork) && adUnitsIncluded.size == 1)
+  val hasUnknownTarget = isRunOfNetwork && editions.isEmpty && urls.isEmpty && tags.isEmpty
+
+  // Returns true if the metadata parameters explicitly match the lineItem.
+  def matchesPageTargeting (adUnitSuffix: String, pageTags:Seq[Tag], edition:Edition, pagePath:String): Boolean = {
+
+    val cleansedPageEdition = edition.id.toLowerCase
+    val cleansedPageTagNames = pageTags map (_.name.replaceAll(" ","-").toLowerCase)
+
+    val matchesAdUnit = adUnitsIncluded.isEmpty || adUnitsIncluded.exists(_.path contains adUnitSuffix)
+    val matchesTag = cleansedPageTagNames.isEmpty || cleansedPageTagNames.exists(tags.contains)
+    val matchesEdition = editions.isEmpty || editions.contains(cleansedPageEdition)
+    val matchesUrl = urls.isEmpty || urls.contains(pagePath)
+
+    // High-merch line items must be explicitly targeted to something, so if there is no kind of targeting,
+    // then the match fails.
+    matchesAdUnit && matchesTag && matchesEdition && matchesUrl && !hasUnknownTarget
+  }
+}
+
+object HighMerchandisingTargetedTagsReport {
+  implicit val jsonFormat = Json.format[HighMerchandisingTargetedTagsReport]
+}
+
+case class HighMerchandisingTargetedTagsReport(updatedTimeStamp: String, lineItems: HighMerchandisingLineItems)
+
+object HighMerchandisingTargetedTagsReportParser extends Logging {
+  def apply(jsonString: String): Option[HighMerchandisingTargetedTagsReport] = {
+    val json = Json.parse(jsonString)
+    json.validate[HighMerchandisingTargetedTagsReport] match {
+      case s: JsSuccess[HighMerchandisingTargetedTagsReport] => Some(s.get)
+      case e: JsError => log.error("Errors: " + JsError.toJson(e).toString()); None
+    }
+  }
+}
+
+
+sealed abstract class TagType(val name: String)
+case object Series extends TagType("series")
+case object Keyword extends TagType("keyword")
+
+
+sealed abstract class PaidForType(val name: String)
+case object Sponsored extends PaidForType("sponsoredfeatures")
+case object AdvertisementFeature extends PaidForType("advertisement-features")
+case object FoundationFunded extends PaidForType("foundation-features")
+
+
+case class PaidForTag(targetedName: String,
+                      tagType: TagType,
+                      paidForType: PaidForType,
+                      matchingCapiTagIds: Seq[String],
+                      lineItems: Seq[GuLineItem]) {
+}
+
+object PaidForTag {
+
+  def fromLineItems(lineItems: Seq[GuLineItem]): Seq[PaidForTag] = {
+
+    val lineItemsGroupedByTag: Map[PaidForTag, Seq[GuLineItem]] = {
+      val logoLineItems = lineItems filterNot (_.isExpired) filter (_.paidForTags.nonEmpty)
+      logoLineItems.foldLeft(Map.empty[PaidForTag, Seq[GuLineItem]]) { case (soFar, lineItem) =>
+        val lineItemTags = lineItem.paidForTags map { tag =>
+          val tagLineItems = soFar.get(tag).map(_ :+ lineItem).getOrElse(Seq(lineItem))
+          tag -> tagLineItems
+        }
+        soFar ++ lineItemTags
+      }
+    }
+
+    lineItemsGroupedByTag.map { case (currTag, currLineItems) =>
+      currTag.copy(
+        matchingCapiTagIds = CapiLookupAgent.getTagIds(currTag.tagType, currTag.targetedName),
+        lineItems = currLineItems
+      )
+    }.toList.sortBy(_.targetedName)
+  }
+
+  implicit val jsonWrites = new Writes[PaidForTag] {
+    override def writes(tag: PaidForTag): JsValue = {
+      Json.obj(
+        "targetedName" -> tag.targetedName,
+        "tagType" -> tag.tagType.name,
+        "paidForType" -> tag.paidForType.name,
+        "matchingCapiTagIds" -> tag.matchingCapiTagIds,
+        "lineItems" -> tag.lineItems
+      )
+    }
+  }
+
+  implicit val jsonReads: Reads[PaidForTag] = (
+    (JsPath \ "targetedName").read[String] and
+      (JsPath \ "tagType").read[String].map {
+        case Series.name => Series
+        case Keyword.name => Keyword
+      } and
+      (JsPath \ "paidForType").read[String].map {
+        case Sponsored.name => Sponsored
+        case AdvertisementFeature.name => AdvertisementFeature
+        case FoundationFunded.name => FoundationFunded
+      } and
+      (JsPath \ "matchingCapiTagIds").read[Seq[String]] and
+      (JsPath \ "lineItems").read[Seq[GuLineItem]]
+    )(PaidForTag.apply _)
+}
+
+
+case class PaidForTagsReport(updatedTimeStamp: String, paidForTags: Seq[PaidForTag]) {
+
+  private def subset(paidForType: PaidForType, tagType: TagType) = {
+    paidForTags filter { tag =>
+      tag.paidForType == paidForType && tag.tagType == tagType
+    }
+  }
+
+  val sponsoredSeries: Seq[PaidForTag] = subset(Sponsored, Series)
+  val sponsoredKeywords: Seq[PaidForTag] = subset(Sponsored, Keyword)
+
+  val advertisementFeatureSeries: Seq[PaidForTag] = subset(AdvertisementFeature, Series)
+  val advertisementFeatureKeywords: Seq[PaidForTag] = subset(AdvertisementFeature, Keyword)
+
+  val foundationFundedSeries: Seq[PaidForTag] = subset(FoundationFunded, Series)
+  val foundationFundedKeywords: Seq[PaidForTag] = subset(FoundationFunded, Keyword)
+}
+
+object PaidForTagsReport {
+
+  implicit val jsonWrites = new Writes[PaidForTagsReport] {
+    override def writes(report: PaidForTagsReport): JsValue = {
+      Json.obj(
+        "updatedTimeStamp" -> report.updatedTimeStamp,
+        "paidForTags" -> report.paidForTags
+      )
+    }
+  }
+
+  implicit val jsonReads = Json.reads[PaidForTagsReport]
+}

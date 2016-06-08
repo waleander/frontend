@@ -3,63 +3,86 @@
  */
 define([
     'Promise',
+    'common/utils/$',
     'common/utils/config',
+    'common/utils/detect',
     'common/utils/mediator',
+    'common/utils/fastdom-promise',
+    'common/utils/template',
+    'common/modules/commercial/commercial-features',
     'common/modules/commercial/third-party-tags/audience-science-gateway',
+    'common/modules/commercial/third-party-tags/audience-science-pql',
     'common/modules/commercial/third-party-tags/imr-worldwide',
     'common/modules/commercial/third-party-tags/remarketing',
     'common/modules/commercial/third-party-tags/krux',
+    'common/modules/identity/api',
     'common/modules/commercial/third-party-tags/outbrain',
-    'common/modules/commercial/third-party-tags/gravity',
-    'common/modules/commercial/third-party-tags/taboola'
+    'common/modules/commercial/third-party-tags/plista',
+    'text!common/views/commercial/external-content.html'
 ], function (
     Promise,
+    $,
     config,
+    detect,
     mediator,
+    fastdom,
+    template,
+    commercialFeatures,
     audienceScienceGateway,
+    audienceSciencePql,
     imrWorldwide,
     remarketing,
     krux,
+    identity,
     outbrain,
-    gravity,
-    taboola
-) {
+    plista,
+    externalContentContainerStr
+    ) {
+
+    function loadExternalContentWidget() {
+
+        var externalTpl = template(externalContentContainerStr);
+        var documentAnchorClass = '.js-external-content-widget-anchor';
+
+        function renderWidgetContainer(widgetType) {
+            $(documentAnchorClass).append(externalTpl({widgetType: widgetType}));
+        }
+
+        if (config.switches.plistaForOutbrainAu && config.page.edition.toLowerCase() === 'au') {
+            fastdom.write(function () {
+                renderWidgetContainer('plista');
+            }).then(plista.init);
+        } else {
+            fastdom.write(function () {
+                renderWidgetContainer('outbrain');
+            }).then(outbrain.init);
+        }
+    }
 
     function init() {
 
-        if (config.page.contentType === 'Identity' || config.page.section === 'identity') {
+        if (!commercialFeatures.thirdPartyTags) {
             return false;
         }
 
         switch (config.page.edition.toLowerCase()) {
             case 'uk':
+                audienceSciencePql.load();
                 audienceScienceGateway.load();
                 break;
         }
 
-        if (config.switches.thirdPartiesLater) {
-            var timeout = setTimeout(loadOther, 1000);
-            // Load third parties after first ad was rendered
-            mediator.once('modules:commercial:dfp:rendered', function () {
-                loadOther();
-                clearTimeout(timeout);
-            });
-        } else {
-            loadOther();
-        }
+        // Outbrain/Plista needs to be loaded before first ad as it is checking for presence of high relevance component on page
+        loadExternalContentWidget();
 
-        gravity.lightBeacon();
-
+        loadOther();
         return Promise.resolve(null);
     }
 
     function loadOther() {
         imrWorldwide.load();
         remarketing.load();
-        outbrain.load();
         krux.load();
-        gravity.getRecommendations();
-        taboola.load();
     }
 
     return {

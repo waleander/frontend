@@ -3,11 +3,7 @@
  Module: storage.js
  Description: Wrapper around localStorage functionality
  */
-define([
-    'common/utils/_'
-], function (
-    _
-) {
+define(function () {
 
     var w = window,
         Storage = function (type) {
@@ -20,7 +16,7 @@ define([
     };
 
     Storage.prototype.isStorageAvailable = function (refresh) {
-        if (_.isUndefined(isAvailable) || refresh) {
+        if (isAvailable === undefined || refresh) {
             isAvailable = this.isAvailable();
         }
         return isAvailable;

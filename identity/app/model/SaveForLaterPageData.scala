@@ -1,25 +1,27 @@
 package model
 
 import com.google.inject.{Inject, Singleton}
-import com.gu.facia.api.models.CollectionConfig
 import com.gu.identity.model.{SavedArticle, SavedArticles}
 import common.{ExecutionContexts, Edition, Pagination}
-import conf.LiveContentApi
-import conf.LiveContentApi._
+import contentapi.ContentApiClient
+import contentapi.ContentApiClient._
 import layout.{ItemClasses, FaciaCard, ContentCard}
-import model.{Content => ApiContent}
 import services.{FaciaContentConvert, IdRequestParser, IdentityRequest, IdentityUrlBuilder}
 import implicits.Articles._
+import pressed.{PressedContent, CollectionConfig}
 import cards._
 
 import scala.concurrent.Future
 
-case class SaveForLaterItem(
-  content: Content,
-  savedArticle: SavedArticle) {
+case class SaveForLaterItem (
+  content: ContentType,
+  faciaContent: PressedContent,
+  savedArticle: SavedArticle) extends Ordered[SaveForLaterItem] {
+
+  def compare(other: SaveForLaterItem) : Int = other.savedArticle.date.compareTo(this.savedArticle.date)
 
   val contentCard = FaciaCard.fromTrail(
-    FaciaContentConvert.frontentContentToFaciaContent(content),
+    faciaContent,
     CollectionConfig.empty,
     ItemClasses(mobile = cards.SavedForLater, tablet = cards.SavedForLater),
     showSeriesAndBlogKickers = false
@@ -28,7 +30,7 @@ case class SaveForLaterItem(
 
 case class SaveForLaterPageData(
   formActionUrl: String,
-  savedItems: List[SaveForLaterItem],
+  savedItems: Seq[SaveForLaterItem],
   pagination: Pagination,
   paginationUrl: String,
   totalArticlesSaved: Int,
@@ -42,7 +44,7 @@ class SaveForLaterDataBuilder @Inject()(idUrlBuilder: IdentityUrlBuilder) extend
     val articles = savedArticles.getPage(pageNum)
     val shortUrls = articles.map(_.shortUrl)
 
-    getResponse(LiveContentApi.search(Edition.defaultEdition)
+    getResponse(ContentApiClient.search(Edition.defaultEdition)
       .ids(shortUrls.map(_.drop(1)).mkString(","))
       .showFields("all")
       .showElements ("all")
@@ -50,16 +52,17 @@ class SaveForLaterDataBuilder @Inject()(idUrlBuilder: IdentityUrlBuilder) extend
 
       val items = r.results.flatMap { result =>
         for {
-          content <- Some(ApiContent(result))
-          article <- articles.find( article => article.id == content.id)
+          content <- Some(Content(result))
+          faciaContent <- Some(FaciaContentConvert.contentToFaciaContent(result))
+          article <- articles.find( article => article.id == content.metadata.id)
         } yield {
-          SaveForLaterItem(content, article)
+          SaveForLaterItem(content, faciaContent, article)
         }
       }
 
       SaveForLaterPageData(
         idUrlBuilder.buildUrl("/saved-for-later", idRequest),
-        items,
+        items.sorted,
         Pagination(pageNum, savedArticles.numPages, savedArticles.totalSaved),
         idUrlBuilder.buildUrl("/saved-for-later"),
         savedArticles.totalSaved,

@@ -1,31 +1,44 @@
-import ab_headlines.ABTHeadlinesLifecycle
-import common.{ContentApiMetrics, CloudWatchApplicationMetrics}
-import conf.Filters
+import common.Logback.LogstashLifecycle
+import common.dfp.DfpAgentLifecycle
+import common._
+import conf.switches.SwitchboardLifecycle
+import conf.CachedHealthCheckLifeCycle
 import contentapi.SectionsLookUpLifecycle
-import dev.DevParametersLifecycle
-import dfp.DfpAgentLifecycle
-import metrics.FrontendMetric
+import controllers.HealthCheck
+import jobs.SiteMapLifecycle
+import model.ApplicationIdentity
 import ophan.SurgingContentAgentLifecycle
-import play.api.mvc.WithFilters
+import play.api.inject.ApplicationLifecycle
+import play.api.GlobalSettings
 import services.{ConfigAgentLifecycle, IndexListingsLifecycle}
 
-object Global extends WithFilters(Filters.common: _*)
-  with ConfigAgentLifecycle
-  with DevParametersLifecycle
-  with CloudWatchApplicationMetrics
-  with DfpAgentLifecycle
-  with SurgingContentAgentLifecycle
-  with IndexListingsLifecycle
-  with SectionsLookUpLifecycle
-  with ABTHeadlinesLifecycle
-  with CorsErrorHandler {
-  override lazy val applicationName = "frontend-applications"
+import scala.concurrent.ExecutionContext
 
-  override def applicationMetrics: List[FrontendMetric] = super.applicationMetrics ++ List(
-    ContentApiMetrics.ElasticHttpTimeoutCountMetric,
-    ContentApiMetrics.ElasticHttpTimingMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerRequestsMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerOnOpen,
-    ContentApiMetrics.ContentApiErrorMetric
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
+
+  val applicationMetrics = ApplicationMetrics(
+    ContentApiMetrics.HttpTimeoutCountMetric,
+    ContentApiMetrics.HttpLatencyTimingMetric,
+    ContentApiMetrics.ContentApiErrorMetric,
+    EmailSubsciptionMetrics.EmailSubmission,
+    EmailSubsciptionMetrics.EmailFormError,
+    EmailSubsciptionMetrics.NotAccepted,
+    EmailSubsciptionMetrics.APIHTTPError,
+    EmailSubsciptionMetrics.APINetworkError,
+    EmailSubsciptionMetrics.ListIDError,
+    EmailSubsciptionMetrics.AllEmailSubmission
+  )
+
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new ConfigAgentLifecycle(appLifecycle),
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-applications"), applicationMetrics),
+    new DfpAgentLifecycle(appLifecycle),
+    new SurgingContentAgentLifecycle(appLifecycle),
+    IndexListingsLifecycle,
+    new SectionsLookUpLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    new SiteMapLifecycle(),
+    LogstashLifecycle,
+    new CachedHealthCheckLifeCycle(HealthCheck)
   )
 }

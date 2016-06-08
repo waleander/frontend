@@ -1,62 +1,111 @@
-@(model: ArticlePage)(implicit request: RequestHeader)
 
-@import conf.Switches._
+@(model: ArticlePage, amp: Boolean = false)(implicit request: RequestHeader)
+
+@import common.LinkTo
 @import views.BodyCleaner
-@import views.support.TrailCssClasses.articleToneClass
+@import views.support.RenderClasses
+@import views.support.TrailCssClasses.toneClass
+
+@* Feb 2015: Google does only support NewsArticle in their amp carousel. To remove once Google starts supporting other schemas like schema.org/Review *@
+@schemaType(page: ArticlePage) = @{
+    if (amp) "http://schema.org/NewsArticle" else page.article.metadata.schemaType
+}
+
+@bodyType(page: ArticlePage) = @{
+    if (page.article.tags.isReview && !amp) "reviewBody" else "articleBody"
+}
 
 @defining(model.article) { article =>
-<div class="l-side-margins">
-    <article id="article" data-test-id="article-root"
-        class="content content--article tonal tonal--@articleToneClass(article) section-@article.sectionName.trim.toLowerCase.replaceAll("""[\s-]+""", "-")
-        @if(article.isAdvertisementFeature){content--advertisement-feature}
-        @if(article.isFeature && article.hasShowcaseMainPicture){has-feature-showcase-picture}"
-        itemscope itemtype="@article.schemaType" role="main">
 
-        @fragments.headTonal(article)
+    <div class="l-side-margins">
+        <article id="article" data-test-id="article-root"
 
-        @if(article.isFeature && article.hasShowcaseMainPicture) {
-            @fragments.mainMedia(article)
-        }
+        class="@RenderClasses(Map(
+            "content--advertisement-feature" -> article.commercial.isAdvertisementFeature,
+            "has-feature-showcase-element" -> (article.tags.isFeature && article.elements.hasShowcaseMainElement),
+            "paid-content--advertisement-feature" -> article.commercial.isAdvertisementFeature
+        ),  "content", "content--article", "tonal", s"tonal--${toneClass(article)}", s"section-${article.trail.sectionName.trim.toLowerCase.replaceAll("""[\s-]+""", "-")}")"
 
-        <div class="content__main tonal__main tonal__main--@articleToneClass(article)">
-            <div class="gs-container">
-                <div class="content__main-column content__main-column--article js-content-main-column @if(article.isSudoku) {sudoku}">
+        itemscope itemtype="@schemaType(model)" role="main">
+            <meta itemprop="mainEntityOfPage" content="@LinkTo(article.metadata.url)">
+            <div itemprop="publisher" itemscope itemtype="https://schema.org/Organization">
+                <meta itemprop="name" content="The Guardian">
+                @if(amp) {
+                    @* AMP doesn't support sameAs *@
+                    <div itemprop="logo" itemscope itemtype="https://schema.org/ImageObject">
+                        <meta itemprop="url" content="https://static.guim.co.uk/sys-images/Guardian/Pix/pictures/2015/10/1/1443713974413/Guardiantitlepiecedigitalon.png">
+                    </div>
+                } else {
+                    <link itemprop="sameAs" href="http://www.theguardian.com">
+                }
+            </div>
 
-                    <div class="js-football-tabs football-tabs content__mobile-full-width"></div>
+            @if(article.commercial.isAdvertisementFeature){
+                @fragments.guBand()
+            }
 
-                    @if(!(article.isFeature && article.hasShowcaseMainPicture)) {
-                        @fragments.mainMedia(article)
-                    }
+            @fragments.headTonal(article, model, article.commercial.isAdvertisementFeature, amp = amp)
 
-                    @fragments.witnessCallToAction(article)
+            @if(article.tags.isFeature && article.elements.hasShowcaseMainElement) {
+                @fragments.mainMedia(article, amp)
+            }
 
-                    @fragments.contentMeta(article)
+            <div class="content__main tonal__main tonal__main--@toneClass(article)">
+                <div class="gs-container">
+                    <div class="content__main-column content__main-column--article js-content-main-column @if(article.tags.isSudoku) {sudoku}">
 
-                    @if(article.isNews && !article.hasMainEmbed && article.elements("main").isEmpty) {
-                        <hr class="content__hr hide-until-leftcol" />
-                    }
+                        <div class="js-sport-tabs football-tabs content__mobile-full-width"></div>
 
-                    <div class="content__article-body from-content-api js-article__body" itemprop="@if(article.isReview){reviewBody} else {articleBody}"
-                        data-test-id="article-review-body">
-                        @BodyCleaner(article, article.body)
+                        @if(!(article.tags.isFeature && article.elements.hasShowcaseMainElement)) {
+                            @fragments.mainMedia(article, amp)
+                        }
+
+                        @fragments.witnessCallToAction(article.content)
+
+                        @fragments.contentMeta(article, model)
+
+                        @fragments.chapterHeadings(article)
+
+                        @if(article.tags.isNews && !article.elements.hasMainEmbed && article.elements.elements("main").isEmpty) {
+                            <hr class="content__hr hide-until-leftcol" />
+                        }
+
+                        <div class="content__article-body from-content-api js-article__body" itemprop="@bodyType(model)"
+                            data-test-id="article-review-body">
+                            @BodyCleaner(article, article.fields.body, amp = amp)
+
+                            @* A value for the image field is required for AMP article
+                            WORKAROUND: if the article doesn't contain any image we insert the metadata of the fallback logo,
+                            so the amp page passes validation but no image is visible by the user *@
+                            @if(amp && article.content.elements.images.isEmpty) {
+                                <div itemprop="image" itemscope itemtype="http://schema.org/ImageObject">
+                                    <meta itemprop="url" content="https://assets.guim.co.uk/images/2170b16eb045a34f8c79761b203627b4/fallback-logo.png">
+                                    <meta itemprop="width" content="1200">
+                                    <meta itemprop="height" content="630">
+                                </div>
+                            }
+                        </div>
+
+                        @fragments.witnessCallToAction(article.content)
+
+                        @fragments.submeta(article)
+
+                        <div class="after-article js-after-article"></div>
                     </div>
 
-                    @fragments.witnessCallToAction(article)
-
-                    @fragments.submeta(article)
-
-                    <div class="after-article js-after-article"></div>
-                </div>
-
-                <div class="content__secondary-column js-secondary-column" aria-hidden="true">
-                    <div class="mpu-container js-mpu-ad-slot"></div>
-                    <div class="js-components-container"></div>
+                    <div class="content__secondary-column js-secondary-column" aria-hidden="true">
+                        @fragments.chapterHeadings(article)
+                        <div class="ad-slot-container js-ad-slot-container"></div>
+                        <div class="js-components-container"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </article>
+        </article>
 
-    @fragments.contentFooter(article, model.related)
+        @* Currently AMP documents don't support most of what we do in the footer *@
+        @if(!amp) {
+            @fragments.contentFooter(article, model.related)
+        }
 
-    }
-</div>
+    </div>
+}

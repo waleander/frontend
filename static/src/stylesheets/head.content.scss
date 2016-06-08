@@ -5,9 +5,10 @@
 /* ==========================================================================
    Icons
    ========================================================================== */
-@import 'icons/_content-icons-sprite';
-@import 'icons/_content-icons-svg';
-
+@import 'icons/_global-icons-sprite';
+@import 'icons/_global-icons-svg';
+@import 'icons/video-icons-sprite';
+@import 'icons/video-icons-svg';
 
 /* ==========================================================================
    Global modules
@@ -20,7 +21,10 @@
 @import 'module/_social';
 @import 'module/_layout-hints';
 @import 'module/_live-pulse';
-
+@import 'module/_chapters';
+@import 'module/content/_article-immersive';
+@import 'module/content/_article-minute';
+@import 'module/test-welcome-header';
 
 /* ==========================================================================
    External modules
@@ -30,3 +34,10 @@
 // and may contain more specific selectors than we would usually like
 
 @import 'module/external/_from-content-api';
+@import 'module/content/_badging';
+
+/* ==========================================================================
+   Atoms
+   ========================================================================== */
+
+@import 'module/atoms/_quiz';

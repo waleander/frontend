@@ -2,51 +2,63 @@ define([
     'bonzo',
     'fastdom',
     'qwery',
+    'common/modules/experiments/ab',
+    'common/modules/experiments/tests/utils/comment-blocker',
     'common/utils/$',
-    'common/utils/_',
     'common/utils/ajax',
     'common/utils/formatters',
     'common/utils/mediator',
     'common/utils/template',
     'common/views/svgs',
     'text!common/views/discussion/comment-count.html',
-    'text!common/views/discussion/comment-count--content.html'
+    'text!common/views/discussion/comment-count--content.html',
+    'text!common/views/discussion/comment-count--content-immersive.html',
+    'lodash/collections/groupBy',
+    'lodash/collections/forEach',
+    'lodash/collections/sortBy',
+    'lodash/arrays/uniq',
+    'lodash/objects/keys',
+    'common/utils/chain'
 ], function (
     bonzo,
     fastdom,
     qwery,
+    ab,
+    CommentBlocker,
     $,
-    _,
     ajax,
     formatters,
     mediator,
     template,
     svgs,
     commentCountTemplate,
-    commentCountContentTemplate
+    commentCountContentTemplate,
+    commentCountContentImmersiveTemplate,
+    groupBy,
+    forEach,
+    sortBy,
+    uniq,
+    keys,
+    chain
 ) {
     var attributeName = 'data-discussion-id',
         countUrl = '/discussion/comment-counts.json?shortUrls=',
         templates = {
-            content: commentCountContentTemplate
+            content: commentCountContentTemplate,
+            contentImmersive: commentCountContentImmersiveTemplate
         },
         defaultTemplate = commentCountTemplate;
 
     function getElementsIndexedById(context) {
         var elements = qwery('[' + attributeName + ']', context);
 
-        return _.groupBy(elements, function (el) {
+        return groupBy(elements, function (el) {
             return bonzo(el).attr(attributeName);
         });
     }
 
     function getContentIds(indexedElements) {
-        return _.chain(indexedElements)
-                    .keys()
-                    .uniq()
-                    .sortBy()
-                    .join(',')
-                    .value();
+        return chain(indexedElements).and(keys).and(uniq).and(sortBy).join(',').value();
     }
 
     function getContentUrl(node) {
@@ -56,13 +68,18 @@ define([
 
     function renderCounts(counts, indexedElements) {
         counts.forEach(function (c) {
-            _.forEach(indexedElements[c.id], function (node) {
+            forEach(indexedElements[c.id], function (node) {
                 var format,
                     $node = bonzo(node),
                     url = $node.attr('data-discussion-url') || getContentUrl(node),
+                    shortUrl = $node.attr('data-loyalty-short-url') || '',
                     $container,
                     meta,
                     html;
+
+                if (shortUrl && ab.isInVariant('ParticipationDiscussionTest', 'variant-1') &&  CommentBlocker.hideComments(shortUrl.replace('/p/','')) ) {
+                    return;
+                }
 
                 if ($node.attr('data-discussion-closed') === 'true' && c.count === 0) {
                     return; // Discussion is closed and had no comments, we don't want to show a comment count

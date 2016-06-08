@@ -1,12 +1,6 @@
 define([
-    'common/utils/_',
-    'common/utils/detect',
-    'common/utils/mediator'
-], function (
-    _,
-    detect,
-    mediator
-) {
+    'common/utils/detect'
+], function (detect) {
 
     var supportsPushState = detect.hasPushStateSupport(),
         model = {
@@ -15,13 +9,15 @@ define([
             // eg ?foo=bar&fizz=buzz returns {foo: 'bar', fizz: 'buzz'}
             getUrlVars: function (options) {
                 var opts = options || {};
-                return _((opts.query || model.getCurrentQueryString()).split('&'))
-                    .compact()
+                return (opts.query || model.getCurrentQueryString()).split('&')
+                    .filter(Boolean)
                     .map(function (query) {
                         return query.indexOf('=') > -1 ? query.split('=') : [query, true];
                     })
-                    .zipObject()
-                    .valueOf();
+                    .reduce(function (result, input) {
+                        result[input[0]] = input[1];
+                        return result;
+                    }, {});
             },
 
             // returns "foo=bar&fizz=buzz" (eg. no ? symbol)
@@ -50,14 +46,9 @@ define([
 
             // take an object, construct into a query, e.g. {page: 1, pageSize: 10} => page=1&pageSize=10
             constructQuery: function (query) {
-                return _(query)
-                    .pairs()
-                    .map(function (queryParts) {
-                        var value = queryParts[1];
-                        if (_.isArray(value)) {
-                            value = value.join(',');
-                        }
-                        return [queryParts[0], '=', value].join('');
+                return Object.keys(query).map(function (param) {
+                        var value = query[param];
+                        return param + '=' + (Array.isArray(value) ? value.join(',') : value);
                     }).join('&');
             },
 
@@ -80,9 +71,6 @@ define([
             }
         };
 
-    // pubsub
-    mediator.on('modules:url:pushquerystring', model.pushQueryString);
-
     // not exposing all the methods here
     return {
         getUrlVars: model.getUrlVars,
@@ -90,7 +78,8 @@ define([
         pushUrl: model.pushUrl,
         constructQuery: model.constructQuery,
         back: model.back,
-        hasHistorySupport: supportsPushState
+        hasHistorySupport: supportsPushState,
+        pushQueryString: model.pushQueryString
     };
 
 });

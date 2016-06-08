@@ -1,10 +1,10 @@
-@(env: String, report: dfp.InlineMerchandisingTargetedTagsReport)
+@(env: String, report: dfp.InlineMerchandisingTargetedTagsReport)(implicit request: RequestHeader)
 @import tools.SiteLink
 @import tools.CapiLink
 
 @admin_main("Commercial IM Slot", env, isAuthed = true, hasCharts = false) {
 
-    <link rel="stylesheet" type="text/css" href="@routes.Assets.at(" css/commercial.css")">
+    <link rel="stylesheet" type="text/css" href="@controllers.admin.routes.UncachedAssets.at(" css/commercial.css")">
 
     <h1>Inline Merchandising Slot</h1>
 

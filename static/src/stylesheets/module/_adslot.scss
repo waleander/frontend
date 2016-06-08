@@ -1,4 +1,5 @@
 .ad-slot {
+    position: relative;
     z-index: $zindex-ads;
     overflow: hidden;
 
@@ -10,8 +11,16 @@
         }
     }
 }
+
+/* Ad slots with sticky MPUs should be vertically separated from the following content, but collapse if empty.
+ * Margins on children don't affect the position of elements we make sticky.
+ */
+.ad-slot-container > :last-child {
+    margin-bottom: 0;
+    padding-bottom: $gs-baseline * 2;
+}
 .ad-slot--dark {
-    background-color: lighten(colour(media-background), 2.5%);
+    background-color: lighten($media-background, 2.5%);
 }
 .ad-slot--mobile {
     @include mq(tablet) {
@@ -24,21 +33,27 @@
     }
  }
 
+.ad-slot--right {
+    &.is-sticky {
+        width: 300px;
+    }
+}
+
 .ad-slot__label {
+    @include font-size(12, 20);
     height: $mpu-ad-label-height;
-    background-color: colour(neutral-8);
+    background-color: $neutral-8;
     margin: 0 auto;
     padding: 0 ($gs-baseline/3)*2;
-    border-top: 1px solid colour(neutral-5);
-    color: colour(neutral-2-contrasted);
+    border-top: 1px solid $neutral-5;
+    color: $neutral-2-contrasted;
     text-align: right;
     box-sizing: border-box;
     font-family: $f-sans-serif-text;
-    @include font-size(12, 20);
 
     .ad-slot--dark & {
-        color: colour(neutral-3);
-        border-top-color: colour(neutral-2);
+        color: $neutral-3;
+        border-top-color: $media-mute;
         background-color: transparent;
     }
 }
@@ -50,11 +65,20 @@
 .top-banner-ad-container--mobile {
     background-color: #f0f0f0;
 }
-.top-banner-ad-container--desktop {
-    background-color: colour(neutral-8);
-    border-bottom: 2px solid colour(neutral-4);
+.top-banner-ad-container--ab-mobile {
     display: none;
-    overflow: hidden;
+}
+.top-banner-ad-container--desktop {
+    background-color: $neutral-8;
+    display: none;
+
+    .sticky-ad-banner & {
+        z-index: 1022;
+        width: 100%;
+        transform: translateZ(0);
+        will-change: transform;
+        position: relative;
+    }
 
     &.top-banner-ad-container--below-nav {
         border-bottom-width: 1px;
@@ -81,25 +105,32 @@
             margin: 0;
         }
     }
-    iframe {
-        transform: translateZ(0);
-        transition: height 1s cubic-bezier(0, 0, 0, .985);
+
+    /*
+     * Sometimes we have ads which needs to be allowed to escape container in the top slot (for example video ads)
+     * We are giving this ad priority 5 so it will go over everything except lightbox
+     */
+    .ad-slot {
+        overflow: visible;
+        z-index: $zindex-popover;
     }
 }
+
 .top-banner-ad-container--above-nav {
     @include mq(tablet) {
-        .js-on & {
+        .js-on:not(.is-adfree) & {
             display: block;
         }
     }
 }
 .top-banner-ad-container--below-nav {
     @include mq(desktop) {
-        .js-on & {
+        .js-on:not(.is-adfree) & {
             display: block;
         }
     }
 }
+
 .ad-slot--top-banner-ad {
     text-align: center;
 
@@ -119,8 +150,20 @@
     .top-banner-ad-container--desktop & {
         margin: 0 auto;
         display: none;
-        min-height: 90 + ($gs-row-height / 2);
+        min-height: 90px;
         padding-bottom: $gs-row-height / 2;
+        padding-top: $gs-row-height / 2;
+
+        /* Oh horrible code, I'm looking at you. One day, you'll disappear.
+           One day, I'll fucking rip you apart.
+         */
+        &.ad-slot--h250 {
+            height: 250px;
+        }
+
+        .ad-slot__label {
+            margin-top: (-1) * $gs-row-height / 2;
+        }
 
         .ad-below-nav & {
             min-height: 0;
@@ -139,6 +182,7 @@
             text-align: left;
         }
     }
+
     .has-page-skin & {
         @include mq(wide) {
             width: auto !important;
@@ -146,7 +190,8 @@
             text-align: center;
 
             .ad-slot__label {
-                margin: 0 auto;
+                margin-left: auto;
+                margin-right: auto;
             }
         }
     }
@@ -163,16 +208,15 @@
 .ad-slot--container-inline,
 .ad-slot--gallery-inline,
 .ad-slot--liveblog-inline {
-    width: 300px;
+    width: $mpu-original-width;
     margin: $gs-baseline auto;
-    min-height: 50 + $mpu-ad-label-height;
+    min-height: $mpu-original-height + $mpu-ad-label-height;
     text-align: center;
 
     @include mq(mobileLandscape) {
         width: 320px;
     }
     @include mq(tablet) {
-        height: 250px + $mpu-ad-label-height;
         width: auto;
     }
     .ad-slot__label {
@@ -180,16 +224,24 @@
     }
 }
 .ad-slot--gallery-inline {
+    background-color: $media-background;
+
     @include mq(mobileLandscape) {
         width: 300px;
     }
     @include mq(tablet) {
         width: auto;
     }
+    @include mq(desktop) {
+        &,
+        .ad-slot__label {
+            text-align: left;
+        }
+    }
 }
 .ad-slot--inline,
 .ad-slot--container-inline {
-    background-color: colour(neutral-8);
+    background-color: $neutral-8;
 
     @include mq(tablet) {
         width: 300px;
@@ -204,7 +256,7 @@
 }
 .ad-slot__content {
     > div {
-        margin: 0 auto;            
+        margin: 0 auto;
     }
 }
 .ad-slot--container-inline {
@@ -215,7 +267,6 @@
         position: relative;
         height: auto;
         margin: 0 $gs-gutter/2;
-        width: gs-span(4.5);
 
         .content-footer & {
             width: 300px;
@@ -241,7 +292,6 @@
         }
     }
 }
-.ad-slot--gallery-inline,
 .ad-slot--liveblog-inline {
     @include mq(tablet) {
         padding-bottom: $gs-baseline*2;
@@ -254,66 +304,22 @@
     }
 }
 .ad-slot--liveblog-inline {
-    background-color: colour(neutral-6);
+    background-color: $neutral-6;
 
     .ad-slot__label {
-        color: colour(neutral-2);
-        border-top-color: colour(neutral-3);
+        color: $neutral-2;
+        border-top-color: $neutral-3;
     }
 }
 .ad-slot--mpu-banner-ad {
     display: none;
-    width: 300px;
-    min-height: 250 + $mpu-ad-label-height;
+    width: $mpu-original-width;
+    min-height: $mpu-original-height + $mpu-ad-label-height;
     margin-bottom: $gs-baseline*2;
 
     @include mq(desktop) {
         display: block;
     }
-}
-.ad-slot--sponsored {
-    min-height: 250px;
-    box-sizing: border-box;
-    background-color: colour(neutral-8);
-    overflow: hidden;
-    border-top: 1px solid colour(neutral-5);
-    padding-top: $gs-baseline/2;
-}
-.ad-slot--sponsored__article {
-    text-align: left;
-    display: block;
-    position: relative;
-    min-height: gs-height(2);
-    padding: 0 $gs-gutter/2 $gs-baseline/2 (gs-span(2) + $gs-gutter);
-    margin-bottom: $gs-baseline/2;
-    border-bottom: 1px solid colour(neutral-5);
-}
-.ad-slot--sponsored__image {
-    position: absolute;
-    top: 0;
-    left: $gs-gutter/2;
-}
-.ad-slot--sponsored__article,
-.ad-slot--sponsored__label,
-.ad-slot--sponsored__help {
-    color: colour(neutral-2);
-}
-.ad-slot--sponsored__article {
-    @include f-headlineSans;
-    @include font-size(16, 20);
-}
-.ad-slot--sponsored__label,
-.ad-slot--sponsored__help {
-    float: left;
-    clear: left;
-    padding-left: $gs-gutter/2;
-    @include fs-textSans(3);
-}
-.ad-slot--sponsored__label {
-    margin-bottom: $gs-baseline/3;
-}
-.ad-slot--sponsored__link {
-    float: right;
 }
 
 /**
@@ -331,7 +337,7 @@
 }
 
 /**
- * Badges
+ * Badges - This will become obsolete when we will merge new server side served badges. Styles will be moved into commercial/_brandbadge.scss
  */
 .ad-slot--paid-for-badge {
     padding: 2px 0 $gs-baseline;
@@ -352,7 +358,7 @@
     .ad-slot--paid-for-badge__header,
     .ad-slot--paid-for-badge__help {
         @include fs-textSans(1);
-        color: colour(neutral-2);
+        color: $neutral-2;
     }
     .ad-slot--paid-for-badge__help {
         @include font-size(11, 14);
@@ -371,6 +377,10 @@
     .ad-slot--paid-for-badge__logo {
         display: block;
     }
+    .ad-slot--paid-for-badge__logo {
+        max-width: 100%;
+        max-height: $gs-baseline * 6;
+    }
     .ad-slot--paid-for-badge__link,
     .ad-slot--paid-for-badge__help {
         float: left;
@@ -386,16 +396,16 @@
 .ad-slot--adbadge {
     .ad-slot--paid-for-badge__header,
     .ad-slot--paid-for-badge__help {
-        color: colour(neutral-2-contrasted);
+        color: $neutral-2-contrasted;
     }
 }
 .ad-slot--im {
-    box-sizing: border-box;
-    max-width: 50%;
     float: left;
+    margin: 5px $gs-gutter $gs-baseline 0;
 
-    @include mq(mobileLandscape) {
-        max-width: $left-column-wide + $gs-gutter;
+    @include mq($until: mobileLandscape) {
+        margin-bottom: $gs-baseline / 2;
+        margin-right: $gs-gutter / 2;
     }
 }
 .ad-slot--fobadge.ad-slot--im {
@@ -403,18 +413,18 @@
 
     .ad-slot--paid-for-badge__inner {
         padding: $gs-baseline / 2 0 $gs-baseline;
-        border-top: 1px solid colour(neutral-3);
-        border-bottom: 1px dotted colour(neutral-3);
+        border-top: 1px solid $neutral-3;
+        border-bottom: 1px dotted $neutral-3;
     }
  }
 .ad-slot--paid-for-badge--article {
     padding-bottom: $gs-baseline * 2;
-    border-bottom: 1px dotted colour(neutral-5);
+    border-bottom: 1px dotted $neutral-5;
 
     @include mq(leftCol) {
         min-height: 0;
         border-bottom-width: 0;
-        border-top: 1px dotted colour(neutral-5);
+        border-top: 1px dotted $neutral-5;
     }
 
     @include mq(mobile, $until: leftCol) {
@@ -432,11 +442,54 @@
     .content--media--video & {
         min-height: 0;
     }
+
+    .content--immersive & {
+        @include mq(leftCol) {
+            float: left;
+            margin-left: -158px;
+        }
+
+        @include mq(wide) {
+            margin-left: -238px;
+        }
+    }
 }
+
+.content--media:not(.paid-content--advertisement-feature) {
+    .ad-slot--paid-for-badge--gallery {
+        border-top: 1px dotted $media-mute;
+        border-bottom: 0;
+        padding-top: $gs-baseline / 3;
+
+        @include mq(desktop) {
+            width: gs-span(3);
+            position: absolute;
+        }
+
+        .content__main-column > & {
+            @include mq(desktop) {
+                top: 100%;
+            }
+
+            @include mq(leftCol) {
+                left: -160px;
+            }
+
+            @include mq(wide) {
+                left: -240px;
+            }
+        }
+
+        .ad-slot--paid-for-badge__header {
+            font-weight: normal;
+        }
+    }
+}
+
 .ad-slot--paid-for-badge--interactive {
     width: 140px;
     min-height: 135px;
-    border-top: 1px dotted colour(neutral-5);
+    border-top: 1px dotted $neutral-5;
 
     @include mq(desktop) {
         position: absolute;
@@ -478,7 +531,7 @@
             height: 0;
             width: $left-column + $gs-gutter;
             content: '';
-            border-bottom: 1px dotted colour(neutral-5);
+            border-bottom: 1px dotted $neutral-5;
             margin-top: $gs-gutter/4;
 
             @include mq(leftCol) {
@@ -498,6 +551,11 @@
         @include mq(mobile, $until: leftCol) {
             max-height: 60px;
         }
+        @include mq($from: leftCol) {
+            .has-page-skin & {
+                max-height: 60px;
+            }
+        }
     }
 
     @include mq(leftCol) {
@@ -509,16 +567,21 @@
         min-height: 0;
         margin-top: 4px;
         padding-top: 2px;
-        border-top: 1px dotted colour(neutral-5);
-
-        .commercial-dfp-multi & {
-            position: absolute;
-            bottom: $gs-gutter;
-        }
+        border-top: 1px dotted $neutral-5;
 
         .ad-slot--paid-for-badge__link {
             float: none;
             margin-top: $gs-row-height/4;
+        }
+    }
+    @include mq($from: leftCol) {
+        .has-page-skin & {
+            float: right;
+            clear: right;
+            width: $left-column + $gs-gutter;
+            min-height: 90px;
+            margin: 0;
+            padding: 2px 0 $gs-baseline;
         }
     }
     @include mq(tablet, $until: leftCol) {
@@ -529,23 +592,13 @@
     @include mq(wide) {
         width: $left-column-wide;
 
-        .has-page-skin & {
-            margin-left: 50%;
-            width: auto;
-            float: none;
-            margin-top: -$gs-row-height;
-
-            .ad-slot--paid-for-badge__link {
-                float: right;
-            }
-        }
         .has-page-skin .fc-container--has-toggle & {
             margin-right: gs-span(1);
         }
     }
     @include mq($until: tablet) {
         clear: both;
-        border-top: 1px dotted colour(neutral-5);
+        border-top: 1px dotted $neutral-5;
 
         .fc-container--tag & {
             width: gs-span(2);
@@ -559,8 +612,6 @@
 .fc-container--advertisement-feature,
 .fc-container--foundation-supported {
     .fc-container__header + .fc-container__body {
-        margin-top: 104px;
-
         @include mq(tablet) {
             margin-top: 78px;
         }
@@ -595,4 +646,11 @@
             }
         }
     }
+}
+
+/**
+ * Fluid ad slots don't have widths
+ */
+.ad-slot--fluid {
+    width: auto;
 }

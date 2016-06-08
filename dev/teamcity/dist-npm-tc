@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -o xtrace
+set -o nounset
+set -o errexit
+
+echo "Install dependencies"
+make install
+
+./grunt-tc clean

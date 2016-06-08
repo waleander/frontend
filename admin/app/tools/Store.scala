@@ -1,23 +1,21 @@
 package tools
 
 import common.Logging
-import conf.AdminConfiguration
+import common.dfp._
 import conf.Configuration.commercial._
-import dfp._
+import conf.{AdminConfiguration, Configuration}
+import dfp.GuCustomTargetingKey
 import implicits.Dates
 import org.joda.time.DateTime
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.libs.json.Json.toJson
 import services.S3
 
 trait Store extends Logging with Dates {
-  lazy val configKey = AdminConfiguration.configKey
-  lazy val switchesKey = AdminConfiguration.switchesKey
+  lazy val switchesKey = Configuration.switches.key
   lazy val topStoriesKey = AdminConfiguration.topStoriesKey
 
   final val defaultJsonEncoding: String = "application/json;charset=utf-8"
-
-  def getConfig = S3.get(configKey)
-  def putConfig(config: String) { S3.putPublic(configKey, config, "application/json") }
 
   def getSwitches = S3.get(switchesKey)
   def getSwitchesWithLastModified = S3.getWithLastModified(switchesKey)
@@ -33,20 +31,32 @@ trait Store extends Logging with Dates {
   def putInlineMerchandisingSponsorships(keywordsJson: String) {
     S3.putPublic(dfpInlineMerchandisingTagsDataKey, keywordsJson, defaultJsonEncoding)
   }
+  def putHighMerchandisingSponsorships(keywordsJson: String) {
+    S3.putPublic(dfpHighMerchandisingTagsDataKey, keywordsJson, defaultJsonEncoding)
+  }
   def putDfpPageSkinAdUnits(adUnitJson: String) {
     S3.putPublic(dfpPageSkinnedAdUnitsKey, adUnitJson, defaultJsonEncoding )
   }
   def putDfpLineItemsReport(everything: String) {
     S3.putPublic(dfpLineItemsKey, everything, defaultJsonEncoding)
   }
-  def putDfpAdFeatureReport(adFeaturesJson: String) {
-    S3.putPublic(dfpAdFeatureReportKey, adFeaturesJson, defaultJsonEncoding)
+  def putDfpAdUnitList(filename: String, adUnits: String): Unit = {
+    S3.putPublic(filename, adUnits, "text/plain")
   }
-  def putDfpActiveAdUnitList(adUnits: String) {
-    S3.putPublic(dfpActiveAdUnitListKey, adUnits, "text/plain")
+  def putTopAboveNavSlotTakeovers(takeovers: String) {
+    S3.putPublic(topAboveNavSlotTakeoversKey, takeovers, defaultJsonEncoding)
   }
-  def putCachedTravelOffersFeed(everything: String) {
-    S3.putPublic(travelOffersS3Key, everything, "text/plain")
+  def putTopBelowNavSlotTakeovers(takeovers: String) {
+    S3.putPublic(topBelowNavSlotTakeoversKey, takeovers, defaultJsonEncoding)
+  }
+  def putTopSlotTakeovers(takeovers: String) {
+    S3.putPublic(topSlotTakeoversKey, takeovers, defaultJsonEncoding)
+  }
+  def putDfpTemplateCreatives(creatives: String) {
+    S3.putPublic(dfpTemplateCreativesKey, creatives, defaultJsonEncoding)
+  }
+  def putDfpCustomTargetingKeyValues(keyValues: String): Unit ={
+    S3.putPublic(dfpCustomTargetingKey, keyValues, defaultJsonEncoding )
   }
 
   val now: String = DateTime.now().toHttpDateTimeString
@@ -63,7 +73,50 @@ trait Store extends Logging with Dates {
     S3.get(dfpInlineMerchandisingTagsDataKey) flatMap (InlineMerchandisingTargetedTagsReportParser(_))
   } getOrElse InlineMerchandisingTargetedTagsReport(now, InlineMerchandisingTagSet())
 
-  def getDfpLineItemsReport() = S3.get(dfpLineItemsKey)
+  def getDfpHighMerchandisingTargetedTagsReport(): HighMerchandisingTargetedTagsReport = {
+    S3.get(dfpHighMerchandisingTagsDataKey) flatMap (HighMerchandisingTargetedTagsReportParser(_))
+  } getOrElse HighMerchandisingTargetedTagsReport(now, HighMerchandisingLineItems(items = List.empty))
+
+  def getDfpLineItemsReport(): Option[String] = S3.get(dfpLineItemsKey)
+
+  def getSlotTakeoversReport(slotName: String): Option[String] = slotName match {
+    case "top-above-nav" => S3.get(topAboveNavSlotTakeoversKey)
+    case "top-below-nav" => S3.get(topBelowNavSlotTakeoversKey)
+    case "top" => S3.get(topSlotTakeoversKey)
+    case _ => None
+  }
+
+  def getDfpTemplateCreatives: Seq[GuCreative] = {
+    val creatives = for (doc <- S3.get(dfpTemplateCreativesKey)) yield {
+      Json.parse(doc).as[Seq[GuCreative]]
+    }
+    creatives getOrElse Nil
+  }
+
+  def getDfpCustomTargetingKeyValues: Seq[GuCustomTargetingKey] = {
+    val targeting = for (doc <- S3.get(dfpCustomTargetingKey)) yield {
+      val json = Json.parse(doc)
+      json.validate[Seq[GuCustomTargetingKey]] match {
+        case s: JsSuccess[Seq[GuCustomTargetingKey]] => s.get.sortBy(_.name)
+        case e: JsError => log.error("Errors: " + JsError.toJson(e).toString()); Nil
+      }
+    }
+    targeting getOrElse Nil
+  }
+
+  object commercial {
+
+    def getTakeoversWithEmptyMPUs(): Seq[TakeoverWithEmptyMPUs] = {
+      S3.get(takeoversWithEmptyMPUsKey) map {
+        Json.parse(_).as[Seq[TakeoverWithEmptyMPUs]]
+      } getOrElse Nil
+    }
+
+    def putTakeoversWithEmptyMPUs(takeovers: Seq[TakeoverWithEmptyMPUs]): Unit = {
+      val content = Json.stringify(toJson(takeovers))
+      S3.putPrivate(takeoversWithEmptyMPUsKey, content, "application/json")
+    }
+  }
 }
 
 object Store extends Store

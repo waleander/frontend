@@ -3,7 +3,7 @@ package test
 import org.scalatest.{DoNotDiscover, FeatureSpec, GivenWhenThen, Matchers}
 import services.IndexPagePagination
 import collection.JavaConversions._
-import conf.Switches
+import conf.switches.Switches
 import org.fluentlenium.core.domain.{FluentWebElement, FluentList}
 
 @DoNotDiscover class TagFeatureTest extends FeatureSpec with GivenWhenThen with Matchers with ConfiguredTestSuite {
@@ -31,7 +31,7 @@ import org.fluentlenium.core.domain.{FluentWebElement, FluentList}
       goTo("/profile/jemimakiss") { browser =>
         Then("I should see her profile image")
         val profileImage = browser.findFirst("[data-test-id=header-image]")
-        profileImage.getAttribute("src") should endWith(s"42593747/Jemima-Kiss.jpg")
+        profileImage.getAttribute("src") should include(s"42593747/Jemima-Kiss.jpg")
       }
     }
 
@@ -47,7 +47,7 @@ import org.fluentlenium.core.domain.{FluentWebElement, FluentList}
     }
   }
 
-  feature("Tag Pages Football Nav") {
+  feature("Tag Pages") {
 
     scenario("Pagination") {
 
@@ -74,7 +74,7 @@ import org.fluentlenium.core.domain.{FluentWebElement, FluentList}
         dataIdsOnFirstPage intersect dataIdsOnNextPage.toSet should be(Set.empty)
 
         And("The title should reflect the page number")
-        findFirst("title").getText should include ("| Page 2 of")
+        browser.title should include ("| Page 2 of")
 
         And("I should be able to navigate to the 'previous' page")
         findFirst(".pagination").findFirst("[rel=prev]").click()

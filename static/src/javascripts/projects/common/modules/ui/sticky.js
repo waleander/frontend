@@ -1,55 +1,90 @@
 define([
     'bonzo',
-    'common/utils/_',
-    'common/utils/$',
+    'common/utils/config',
     'common/utils/mediator',
-    'common/modules/experiments/ab'
+    'fastdom',
+    'lodash/objects/defaults'
 ], function (
     bonzo,
-    _,
-    $,
+    config,
     mediator,
-    ab
+    fastdom,
+    defaults
 ) {
+
+    var paidforBandHeight;
+
+    function initPaidForBand(element) {
+        paidforBandHeight = 0;
+        if (config.page.isAdvertisementFeature) {
+            var paidforBand = document.querySelector('.paidfor-band');
+            if (paidforBand && paidforBand !== element) {
+                fastdom.read(function () {
+                    paidforBandHeight = paidforBand.offsetHeight;
+                });
+            }
+        }
+    }
+
     /**
      * @todo: check if browser natively supports "position: sticky"
      */
-    var Sticky = function (element, options) {
-        this.$element = bonzo(element);
-        this.$parent  = this.$element.parent();
-        this.opts     = _.defaults(options || {}, {
-            top: 0
+    function Sticky(element, options) {
+        this.element  = element;
+        this.opts     = defaults(options || {}, {
+            top: 0,
+            containInParent: true,
+            emitMessage: false
         });
-    };
+    }
 
-    Sticky.prototype.init = function () {
-        mediator.on('window:scroll', _.throttle(this.updatePosition.bind(this), 10));
+    Sticky.prototype.init = function init() {
+        if (paidforBandHeight === undefined) {
+            initPaidForBand(this.element);
+        }
+        mediator.on('window:throttledScroll', this.updatePosition.bind(this));
         // kick off an initial position update
-        this.updatePosition();
+        fastdom.read(this.updatePosition, this);
     };
 
-    Sticky.prototype.updatePosition = function () {
-        var fixedTop, css, stickyHeaderHeight;
-
-        stickyHeaderHeight = ab.shouldRunTest('Viewability', 'variant') ? $('.navigation').dim().height : 0;
+    Sticky.prototype.updatePosition = function updatePosition() {
+        var parentRect = this.element.parentNode.getBoundingClientRect();
+        var elementHeight = this.element.offsetHeight;
+        var css = {}, message, stick;
 
         // have we scrolled past the element
-        if (window.scrollY >= this.$parent.offset().top - this.opts.top - stickyHeaderHeight) {
+        if (parentRect.top < this.opts.top + paidforBandHeight) {
             // make sure the element stays within its parent
-            fixedTop = Math.min(this.opts.top, this.$parent[0].getBoundingClientRect().bottom - this.$element.dim().height) + stickyHeaderHeight;
-
-            css = {
-                position: 'fixed',
-                top:      fixedTop
-            };
+            var fixedTop = this.opts.containInParent && parentRect.bottom < this.opts.top + elementHeight ?
+                Math.floor(parentRect.bottom - elementHeight - this.opts.top) :
+                this.opts.top;
+            stick = true;
+            css = { top: fixedTop };
+            message = 'fixed';
         } else {
-            css = {
-                position: null,
-                top:      null
-            };
+            stick = false;
+            css = { top: 0 };
+            message = 'unfixed';
         }
 
-        return this.$element.css(css);
+        if (this.opts.emitMessage && message && message !== this.lastMessage) {
+            this.emitMessage(message);
+            this.lastMessage = message;
+        }
+
+        if (css) {
+            fastdom.write(function () {
+                if (stick) {
+                    bonzo(this.element).addClass('is-sticky').css(css);
+                } else {
+                    bonzo(this.element).removeClass('is-sticky').css(css);
+                }
+            }, this);
+        }
+    };
+
+    Sticky.prototype.emitMessage = function emitMessage(message) {
+        mediator.emit('modules:' + this.element.id + ':' + message);
     };
 
     return Sticky;

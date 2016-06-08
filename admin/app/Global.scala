@@ -1,22 +1,29 @@
-import common.CloudWatchApplicationMetrics
-import conf.Gzipper
-import dfp.{DfpAgentLifecycle, DfpDataCacheLifecycle}
-import model.AdminLifecycle
+import common.{CloudWatchMetricsLifecycle, BackwardCompatibleLifecycleComponents, LifecycleComponent}
+import common.Logback.LogstashLifecycle
+import common.dfp.DfpAgentLifecycle
+import conf.CachedHealthCheckLifeCycle
+import conf.switches.SwitchboardLifecycle
+import controllers.HealthCheck
+import dfp.DfpDataCacheLifecycle
+import model.{ApplicationIdentity, AdminLifecycle}
 import ophan.SurgingContentAgentLifecycle
-import play.api.mvc.{WithFilters, Results, RequestHeader}
-import scala.concurrent.Future
+import play.api.inject.ApplicationLifecycle
+import play.api.GlobalSettings
+import services.ConfigAgentLifecycle
 
-object Global extends WithFilters(Gzipper)
-  with AdminLifecycle
-  with CloudWatchApplicationMetrics
-  with Results
-  with SurgingContentAgentLifecycle
-  with DfpAgentLifecycle
-  with DfpDataCacheLifecycle {
+import scala.concurrent.ExecutionContext
 
-  override lazy val applicationName = "frontend-admin"
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
 
-  override def onError(request: RequestHeader, ex: Throwable) = Future.successful(InternalServerError(
-    views.html.errorPage(ex)
-  ))
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new AdminLifecycle(appLifecycle),
+    new ConfigAgentLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-admin")),
+    new SurgingContentAgentLifecycle(appLifecycle),
+    new DfpAgentLifecycle(appLifecycle),
+    new DfpDataCacheLifecycle(appLifecycle),
+    LogstashLifecycle,
+    new CachedHealthCheckLifeCycle(HealthCheck)
+  )
 }

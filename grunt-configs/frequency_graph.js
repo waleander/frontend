@@ -1,12 +1,12 @@
-module.exports = function(grunt, options) {
+module.exports = function () {
     return {
         options: {
             basePath: '.',
             staticFolder: 'static/src/javascripts',
             seeds: [
-                'bootstraps/app.js',
-                'bootstraps/commercial.js',
-                'core.js'
+                'bootstraps/standard/main.js',
+                'bootstraps/enhanced/main.js',
+                'bootstraps/commercial.js'
             ],
             requireConfig: '/grunt-configs/requirejs.js',
             gruntJit: true,

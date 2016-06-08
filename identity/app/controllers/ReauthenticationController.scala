@@ -9,7 +9,7 @@ import implicits.Forms
 import model.{IdentityPage, NoCache}
 import play.api.data._
 import play.api.data.validation.Constraints
-import play.api.i18n.Messages
+import play.api.i18n.{MessagesApi, Messages}
 import play.api.mvc._
 import services.{IdRequestParser, IdentityUrlBuilder, PlaySigninService, ReturnUrlVerifier}
 import utils.SafeLogging
@@ -23,7 +23,8 @@ class ReauthenticationController @Inject()(returnUrlVerifier: ReturnUrlVerifier,
                                  idRequestParser: IdRequestParser,
                                  idUrlBuilder: IdentityUrlBuilder,
                                  authenticatedActions: AuthenticatedActions,
-                                 signInService : PlaySigninService)
+                                 signInService : PlaySigninService,
+                                 val messagesApi: MessagesApi)
   extends Controller with ExecutionContexts with SafeLogging with Mappings with Forms {
 
   val page = IdentityPage("/reauthenticate", "Re-authenticate", "reauthenticate")
@@ -31,21 +32,29 @@ class ReauthenticationController @Inject()(returnUrlVerifier: ReturnUrlVerifier,
   val form = Form(
     Forms.single(
       "password" -> Forms.text
+    )
+  )
+
+  val formWithConstraints = Form(
+    Forms.single(
+      "password" -> Forms.text
         .verifying(Constraints.nonEmpty)
     )
   )
 
-  def renderForm(returnUrl: Option[String]) = authenticatedActions.authAction { implicit request =>
+  def renderForm(returnUrl: Option[String]) = authenticatedActions.authActionWithUser { implicit request =>
     val filledForm = form.bindFromFlash.getOrElse(form.fill(""))
 
     logger.trace("Rendering reauth form")
     val idRequest = idRequestParser(request)
-    NoCache(Ok(views.html.reauthenticate(page, idRequest, idUrlBuilder, filledForm)))
+    val googleId = request.user.socialLinks.find(_.getNetwork == "google").map(_.getSocialId)
+
+    NoCache(Ok(views.html.reauthenticate(page, idRequest, idUrlBuilder, filledForm, googleId)))
   }
 
   def processForm = authenticatedActions.authActionWithUser.async { implicit request =>
     val idRequest = idRequestParser(request)
-    val boundForm = form.bindFromRequest
+    val boundForm = formWithConstraints.bindFromRequest
     val verifiedReturnUrlAsOpt = returnUrlVerifier.getVerifiedReturnUrl(request)
 
     def onError(formWithErrors: Form[String]): Future[Result] = {

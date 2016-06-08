@@ -1,35 +1,9 @@
 package model
 
+import common.commercial.{BrandHunter, Branding}
 import common.{Edition, ExecutionContexts, Logging}
-import org.joda.time.DateTime
 import play.api.libs.json.Json
 
-trait CollectionItems {
-  def items: Seq[Content] = List()
-}
-
-case class Collection(curated: Seq[Content],
-                      editorsPicks: Seq[Content],
-                      mostViewed: Seq[Content],
-                      results: Seq[Content],
-                      treats: Seq[Content],
-                      displayName: Option[String],
-                      href: Option[String],
-                      lastUpdated: Option[String],
-                      updatedBy: Option[String],
-                      updatedEmail: Option[String]) extends implicits.Collections with CollectionItems {
-  override lazy val items: Seq[Content] = (curated ++ editorsPicks ++ mostViewed ++ results).distinctBy(_.url)
-
-  def isBackFillEmpty =
-    (editorsPicks ++ mostViewed ++ results).isEmpty
-
-  lazy val isEmpty = items.isEmpty
-}
-
-object Collection {
-  def apply(curated: Seq[Content]): Collection = Collection(curated, Nil, Nil, Nil, Nil, None, None, Option(DateTime.now.toString), None, None)
-  def apply(curated: Seq[Content], displayName: Option[String]): Collection = Collection(curated, Nil, Nil, Nil, Nil, displayName, None, Option(DateTime.now.toString), None, None)
-}
 case class SeoDataJson(
   id: String,
   navSection: Option[String],
@@ -80,11 +54,17 @@ case class FrontProperties(
   imageWidth: Option[String],
   imageHeight: Option[String],
   isImageDisplayed: Boolean,
-  editorialType: Option[String]
-)
+  editorialType: Option[String],
+  activeBrandings: Option[Seq[Branding]]
+) {
+  def branding(edition: Edition): Option[Branding] =
+    BrandHunter.findBranding(activeBrandings, edition, publicationDate = None)
+}
 
 object FrontProperties {
   implicit val jsonFormat = Json.format[FrontProperties]
 
-  val empty = FrontProperties(None, None, None, None, false, None)
+  val empty = FrontProperties(None, None, None, None, false, None, None)
+
+  def fromBranding(branding: Branding): FrontProperties = empty.copy(activeBrandings = Some(Seq(branding)))
 }

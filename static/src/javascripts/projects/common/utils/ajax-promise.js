@@ -6,17 +6,21 @@ define([
     Promise
 ) {
     return function wrappedAjax(params) {
-        var promise = new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             ajax(params)
-            .then(function (value) {
-                resolve(value);
-            })
-            .fail(function (request, text, err) {
-                var error = err ? err : new Error(text);
-                error.request = request;
-                reject(error);
-            });
+                .then(resolve)
+                .fail(function (res, msg, err) {
+                    if (err) {
+                        reject(err);
+                    }
+
+                    if (res && res.status) {
+                        var message = 'AJAX error (' + params.url + '): ' + res.statusText || '' + ' (' + res.status + ')';
+                        reject(new Error(message));
+                    }
+
+                    reject(new Error('Unknown AJAX error (' + params.url + ')'));
+                });
         });
-        return promise;
     };
 });

@@ -1,7 +1,9 @@
 package test
 
 import conf.Configuration
-import conf.Switches._
+import conf.switches.Switches
+import conf.switches.Switches._
+import org.openqa.selenium.By
 import org.scalatest.{DoNotDiscover, Matchers, GivenWhenThen, FeatureSpec}
 import org.fluentlenium.core.filter.FilterConstructor._
 import collection.JavaConversions._
@@ -71,8 +73,8 @@ import collection.JavaConversions._
         $("[itemprop=author]").last.getText should be("Phelim O'Neill")
 
         And("I should see a link to the author's page")
-        $("[itemprop=author] a[itemprop='url name']")(0).getAttribute("href") should be(withHost("/profile/ben-arnold"))
-        $("[itemprop=author] a[itemprop='url name']").last.getAttribute("href") should be(withHost("/profile/phelimoneill"))
+        $("[itemprop=author] a[itemprop='sameAs']")(0).getAttribute("href") should be(withHost("/profile/ben-arnold"))
+        $("[itemprop=author] a[itemprop='sameAs']").last.getAttribute("href") should be(withHost("/profile/phelimoneill"))
       }
     }
 
@@ -82,7 +84,7 @@ import collection.JavaConversions._
         import browser._
 
         Then("I should see a large byline image")
-        $(".byline-img img").getAttribute("src") should endWith("Pix/pictures/2014/3/13/1394733740842/JonathanFreedland.png")
+        $(".byline-img img").getAttribute("src") should include("Pix/pictures/2014/3/13/1394733740842/JonathanFreedland.png")
       }
     }
 
@@ -130,7 +132,17 @@ import collection.JavaConversions._
 
         And("I should see the image caption")
         findFirst("[itemprop='associatedMedia image'] [itemprop=description]").getText should
-          be("Our rivers and natural resources are to be valued and commodified, a move that will benefit only the rich, argues Goegr Monbiot. Photograph: Alamy")
+          be("Our rivers and natural resources are to be valued and commodified, a move that will benefit only the rich, argues George Monbiot. Photograph: Alamy")
+
+        And("I should see the image url")
+        findFirst("[itemprop='associatedMedia image'] [itemprop=url]").getAttribute("content") should
+          endWith("/img/static/sys-images/Guardian/Pix/pictures/2012/8/6/1344274684805/Gunnerside-village-Swaled-009.jpg?w=300&q=55&auto=format&usm=12&fit=max&s=5c104f891f729f652c8f50caf5ee2dc6")
+
+        And("I should see the image width")
+        findFirst("[itemprop='associatedMedia image'] [itemprop=width]").getAttribute("content") should be("460")
+
+        And("I should see the image height")
+        findFirst("[itemprop='associatedMedia image'] [itemprop=height]").getAttribute("content") should be("276")
       }
     }
 
@@ -153,9 +165,22 @@ import collection.JavaConversions._
       }
     }
 
+    scenario("Live blogs should have a coverage start and end date", ArticleComponents) {
+
+      Given("I am on a dead live blog")
+      goTo("/books/live/2015/jul/13/go-set-a-watchman-launch-follow-it-live") { browser =>
+        import browser._
+
+        Then("I should see the start and end date of coverage")
+        val liveBlogPosting = findFirst("[itemtype='http://schema.org/LiveBlogPosting']").getElement
+        liveBlogPosting.findElement(By.cssSelector("[itemprop='coverageStartTime']")).getAttribute("content") should be("2015-07-14T11:20:37+0100")
+        liveBlogPosting.findElement(By.cssSelector("[itemprop='coverageEndTime']")).getAttribute("content") should be("2015-07-14T11:21:25+0100")
+      }
+    }
+
     scenario("Articles should have the correct timezone for when they were published") {
 
-      Given("I am on an article published on '2012-11-10'")
+      Given("I am on an article published on '2012-11-08'")
       And("I am on the 'UK' edition")
       goTo("/world/2012/nov/08/syria-arms-embargo-rebel") { browser =>
         import browser._
@@ -163,7 +188,7 @@ import collection.JavaConversions._
         findFirst(".content__dateline time").getText should be("Thursday 8 November 2012 00.01 GMT")
       }
 
-      Given("I am on an article published on '2012-11-10'")
+      Given("I am on an article published on '2012-11-08'")
       And("I am on the 'US' edition")
       US("/world/2012/nov/08/syria-arms-embargo-rebel") { browser =>
         import browser._
@@ -214,7 +239,7 @@ import collection.JavaConversions._
 
         ImageServerSwitch.switchOn()
         inBodyImage.findFirst("[itemprop=contentUrl]").getAttribute("src") should
-          endWith("sys-images/Travel/Late_offers/pictures/2012/10/11/1349951383662/Shops-in-Rainbow-Row-Char-001.jpg")
+          include("sys-images/Travel/Late_offers/pictures/2012/10/11/1349951383662/Shops-in-Rainbow-Row-Char-001.jpg")
 
         And("I should see the image caption")
         inBodyImage.findFirst("[itemprop=description]").getText should
@@ -224,16 +249,21 @@ import collection.JavaConversions._
 
     scenario("Review stars", ArticleComponents) {
 
-      Given("I am on a review entitled 'Phill Jupitus is Porky the Poet in 27 Years On - Edinburgh festival review'")
-      goTo("/culture/2012/aug/07/phill-jupitus-edinburgh-review") { browser =>
+      Given("I am on a review entitled 'Slow West review – a lyrical ode to love on the wild frontier'")
+      goTo("/film/2015/jun/28/slow-west-review-mark-kermode") { browser =>
         import browser._
 
         Then("I should see the star rating of the festival")
         And("The review is marked up with the correct schema")
         val review = findFirst("article[itemtype='http://schema.org/Review']")
 
-        review.findFirst("[itemprop=reviewRating]").getText should be("3 / 5 stars")
-        review.findFirst("[itemprop=ratingValue]").getText should be("3")
+        review.findFirst("[itemprop=reviewRating]").getText should be("4 / 5 stars")
+        review.findFirst("[itemprop=ratingValue]").getText should be("4")
+
+        val reviewed = review.findFirst("[itemprop=itemReviewed]")
+
+        reviewed.getAttribute("itemtype") should be("http://schema.org/Movie")
+        reviewed.findFirst("[itemprop=sameAs]").getAttribute("href") should be("http://www.imdb.com/title/tt3205376/")
       }
     }
 
@@ -327,8 +357,8 @@ import collection.JavaConversions._
 
         And("the placeholder has the correct data attributes")
         adPlaceholder.getAttribute("data-name") should be("top-above-nav")
-        adPlaceholder.getAttribute("data-mobile") should be("1,1|88,70|728,90")
-        adPlaceholder.getAttribute("data-desktop") should be("1,1|88,70|728,90|940,230|900,250|970,250")
+        adPlaceholder.getAttribute("data-mobile") should be("1,1|88,70|728,90|88,71")
+        adPlaceholder.getAttribute("data-desktop") should be("1,1|88,70|728,90|940,230|900,250|970,250|88,71")
 
         And("the placeholder has the correct class name")
         adPlaceholder.getAttribute("class") should be("js-ad-slot ad-slot ad-slot--dfp ad-slot--top-above-nav ad-slot--top-banner-ad")
@@ -341,37 +371,24 @@ import collection.JavaConversions._
       StandardAdvertsSwitch.switchOff()
     }
 
-    scenario("Direct link to paragraph") {
-
-      Given("I have clicked a direct link to paragrah 16 on the article 'Eurozone crisis live: Fitch downgrades Greece on euro exit fears'")
-
-      goTo("/business/2012/may/17/eurozone-crisis-cameron-greece-euro-exit#block-16") { browser =>
-        import browser._
-
-        Then("I should see paragraph 16")
-        findFirst("#block-16").getText should startWith("11.31am: Vince Cable, the business secretary")
-      }
-    }
-
     scenario("Video as main element should act as main media") {
       Given("I am on an article with a main video")
       goTo("/politics/2014/may/16/nigel-farage-lbc-interview-key-moments") { browser =>
         import browser._
         Then("the main media should contain a video")
         $(".media-primary video") should have size 1
+
+        And("video meta name should be set")
+        findFirst("[itemprop='associatedMedia video'] [itemprop=name]").getAttribute("content") should be("Nigel Farage's LBC interview – the key moments")
+
+        And("video meta thumbnailUrl should be set")
+        findFirst("[itemprop='associatedMedia video'] [itemprop=thumbnailUrl]").getAttribute("content") should
+          endWith("img/static/sys-images/Guardian/Pix/audio/video/2014/5/16/1400240928538/Nigel-Farage-LBC-debate-i-014.jpg?w=640&h=360&q=55&auto=format&usm=12&fit=max&s=d113cafb7eb9b6e05e71352c83f0c4bf")
+
+        And("video meta uploadDate should be set")
+        findFirst("[itemprop='associatedMedia video'] [itemprop=uploadDate]").getAttribute("content") should be("2014-05-16T16:09:34.000+01:00")
       }
     }
-
-//    scenario("Hide main picture if video is at start of article") {
-//      Given("I am on an article with a video at the start of the body")
-//      goTo("/society/2013/mar/26/failing-hospitals-nhs-jeremy-hunt") { browser =>
-//        import browser._
-//        Then("the main picture should be hidden")
-//        $("[itemprop='associatedMedia primaryImageOfPage']") should have size 0
-//
-//        findFirst("video").getAttribute("poster") should endWith("/2013/3/26/1364309869688/Jeremy-Hunt-announcing-ch-016.jpg")
-//      }
-//    }
 
     scenario("SEO Thumbnail") {
       goTo("/society/2013/mar/26/failing-hospitals-nhs-jeremy-hunt") { browser =>
@@ -383,33 +400,12 @@ import collection.JavaConversions._
       }
     }
 
-//    scenario("Show main picture if video is further down article") {
-//      Given("I am on an article with a video further down inside the body")
-//      goTo("/music/musicblog/2013/mar/28/glastonbury-2013-lineup-everybody-happy") { browser =>
-//        import browser._
-//
-//        Then("the main picture should be shown")
-//        $("[itemprop='contentURL']") should have size 1
-//
-//        And("the embedded video should not have a poster when there are no images in the video element")
-//        findFirst("video").getAttribute("poster") should be("")
-//      }
-//    }
-
     scenario("Show embedded video in live blogs") {
       Given("I am on a live blog with an embedded video")
       goTo("/world/2013/jun/24/kevin-rudd-labour-politics-live") { browser =>
         import browser._
         Then("I should see the embedded video")
         $(".element-video").size should be(4)
-      }
-    }
-
-    scenario("Do not show 'classic' link on Football live blogs") {
-      goTo("/football/live/2014/aug/03/arsenal-v-monaco-emirates-cup-live") { browser =>
-        withClue("There should be no 'classic version' link") {
-          browser.find(".js-main-site-link") should be(empty)
-        }
       }
     }
 
@@ -423,9 +419,19 @@ import collection.JavaConversions._
       }
     }
 
+    scenario("Should include the first image of a tweet") {
+      Given("I am on an article with a embedded Tweet")
+      goTo("/world/2015/aug/22/hawker-hunter-plane-crash-shoreham-air-show-reports") { browser =>
+        import browser._
+
+        Then("I should see the first image of the tweet")
+        findFirst(".tweet").findFirst("img").getAttribute("src") should include ("://pbs.twimg.com/media/CNBYttRWIAAHueY.jpg")
+      }
+    }
+
     scenario("Show primary picture on composer articles") {
       Given("I am on an article created in composer tools")
-      goTo("/artanddesign/2013/apr/15/buildings-tall-architecture-guardianwitness") { browser =>
+      goTo("/music/2016/may/19/rage-against-the-machine-chuck-d-b-real-supergroup-prophets-of-rage") { browser =>
         import browser._
         Then("The main picture should be show")
         $("[itemprop='contentUrl']") should have size 1
@@ -440,25 +446,16 @@ import collection.JavaConversions._
         import browser._
 
         val mailShareUrl = "mailto:?subject=Mark%20Kermode's%20DVD%20round-up&body=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fsbl"
-        val fbShareUrl = "https://www.facebook.com/sharer/sharer.php?u=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fsfb&ref=responsive"
-        val twitterShareUrl = "https://twitter.com/intent/tweet?text=Mark+Kermode%27s+DVD+round-up&url=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fstw"
+        val fbShareUrl = "https://www.facebook.com/dialog/share?app_id=202314643182694&href=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fsfb&redirect_uri=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fsfb"
+        val twitterShareUrl = "https://twitter.com/intent/tweet?text=Mark%20Kermode's%20DVD%20round-up&url=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fstw"
         val gplusShareUrl = "https://plus.google.com/share?url=http%3A%2F%2Fgu.com%2Fp%2F3bk2f%2Fsgp&amp;hl=en-GB&amp;wwc=1"
 
         Then("I should see buttons for my favourite social network")
+
         findFirst(".social__item[data-link-name=email] .social__action").getAttribute("href") should be(mailShareUrl)
         findFirst(".social__item[data-link-name=facebook] .social__action").getAttribute("href") should be(fbShareUrl)
         findFirst(".social__item[data-link-name=twitter] .social__action").getAttribute("href") should be(twitterShareUrl)
         findFirst(".social__item[data-link-name=gplus] .social__action").getAttribute("href") should be(gplusShareUrl)
-      }
-
-      Given("I want to track the responsive share buttons using Facebook Insights")
-
-      goTo("/film/2012/nov/11/margin-call-cosmopolis-friends-with-kids-dvd-review") { browser =>
-
-        val fbShareTrackingToken = "ref=responsive"
-
-        Then("I should pass Facebook a tracking token")
-        browser.findFirst(".social__item[data-link-name=facebook] .social__action").getAttribute("href") should include(fbShareTrackingToken)
       }
     }
 
@@ -469,7 +466,7 @@ import collection.JavaConversions._
 
       SearchSwitch.switchOn()
 
-      goTo("/world/2013/jan/27/brazil-nightclub-blaze-high-death-toll") { browser =>
+      goTo("/media/2015/aug/27/sky-sports-news-presenter-kirsty-gallacher-joins-strictly-line-up") { browser =>
         import browser._
 
         Then("I should see the main ARIA roles described")
@@ -500,7 +497,7 @@ import collection.JavaConversions._
     scenario("Story package with a gallery trail") {
 
       Given("I'm on an article that has a gallery in its story package")
-      goTo("/global-development/poverty-matters/2013/jun/03/burma-rohingya-segregation") { browser =>
+      goTo("/media/2015/aug/27/sky-sports-news-presenter-kirsty-gallacher-joins-strictly-line-up") { browser =>
         import browser._
 
         Then("I should see a fancy gallery trail")
@@ -549,6 +546,7 @@ import collection.JavaConversions._
         $("meta[name='twitter:site']").getAttributes("content").head should be("@guardian")
         $("meta[name='twitter:card']").getAttributes("content").head should be("summary_large_image")
         $("meta[name='twitter:app:url:googleplay']").getAttributes("content").head should startWith("guardian://www.theguardian.com/world")
+        $("meta[name='twitter:image']").getAttributes("content").head should include("2013/9/15/1379275549160/Irans-President-Hassan-Ro-010.jpg")
       }
     }
 
@@ -608,30 +606,6 @@ import collection.JavaConversions._
         val link = browser.find(".breadcrumb .signposting__item a", withText().contains("Observer Ethical Awards"))
         link.length should be > 0
       }
-    }
-
-    scenario("Outbrain") {
-
-      Given("I am on an article")
-      goTo("/society/2014/oct/15/lord-freud-unreserved-apology-comment-disabled-people-mimimu-wage") {
-        browser =>
-          import browser._
-          Then("Then the Outbrain placeholder should be rendered")
-          var outbrainPlaceholder = $(".OUTBRAIN")
-          outbrainPlaceholder.length should be(1)
-          outbrainPlaceholder.getAttribute("data-src") should be("DROP_PERMALINK_HERE")
-          outbrainPlaceholder.getAttribute("data-ob-template") should be("guardian")
-      }
-
-      Given("I am on a live blog")
-      goTo("/politics/blog/live/2014/oct/15/cameron-and-miliband-at-pmqs-politics-live-blog") {
-        browser =>
-          import browser._
-          Then("Then the Outbrain placeholder should not be rendered")
-          $(".OUTBRAIN").isEmpty should be(true)
-
-      }
-
     }
 
   }

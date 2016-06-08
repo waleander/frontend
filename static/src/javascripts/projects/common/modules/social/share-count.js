@@ -1,31 +1,33 @@
 define([
-    'raven',
+    'common/utils/report-error',
     'common/utils/$',
     'common/utils/ajax',
     'common/utils/detect',
     'common/utils/config',
     'common/utils/formatters',
     'common/utils/template',
-    'text!common/views/content/share-count.html'
+    'common/views/svgs',
+    'text!common/views/content/share-count.html',
+    'text!common/views/content/share-count-immersive.html'
 ], function (
-    raven,
+    reportError,
     $,
     ajax,
     detect,
     config,
     formatters,
     template,
-    shareCountTemplate
+    svgs,
+    shareCountTemplate,
+    shareCountImmersiveTemplate
 ) {
-
-    var shareCount    = 0,
+    var shareCount = 0,
         $shareCountEls = $('.js-sharecount'),
         $fullValueEls,
         $shortValueEls,
-        tooltip = 'Facebook: <%=facebook%> \nTwitter: <%=twitter%>',
+        tooltip = 'Facebook: <%=facebook%>',
         counts = {
-            facebook: 'n/a',
-            twitter: 'n/a'
+            facebook: 'n/a'
         };
 
     function incrementShareCount(amount) {
@@ -44,10 +46,16 @@ define([
     }
 
     function addToShareCount(val) {
+        var shareSvg = svgs('share');
+        var shareTemplate = $shareCountEls.hasClass('js-sharecount-immersive') ? shareCountImmersiveTemplate : shareCountTemplate;
+
+        var html = template(shareTemplate, {
+            icon: shareSvg
+        });
 
         $shareCountEls
             .removeClass('u-h')
-            .html(shareCountTemplate)
+            .html(html)
             .css('display', '');
 
         $shortValueEls = $('.sharecount__value--short', $shareCountEls[0]); // limited to 1 el
@@ -56,7 +64,7 @@ define([
         if (detect.isBreakpoint({min: 'tablet'})) {
             var duration = 250,
                 updateStep = 25,
-                slices     = duration / updateStep,
+                slices = duration / updateStep,
                 amountPerStep = val / slices,
                 currentSlice = 0,
                 interval = window.setInterval(function () {
@@ -68,11 +76,13 @@ define([
         } else {
             incrementShareCount(val);
         }
-
     }
 
-    function init() {
-        if ($shareCountEls.length) {
+    return function () {
+        // asking for social counts in preview "leaks" upcoming URLs to social sites.
+        // when they then crawl them they get 404s which affects later sharing.
+        // don't call counts in preview
+        if ($shareCountEls.length && !config.page.isPreview) {
             var url = 'http://www.theguardian.com/' + config.page.pageId;
             try {
                 ajax({
@@ -86,30 +96,11 @@ define([
                     addToShareCount(count);
                     updateTooltip();
                 });
-                ajax({
-                    url: 'https://cdn.api.twitter.com/1/urls/count.json?url=' + url,
-                    type: 'jsonp',
-                    method: 'get',
-                    crossOrigin: true
-                }).then(function (resp) {
-                    var count = resp.count || 0;
-                    counts.twitter = count;
-                    addToShareCount(count);
-                    updateTooltip();
-                });
             } catch (e) {
-                raven.captureException(new Error('Error retrieving share counts (' + e.message + ')'), {
-                    tags: {
-                        feature: 'share-count'
-                    }
-                });
+                reportError(new Error('Error retrieving share counts (' + e.message + ')'), {
+                    feature: 'share-count'
+                }, false);
             }
-
         }
-
-    }
-
-    return {
-        init: init
     };
 });

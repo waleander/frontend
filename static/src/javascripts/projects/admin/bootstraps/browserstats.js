@@ -1,24 +1,24 @@
 define([
     'common/utils/$',
     'bonzo',
-    'common/utils/_',
-    'bean'
-], function(
+    'bean',
+    'lodash/functions/debounce'
+], function (
     $,
     bonzo,
-    _,
-    bean
+    bean,
+    debounce
 ) {
     function initialise() {
-        $('.browser-table').each(function() {
+        $('.browser-table').each(function () {
             var node  = $(this),
                 rows  = this.querySelectorAll('tbody tr'),
                 total = node.data('total');
 
             // Format large numbers
-            bonzo(this.querySelectorAll('.format-number')).each(function() {
+            bonzo(this.querySelectorAll('.format-number')).each(function () {
                 var value  = this.getAttribute('data-value'),
-                    perc   = (value/total*100).toFixed(2),
+                    perc   = (value / total * 100).toFixed(2),
                     output = numberWithCommas(value)
                         + ' <span class="perc">' + perc + '%</span>';
 
@@ -26,11 +26,11 @@ define([
             });
 
             // Do basic filtering on the table
-            bean.on(this.querySelector('.search-query'), 'keyup', _.debounce(function() {
-                var filter = new RegExp(this.value, "i"),
+            bean.on(this.querySelector('.search-query'), 'keyup', debounce(function () {
+                var filter = new RegExp(this.value, 'i'),
                     filteredTotal = 0;
 
-                bonzo(rows).each(function() {
+                bonzo(rows).each(function () {
                     var rowValue = this.children[1].innerHTML.toLowerCase();
 
                     if (filter.test(rowValue)) {
@@ -43,8 +43,8 @@ define([
 
                 // Update total
                 var totalOutput = numberWithCommas(filteredTotal)
-                    + ' <span class="perc">' + (filteredTotal/total*100).toFixed(2) + '%</span>';
-                bonzo(this.querySelector('.total')).html(totalOutput)
+                    + ' <span class="perc">' + (filteredTotal / total * 100).toFixed(2) + '%</span>';
+                bonzo(this.querySelector('.total')).html(totalOutput);
             }, 250));
         });
     }
@@ -52,8 +52,9 @@ define([
     function numberWithCommas(x) {
         x = x.toString();
         var pattern = /(-?\d+)(\d{3})/;
-        while (pattern.test(x))
-            x = x.replace(pattern, "$1,$2");
+        while (pattern.test(x)) {
+            x = x.replace(pattern, '$1,$2');
+        }
         return x;
     }
 

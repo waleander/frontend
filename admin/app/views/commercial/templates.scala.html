@@ -1,10 +1,14 @@
-@(env: String, templates: Seq[dfp.GuCreativeTemplate], trails: Seq[model.Content])(implicit request: RequestHeader)
-
+@(env: String, templates: Seq[common.dfp.GuCreativeTemplate])(implicit request: RequestHeader)
+@import model.{MetaData, SectionSummary, SimplePage}
 @import tools.DfpLink
 
 @main(
-    Page("commercial-templates", "admin", "Commercial Templates", "Commercial Templates"),
-    projectName = Option("facia")
+    SimplePage(MetaData.make(
+        id = "commercial-templates",
+        section = Some(SectionSummary.fromId("admin")),
+        webTitle = "Commercial Templates",
+        analyticsName = "Commercial Templates"
+    ))
 ) { } {
 
     <div class="l-side-margins">
@@ -14,15 +18,22 @@
                 <h1>Creative Templates</h1>
                 <p>This dashboard is to help debug DFP creative templates.<br />
                     All unarchived custom creative templates are shown.</p>
-                <p>The creatives listed under each template are only either creatives owned by the Guardian Merchandising account, or sponsors' logos of size 140x90.<br />
-                    So a template might appear to be unused when in fact other creatives have been built from it.</p>
+            </div>
+
+            <div class="facia-container__inner">
+                <h2>Creative Templates: Contents</h2>
+                <ul>
+                    @for(template <- templates) {
+                    <li><a href="#@template.name">@template.name</a></li>
+                    }
+                </ul>
             </div>
 
             <ul class="u-unstyled">
                 @for(template <- templates) {
-                    <li class="container__border">
+                    <li class="container__border" >
                         <div class="facia-container__inner">
-                            <h2>
+                            <h2 id="@template.name">
                                 @template.name (<a href="@DfpLink.creativeTemplate(template.id)">@template.id</a>)
                             </h2>
                             <p>@{template.description}</p>
@@ -30,21 +41,14 @@
                                 <p><b>This template is not in use.</b></p>
                             }
                             @if(template.creatives.nonEmpty){
-                                <p>Creatives built from this template:
-                                    <ul>
-                                        @for(creative <- template.creatives){
-                                            <li>@{creative.name} (<a href="@DfpLink.creative(creative.id)">@{creative.id}</a>)</li>
-                                        }
-                                    </ul>
-                                </p>
+                                <p>Creatives built from this template (see preview <a href="@template.examplePreviewUrl">here</a>):</p>
+                                <ul>
+                                    @for(creative <- template.creatives){
+                                        <li>@{creative.name} (<a href="@DfpLink.creative(creative.id)">@{creative.id}</a>)</li>
+                                    }
+                                </ul>
                             }
                         </div>
-                        <h3 class="facia-container__inner">Template</h3>
-                        @Html(template.snippet)
-                        @for(example <- template.example) {
-                            <h3 class="facia-container__inner">Example</h3>
-                            @Html(example)
-                        }
                     </li>
                 }
             </ul>

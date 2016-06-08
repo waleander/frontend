@@ -1,18 +1,19 @@
 package controllers
 
-import com.gu.facia.api.models.CollectionConfig
-import layout.{CollectionEssentials, FaciaContainer}
-import play.api.mvc.{ Controller, Action, RequestHeader }
-import common._
-import model._
-import services.{FaciaContentConvert, CollectionConfigWithId}
-import slices.{Fixed, FixedContainers}
-import scala.concurrent.Future
-import implicits.Requests
-import conf.LiveContentApi
-import LiveContentApi.getResponse
 import com.gu.contentapi.client.GuardianContentApiError
-import com.gu.contentapi.client.model.{Content => ApiContent}
+import com.gu.contentapi.client.model.v1.{Content => ApiContent}
+import common._
+import contentapi.ContentApiClient
+import contentapi.ContentApiClient.getResponse
+import implicits.Requests
+import layout.{CollectionEssentials, FaciaContainer}
+import model._
+import model.pressed.CollectionConfig
+import play.api.mvc.{Action, Controller, RequestHeader}
+import services.CollectionConfigWithId
+import slices.{Fixed, FixedContainers}
+
+import scala.concurrent.Future
 
 object MediaInSectionController extends Controller with Logging with Paging with ExecutionContexts with Requests {
   // These exist to work around the absence of default values in Play routing.
@@ -27,7 +28,7 @@ object MediaInSectionController extends Controller with Logging with Paging with
     response map { _ getOrElse NotFound }
   }
 
-  private def lookup(edition: Edition, mediaType: String, sectionId: String, seriesId: Option[String])(implicit request: RequestHeader): Future[Option[Seq[Content]]] = {
+  private def lookup(edition: Edition, mediaType: String, sectionId: String, seriesId: Option[String])(implicit request: RequestHeader): Future[Option[Seq[RelatedContentItem]]] = {
     val currentShortUrl = request.getQueryString("shortUrl").getOrElse("")
     log.info(s"Fetching $mediaType content in section: $sectionId")
 
@@ -35,31 +36,31 @@ object MediaInSectionController extends Controller with Logging with Paging with
     val tags = (s"type/$mediaType" +: excludeTags).mkString(",")
 
     def isCurrentStory(content: ApiContent) =
-      content.safeFields.get("shortUrl").exists(!_.equals(currentShortUrl))
+      content.fields.flatMap(_.shortUrl).exists(!_.equals(currentShortUrl))
 
-    val promiseOrResponse = getResponse(LiveContentApi.search(edition)
+    val promiseOrResponse = getResponse(ContentApiClient.search(edition)
       .section(sectionId)
       .tag(tags)
       .showTags("all")
       .showFields("all")
     ).map {
       response =>
-        response.results filter { content => isCurrentStory(content) } map { result =>
-          Content(result)
+        response.results.toList filter { content => isCurrentStory(content) } map { result =>
+          RelatedContentItem(result)
         } match {
           case Nil => None
           case results => Some(results)
         }
     }
 
-    promiseOrResponse recover { case GuardianContentApiError(404, message) =>
+    promiseOrResponse recover { case GuardianContentApiError(404, message, _) =>
       log.info(s"Got a 404 calling content api: $message" )
       None
     }
   }
 
-  private def renderSectionTrails(mediaType: String, trails: Seq[Content], sectionId: String)(implicit request: RequestHeader) = {
-    val sectionName = trails.headOption.map(t => t.sectionName.toLowerCase).getOrElse("")
+  private def renderSectionTrails(mediaType: String, trails: Seq[RelatedContentItem], sectionId: String)(implicit request: RequestHeader) = {
+    val sectionName = trails.headOption.map(t => t.content.trail.sectionName.toLowerCase).getOrElse("")
 
     // Content API doesn't understand the alias 'uk-news'.
     val sectionTag = sectionId match {
@@ -83,7 +84,7 @@ object MediaInSectionController extends Controller with Logging with Paging with
         1,
         Fixed(FixedContainers.fixedMediumFastXI),
         CollectionConfigWithId(dataId, config),
-        CollectionEssentials(trails map FaciaContentConvert.frontentContentToFaciaContent take 7, Nil, displayName, None, None, None),
+        CollectionEssentials(trails.map(_.faciaContent) take 7, Nil, displayName, None, None, None),
         componentId
       ).withTimeStamps,
       FrontProperties.empty

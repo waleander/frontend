@@ -1,62 +1,34 @@
+import common.Logback.LogstashLifecycle
 import common._
-import conf.{Configuration => GuardianConfiguration}
-import frontpress.{FrontPressCron, ToolPressQueueWorker}
-import metrics._
+import conf.switches.SwitchboardLifecycle
+import lifecycle.FaciaPressLifecycle
+import model.ApplicationIdentity
+import play.api.inject.ApplicationLifecycle
 import play.api.GlobalSettings
 import services.ConfigAgentLifecycle
 
-object Global extends GlobalSettings
-  with ConfigAgentLifecycle
-  with CloudWatchApplicationMetrics {
+import scala.concurrent.ExecutionContext
 
-  private def getTotalPressSuccessCount: Long =
-    FaciaPressMetrics.FrontPressLiveSuccess.getResettingValue() + FaciaPressMetrics.FrontPressDraftSuccess.getResettingValue()
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
 
-  private def getTotalPressFailureCount: Long =
-    FaciaPressMetrics.FrontPressLiveFailure.getResettingValue() + FaciaPressMetrics.FrontPressDraftFailure.getResettingValue()
-
-  override def applicationName = "frontend-facia-press"
-
-  override def applicationMetrics = List(
-    GaugeMetric("front-press-failure", "Total number of front press failure", () => getTotalPressFailureCount),
-    GaugeMetric("front-press-success", "Total number of front press success", () => getTotalPressSuccessCount),
-    FaciaPressMetrics.FrontPressDraftFailure,
-    FaciaPressMetrics.FrontPressDraftSuccess,
-    FaciaPressMetrics.FrontPressLiveFailure,
-    FaciaPressMetrics.FrontPressLiveSuccess,
+  val applicationMetrics = ApplicationMetrics(
     FaciaPressMetrics.FrontPressCronSuccess,
-    FaciaPressMetrics.FrontPressCronFailure,
-    GaugeMetric("content-api-calls", "Total number of Content API calls", () => ContentApiMetrics.ElasticHttpTimingMetric.getCount),
-    ContentApiMetrics.ElasticHttpTimingMetric,
-    ContentApiMetrics.ElasticHttpTimeoutCountMetric,
+    ContentApiMetrics.HttpLatencyTimingMetric,
+    ContentApiMetrics.HttpTimeoutCountMetric,
     ContentApiMetrics.ContentApi404Metric,
-    ContentApiMetrics.ContentApiJsonParseExceptionMetric,
-    ContentApiMetrics.ContentApiJsonMappingExceptionMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerRequestsMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerOnOpen,
     ContentApiMetrics.ContentApiErrorMetric,
-    FaciaToolMetrics.InvalidContentExceptionMetric,
-    S3Metrics.S3ClientExceptionsMetric,
-    S3Metrics.S3AuthorizationError,
-    FaciaPressMetrics.ContentApiSeoRequestSuccess,
-    FaciaPressMetrics.ContentApiSeoRequestFailure,
-    FaciaPressMetrics.MemcachedFallbackMetric,
-    UkPressLatencyMetric,
-    UsPressLatencyMetric,
-    AuPressLatencyMetric,
-    AllFrontsPressLatencyMetric
+    FaciaPressMetrics.UkPressLatencyMetric,
+    FaciaPressMetrics.UsPressLatencyMetric,
+    FaciaPressMetrics.AuPressLatencyMetric,
+    FaciaPressMetrics.AllFrontsPressLatencyMetric
   )
 
-  override def onStart(app: play.api.Application) {
-    super.onStart(app)
-    ToolPressQueueWorker.start()
-    if (GuardianConfiguration.faciatool.frontPressCronQueue.isDefined) {
-      FrontPressCron.start()
-    }
-  }
 
-  override def onStop(app: play.api.Application) {
-    ToolPressQueueWorker.stop()
-    super.onStop(app)
-  }
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new ConfigAgentLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-facia-press"), applicationMetrics),
+    LogstashLifecycle,
+    new FaciaPressLifecycle(appLifecycle)
+  )
 }

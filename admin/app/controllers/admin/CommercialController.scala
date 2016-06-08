@@ -1,20 +1,32 @@
 package controllers.admin
 
-import common.{Edition, ExecutionContexts, Logging}
+import common.dfp.{GuCreativeTemplate, LineItemReport}
+import common.{ExecutionContexts, Logging}
+import conf.Configuration
 import conf.Configuration.environment
-import conf.LiveContentApi.getResponse
-import conf.{Configuration, LiveContentApi}
 import controllers.AuthLogging
-import dfp.{DfpDataHydrator, LineItemReport}
-import model.{Content, NoCache, Page}
+import dfp.{CreativeTemplateAgent, DfpApi}
+import model._
 import ophan.SurgingContentAgent
-import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.libs.json.{JsString, Json}
 import play.api.mvc.Controller
 import tools._
 
+case class CommercialPage() extends StandalonePage {
+  override val metadata = MetaData.make(
+    id = "commercial-templates",
+    section = Some(SectionSummary.fromId("admin")),
+    webTitle = "Commercial Templates",
+    analyticsName = "Commercial Templates",
+    javascriptConfigOverrides = Map(
+      "keywordIds" -> JsString("live-better"),
+      "adUnit" -> JsString("/59666047/theguardian.com/global-development/ng")))
+}
+
 object CommercialController extends Controller with Logging with AuthLogging with ExecutionContexts {
-  def renderCommercial = AuthActions.AuthActionTest { implicit request =>
-    NoCache(Ok(views.html.commercial.commercial(environment.stage)))
+
+  def renderCommercialMenu() = AuthActions.AuthActionTest { implicit request =>
+    NoCache(Ok(views.html.commercial.commercialMenu(environment.stage)))
   }
 
   def renderFluidAds = AuthActions.AuthActionTest { implicit request =>
@@ -22,7 +34,7 @@ object CommercialController extends Controller with Logging with AuthLogging wit
   }
 
   def renderSpecialAdUnits = AuthActions.AuthActionTest { implicit request =>
-    val specialAdUnits = DfpDataHydrator().loadSpecialAdunits(Configuration.commercial.dfpAdUnitRoot)
+    val specialAdUnits = DfpApi.readSpecialAdUnits(Configuration.commercial.dfpAdUnitGuRoot)
     Ok(views.html.commercial.specialAdUnits(environment.stage, specialAdUnits))
   }
 
@@ -46,44 +58,18 @@ object CommercialController extends Controller with Logging with AuthLogging wit
     NoCache(Ok(views.html.commercial.inlineMerchandisingTargetedTags(environment.stage, report)))
   }
 
-  def renderCreativeTemplates = AuthActions.AuthActionTest.async { implicit request =>
-    val templates = DfpDataHydrator().loadActiveUserDefinedCreativeTemplates()
-    // get some example trails
-    lazy val trailsFuture = getResponse(
-      LiveContentApi.search(Edition(request))
-        .pageSize(2)
-    ).map { response  =>
-        response.results.map {
-          Content(_)
-        }
-    }
-    trailsFuture map { trails =>
-      NoCache(Ok(views.html.commercial.templates(environment.stage, templates, trails)))
-    }
+  def renderHighMerchandisingTargetedTags = AuthActions.AuthActionTest { implicit request =>
+    val report = Store.getDfpHighMerchandisingTargetedTagsReport()
+    NoCache(Ok(views.html.commercial.highMerchandisingTargetedTags(environment.stage, report)))
   }
 
-  def sponsoredContainers = AuthActions.AuthActionTest.async { implicit request =>
-    // get some example trails
-    lazy val trailsFuture = getResponse(
-      LiveContentApi.search(Edition(request))
-        .pageSize(2)
-    ).map { response  =>
-      response.results.map {
-        Content(_)
-      }
-    }
-    trailsFuture map { trails =>
-      object CommercialPage {
-        def apply() = new Page("commercial-templates", "admin", "Commercial Templates", "Commercial Templates", None, None) {
-          override def metaData: Map[String, JsValue] = super.metaData ++
-            List(
-              "keywordIds" -> JsString("live-better"),
-              "adUnit" -> JsString("/59666047/theguardian.com/global-development/ng")
-            )
-        }
-      }
-      NoCache(Ok(views.html.commercial.sponsoredContainers(environment.stage, CommercialPage(), trails)))
-    }
+  def renderCreativeTemplates = AuthActions.AuthActionTest { implicit request =>
+    val emptyTemplates = CreativeTemplateAgent.get
+    val creatives = Store.getDfpTemplateCreatives
+    val templates = emptyTemplates.foldLeft(Seq.empty[GuCreativeTemplate]) { (soFar, template) =>
+      soFar :+ template.copy(creatives = creatives.filter(_.templateId.get == template.id).sortBy(_.name))
+    }.sortBy(_.name)
+    NoCache(Ok(views.html.commercial.templates(environment.stage, templates)))
   }
 
   def renderAdTests = AuthActions.AuthActionTest { implicit request =>
@@ -114,5 +100,20 @@ object CommercialController extends Controller with Logging with AuthLogging wit
     for (adResponseConfidenceGraph <- CloudWatch.eventualAdResponseConfidenceGraph) yield {
       Ok(views.html.commercial.commercialRadiator("PROD", adResponseConfidenceGraph))
     }
+  }
+
+  def renderKeyValues() = AuthActions.AuthActionTest { implicit request =>
+    Ok(views.html.commercial.customTargetingKeyValues("PROD", Store.getDfpCustomTargetingKeyValues))
+  }
+
+  def renderKeyValuesCsv(key: String) = AuthActions.AuthActionTest { implicit request =>
+    val csv: Option[String] = Store.getDfpCustomTargetingKeyValues.find(_.name == key).map { selectedKey =>
+
+      selectedKey.values.map( targetValue => {
+        s"${targetValue.id}, ${targetValue.name}, ${targetValue.displayName}"
+      }).mkString("\n")
+    }
+
+    Ok(csv.getOrElse(s"No targeting found for key: $key"))
   }
 }

@@ -1,19 +1,20 @@
 package football.controllers
 
 import common._
+import conf._
+import feed._
+import implicits.{Football, Requests}
+import model.Cached.WithoutRevalidationResult
 import model.TeamMap.findTeamIdByUrlName
 import model._
-import conf._
-import play.api.libs.json._
-import play.api.mvc.{ Controller, Action }
-import pa.{LineUpTeam, FootballMatch, LineUp}
 import org.joda.time.format.DateTimeFormat
-import feed._
-import implicits.{ Requests, Football }
+import pa.{FootballMatch, LineUp, LineUpTeam}
+import play.api.libs.json._
+import play.api.mvc.{Action, Controller}
+
 import scala.concurrent.Future
 
-
-case class MatchPage(theMatch: FootballMatch, lineUp: LineUp) extends MetaData with Football with ExecutionContexts {
+case class MatchPage(theMatch: FootballMatch, lineUp: LineUp) extends StandalonePage with Football with ExecutionContexts {
   lazy val matchStarted = theMatch.isLive || theMatch.isResult
   lazy val hasLineUp = lineUp.awayTeam.players.nonEmpty && lineUp.homeTeam.players.nonEmpty
 
@@ -25,13 +26,9 @@ case class MatchPage(theMatch: FootballMatch, lineUp: LineUp) extends MetaData w
 
   lazy val hasPaStats: Boolean = teamHasStats( lineUp.homeTeam ) && teamHasStats( lineUp.awayTeam )
 
-  override lazy val id = MatchUrl(theMatch)
-  override lazy val section = "football"
-  override lazy val webTitle = s"${theMatch.homeTeam.name} ${theMatch.homeTeam.score.getOrElse("")} - ${theMatch.awayTeam.score.getOrElse("")} ${theMatch.awayTeam.name}"
+  private val id = MatchUrl(theMatch)
 
-  override lazy val analyticsName = s"GFE:Football:automatic:match:${theMatch.date.toString("dd MMM YYYY")}:${theMatch.homeTeam.name} v ${theMatch.awayTeam.name}"
-
-  override lazy val metaData: Map[String, JsValue] = super.metaData + (
+  private val javascriptConfig: Map[String, JsValue] = Map(
     "footballMatch" -> JsObject(Seq(
       "id" -> JsString(theMatch.id),
       "dateInMillis" -> JsNumber(theMatch.date.getMillis),
@@ -39,6 +36,13 @@ case class MatchPage(theMatch: FootballMatch, lineUp: LineUp) extends MetaData w
       "awayTeam" -> JsString(theMatch.awayTeam.id),
       "isLive" -> JsBoolean(theMatch.isLive)
     ))
+  )
+  override val metadata = MetaData.make(
+    id = id,
+    section = Some(SectionSummary.fromId("football")),
+    webTitle = s"${theMatch.homeTeam.name} ${theMatch.homeTeam.score.getOrElse("")} - ${theMatch.awayTeam.score.getOrElse("")} ${theMatch.awayTeam.name}",
+    analyticsName = s"GFE:Football:automatic:match:${theMatch.date.toString("dd MMM YYYY")}:${theMatch.homeTeam.name} v ${theMatch.awayTeam.name}",
+    javascriptConfigOverrides = javascriptConfig
   )
 }
 
@@ -60,7 +64,7 @@ object MatchController extends Controller with Football with Requests with Loggi
 
   private def render(maybeMatch: Option[FootballMatch]) = Action.async { implicit request =>
     val response = maybeMatch map { theMatch =>
-      val lineup: Future[LineUp] = FootballClient.lineUp(theMatch.id)
+      val lineup: Future[LineUp] = FootballClient.lineUp(theMatch.id).recover(FootballClient.logErrors)
       val page: Future[MatchPage] = lineup map { MatchPage(theMatch, _) }
 
       page map { page =>
@@ -71,6 +75,6 @@ object MatchController extends Controller with Football with Requests with Loggi
     }
 
     // we do not keep historical data, so just redirect old stuff to the results page (see also MatchController)
-    response.getOrElse(Future.successful(Cached(30){Found("/football/results")}))
+    response.getOrElse(Future.successful(Cached(30)(WithoutRevalidationResult(Found("/football/results")))))
   }
 }

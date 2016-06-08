@@ -3,16 +3,16 @@
 <div class="gu-media-wrapper gu-media-wrapper--audio">
     <canvas id="mycanvas" width="700" height="60"></canvas>
     <audio controls="controls" class="gu-media gu-media--audio js-gu-media--enhance" data-title="@player.title"
-        data-duration="@player.audioElement.duration.toString()" data-media-id="@player.audioElement.id"
+        data-duration="@player.audioElement.audio.duration.toString()" data-media-id="@player.audioElement.properties.id"
         data-auto-play="@player.autoPlay">
 
-        @player.audioElement.encodings.map { encoding =>
+        @player.audioElement.audio.encodings.map { encoding =>
             <source src="@encoding.url" type="@encoding.format" />
         }
     </audio>
     <div class="js-audio-playlist"></div>
     @player.audio match {
-        case audio: Audio => {
+        case audio: model.Audio => {
             <ul class="podcast-meta u-unstyled">
                 @audio.iTunesSubscriptionUrl.map { iTunesSubscriptionUrl =>
                     <li class="podcast-meta__item podcast-meta__item--itunes">

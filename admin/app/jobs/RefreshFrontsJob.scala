@@ -1,10 +1,9 @@
 package jobs
 
-import common.Logging
-import services.{S3FrontsApi, FrontPressNotification}
-import play.api.libs.json.{JsString, JsObject, JsValue, Json}
-import conf.Switches._
+import com.gu.facia.api.models.{CommercialPriority, EditorialPriority, TrainingPriority}
+import common.{ExecutionContexts, Logging}
 import conf.Configuration
+import services.{ConfigAgent, FrontPressNotification}
 
 sealed trait FrontType
 
@@ -17,73 +16,45 @@ object HighFrequency extends FrontType {
 
 case class CronUpdate(path: String, frontType: FrontType)
 
-object RefreshFrontsJob extends Logging {
-  def getCronUpdates: Option[Seq[CronUpdate]] = {
-    val masterConfigJson: Option[JsValue] = S3FrontsApi.getMasterConfig.map(Json.parse)
-    for (json <- masterConfigJson)
-      yield
-      (for {
-        path <- (json \ "fronts").asOpt[Map[String, JsValue]].getOrElse(Map.empty).keys
-    } yield {
-        CronUpdate(path, getFrontType(json, path))
-      }).toSeq
+object RefreshFrontsJob extends Logging with ExecutionContexts {
+  def getAllCronUpdates: Seq[CronUpdate] = {
+    ConfigAgent.getPathIds.map(path => CronUpdate(path, getFrontType(path)))
   }
 
-  def getFrontType(json: JsValue, path: String): FrontType = {
-    lazy val isCommercial: Boolean = (json \ "fronts" \ path \ "priority") == JsString("commercial")
+  def getFrontType(path: String): FrontType = {
     if (HighFrequency.highFrequencyPaths.contains(path))
       HighFrequency
-    else if (isCommercial)
-      LowFrequency
     else
-      StandardFrequency
+      ConfigAgent.getFrontPriorityFromConfig(path) match {
+        case Some(EditorialPriority) => StandardFrequency
+        case Some(CommercialPriority) => LowFrequency
+        case Some(TrainingPriority) => LowFrequency
+        case None => LowFrequency
+      }
   }
 
-  def runHighFrequency(): Unit = {
-    if (FrontPressJobSwitch.isSwitchedOn && Configuration.aws.frontPressSns.filter(_.nonEmpty).isDefined) {
-      log.info("Putting press jobs on Facia Cron (High Frequency)")
-
-      for {
-        updates <- getCronUpdates
-        update <- updates.filter(_.frontType == HighFrequency)
-      } {
+  def runFrequency(frontType: FrontType): Boolean = {
+    if (Configuration.aws.frontPressSns.filter(_.nonEmpty).isDefined) {
+      log.info(s"Putting press jobs on Facia Cron $frontType")
+      for (update <- getAllCronUpdates.filter(_.frontType == frontType)) {
         log.info(s"Pressing $update")
         FrontPressNotification.sendWithoutSubject(update.path)
       }
+      true
     } else {
       log.info("Not pressing jobs to Facia cron - is either turned off or no queue is set")
+      false
     }
   }
 
-  def runStandardFrequency(): Unit = {
-    if (FrontPressJobSwitch.isSwitchedOn && Configuration.aws.frontPressSns.filter(_.nonEmpty).isDefined) {
-      log.info("Putting press jobs on Facia Cron (Standard Frequency)")
-
-      for {
-        updates <- getCronUpdates
-        update <- updates.filter(_.frontType == StandardFrequency)
-      } {
+  //This is used by a route in admin to push ALL paths to the facia-press SQS queue.
+  //The facia-press boxes will start to pick these off one by one, so there is no direct overloading of these boxes
+  def runAll(): Option[Seq[Unit]] = {
+    Configuration.aws.frontPressSns.map(Function.const {
+      log.info("Putting press jobs on Facia Cron (MANUAL REQUEST)")
+      for (update <- getAllCronUpdates)
+        yield {
         log.info(s"Pressing $update")
-        FrontPressNotification.sendWithoutSubject(update.path)
-      }
-    } else {
-      log.info("Not pressing jobs to Facia cron - is either turned off or no queue is set")
-    }
-  }
-
-  def runLowFrequency(): Unit = {
-    if (FrontPressJobSwitch.isSwitchedOn && Configuration.aws.frontPressSns.filter(_.nonEmpty).isDefined) {
-      log.info("Putting press jobs on Facia Cron (Commercial Frequency)")
-
-      for {
-        updates <- getCronUpdates
-        update <- updates.filter(_.frontType == LowFrequency)
-      } {
-        log.info(s"Pressing $update")
-        FrontPressNotification.sendWithoutSubject(update.path)
-      }
-    } else {
-      log.info("Not pressing jobs to Facia cron - is either turned off or no queue is set")
-    }
+        FrontPressNotification.sendWithoutSubject(update.path)}})
   }
 }

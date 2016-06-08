@@ -1,30 +1,31 @@
-import ab_headlines.ABTHeadlinesLifecycle
+import common.Logback.LogstashLifecycle
 import common._
-import conf.Filters
+import common.dfp.FaciaDfpAgentLifecycle
+import conf.CachedHealthCheckLifeCycle
+import conf.switches.SwitchboardLifecycle
+import controllers.HealthCheck
 import crosswords.TodaysCrosswordGridLifecycle
-import dev.DevParametersLifecycle
-import dfp.DfpAgentLifecycle
-import metrics.FrontendMetric
+import headlines.ABHeadlinesLifecycle
+import model.ApplicationIdentity
 import ophan.SurgingContentAgentLifecycle
-import play.api.mvc.WithFilters
-import services.{IndexListingsLifecycle, ConfigAgentLifecycle}
-import play.api.Application
+import play.api.inject.ApplicationLifecycle
+import play.api.GlobalSettings
+import services.{ConfigAgentLifecycle, IndexListingsLifecycle}
 
-object Global extends WithFilters(Filters.common: _*)
-  with ConfigAgentLifecycle
-  with DevParametersLifecycle
-  with CloudWatchApplicationMetrics
-  with DfpAgentLifecycle
-  with SurgingContentAgentLifecycle
-  with IndexListingsLifecycle
-  with ABTHeadlinesLifecycle
-  with TodaysCrosswordGridLifecycle {
-  override lazy val applicationName = "frontend-facia"
+import scala.concurrent.ExecutionContext
 
-  override def applicationMetrics: List[FrontendMetric] = super.applicationMetrics ::: List(
-    S3Metrics.S3AuthorizationError,
-    FaciaMetrics.FaciaToApplicationRedirectMetric,
-    FaciaMetrics.FaciaToRssRedirectMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerRequestsMetric
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
+
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new ConfigAgentLifecycle(appLifecycle),
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-facia")),
+    new FaciaDfpAgentLifecycle(appLifecycle),
+    new SurgingContentAgentLifecycle(appLifecycle),
+    IndexListingsLifecycle,
+    new TodaysCrosswordGridLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    new ABHeadlinesLifecycle(appLifecycle),
+    LogstashLifecycle,
+    new CachedHealthCheckLifeCycle(HealthCheck)
   )
 }

@@ -14,7 +14,7 @@ body {
     background-color: #ffffff;
 }
 .is-modern .has-membership-access-requirement {
-    @include u-h;
+    visibility: hidden !important;
 }
 
 
@@ -23,6 +23,10 @@ body {
     body {
         overflow-x: hidden;
     }
+}
+
+::selection {
+    background: rgba($news-main-2, .4);
 }
 
 /**
@@ -48,7 +52,6 @@ head {
     }
 }
 body:after {
-    content: 'mobile';
     @include u-h;
 
     @include mq(mobileLandscape) {
@@ -66,15 +69,18 @@ body:after {
     @include mq(wide) {
         content: 'wide';
     }
+
+    content: 'mobile';
 }
 
 .dateline {
-    color: colour(neutral-2);
     @include fs-textSans(2);
 
     @include mq(tablet) {
         @include fs-textSans(3, true);
     }
+
+    color: $neutral-2;
 
     i {
         vertical-align: baseline;
@@ -83,7 +89,7 @@ body:after {
 
 .relative-timestamp {
     display: block;
-    color: colour(neutral-2);
+    color: $neutral-2;
     margin: 0;
 }
 

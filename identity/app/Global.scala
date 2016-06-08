@@ -1,62 +1,40 @@
-import com.google.inject.Guice
-import common.CloudWatchApplicationMetrics
+import common.{CloudWatchMetricsLifecycle, LifecycleComponent, BackwardCompatibleLifecycleComponents}
+import common.Logback.LogstashLifecycle
 import conf._
-import filters.HeaderLoggingFilter
-import play.api.Play.current
+import conf.switches.SwitchboardLifecycle
+import controllers.HealthCheck
+import model.ApplicationIdentity
 import play.api._
-import play.api.mvc._
-import play.api.mvc.Results._
-import scala.concurrent.Future
-import utils.SafeLogging
-import conf.{Configuration, Filters}
+import play.api.inject.ApplicationLifecycle
+import play.api.inject.guice._
 
-object Global extends WithFilters(HeaderLoggingFilter :: Filters.common: _*) with SafeLogging
-                                                                                    with CloudWatchApplicationMetrics {
+import scala.concurrent.ExecutionContext
 
-  override lazy val applicationName = "frontend-identity"
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
 
-  private lazy val injector = {
-    val module =
-      Play.mode match {
-        case Mode.Prod => {
-          if (Configuration.environment.isNonProd) new PreProdModule
-          else new ProdModule
-        }
-        case Mode.Dev => new DevModule
-        case Mode.Test => new TestModule
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-identity")),
+    new IdentityLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    LogstashLifecycle,
+    new CachedHealthCheckLifeCycle(HealthCheck)
+  )
+}
+
+class IdentityApplicationLoader extends GuiceApplicationLoader() {
+
+  override def builder(context: ApplicationLoader.Context): GuiceApplicationBuilder = {
+    val module = context.environment.mode match {
+      case Mode.Prod => {
+        if (conf.Configuration.environment.isNonProd) new PreProdModule
+        else new ProdModule
       }
-
-    Guice.createInjector(module)
-  }
-
-  override def getControllerInstance[A](clazz: Class[A]) = {
-    injector.getInstance(clazz)
-  }
-
-  override def onError(request: RequestHeader, ex: Throwable) = {
-    logger.error("Serving error page", ex)
-    if (Play.mode == Mode.Prod) {
-      Future.successful(InternalServerError(views.html.errors._50x()))
-    } else {
-      super.onError(request, ex)
+      case Mode.Dev => new DevModule
+      case Mode.Test => new TestModule
     }
-  }
-
-  override def onHandlerNotFound(request: RequestHeader) = {
-    logger.info(s"Serving 404, no handler found for ${request.path}")
-    if (Play.mode == Mode.Prod) {
-      Future.successful(NotFound(views.html.errors._404()))
-    } else {
-      super.onHandlerNotFound(request)
-    }
-  }
-
-  override def onBadRequest(request: RequestHeader, error: String) = {
-    logger.info(s"Serving 400, could not bind request to handler for ${request.uri}")
-    if (Play.mode == Mode.Prod) {
-      Future.successful(BadRequest("Bad Request: " + error))
-    } else {
-      super.onBadRequest(request, error)
-    }
+    new GuiceApplicationBuilder()
+      .in(context.environment)
+      .loadConfig(context.initialConfiguration)
+      .bindings(module)
   }
 }

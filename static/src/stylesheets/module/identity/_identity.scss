@@ -1,8 +1,5 @@
 /* Identity and registration
    ========================================================================== */
-
-@import '../../components/pasteup-buttons/src/_mixins.scss';
-
 .l-header--identity {
     height: 45px;
 
@@ -60,7 +57,7 @@
 }
 
 .identity-section {
-    border-top: 1px solid colour(neutral-7);
+    border-top: 1px solid $neutral-7;
     box-sizing: border-box;
     margin: (($gs-baseline/3)*5) 0;
     padding-top: (($gs-baseline/3)*5) - 1;
@@ -155,16 +152,14 @@
 
     .social-signin__icon {
         position: absolute;
-    }
+        top: 0;
+        left: 0;
 
-    .social-signin__icon--fb {
-        top: 7px;
-        left: 14px;
-    }
-
-    .social-signin__icon--gplus {
-        top: 9px;
-        left: 10px;
+        svg {
+            float: left;
+            width: 40px;
+            height: 40px;
+        }
     }
 }
 
@@ -211,13 +206,12 @@
     }
 }
 .user-profile__about {
+    @include fs-textSans(2);
     clear: both;
     margin-top: $gs-baseline;
-    @include fs-textSans(2);
 
     @include mq(tablet) {
         margin-left: $gs-gutter*3.5;
-        margin-top: $gs-baseline;
         max-width: gs-span(6);
         clear: none;
         margin-top: 0;
@@ -237,16 +231,16 @@
 }
 .user-profile__last-seen,
 .user-profile__web-page {
-    display: block;
     @include fs-textSans(1);
-    color: colour(neutral-2-contrasted);
+    display: block;
+    color: $neutral-2-contrasted;
     font-weight: normal;
 }
 .user-profile__web-page {
+    @include ellipsis();
     display: block;
     margin-bottom: $gs-baseline/3;
     max-width: 100%;
-    @include ellipsis();
     word-break: break-all;
 }
 
@@ -259,7 +253,7 @@
     position: relative;
     padding-left: 24px;
 
-    i {
+    .inline-icon {
         position: absolute;
         top: 0;
         left: 0;
@@ -288,7 +282,7 @@
 
 .tabs--identity {
     .tabs__tab--selected {
-        border-top-color: colour(news-accent);
+        border-top-color: $news-accent;
     }
     .tabs__tab {
         max-width: gs-span(3);
@@ -316,7 +310,7 @@
     margin-top: $gs-baseline*2;
 }
 .email-subscription {
-    border-top: 1px solid colour(neutral-5);
+    border-top: 1px solid $neutral-5;
     margin-bottom: $gs-baseline*2;
     padding-top: $gs-baseline/3;
 }
@@ -328,8 +322,8 @@
     margin-bottom: $gs-baseline;
 
     @include mq(desktop) {
-        box-sizing: border-box;
         @include fs-headline(3, true);
+        box-sizing: border-box;
         float: left;
         padding-right: $gs-gutter;
         width: gs-span(4);
@@ -345,13 +339,14 @@
 .email-subscription__meta {
     margin-top: $gs-baseline;
 }
+
 .email-subscription__frequency {
     @include fs-textSans(1);
     float: right;
     margin-bottom: $gs-baseline/1.5;
     margin-top: $gs-baseline/1.5;
 
-    .i {
+    .inline-icon {
         margin-right: $gs-gutter/4;
         vertical-align: text-top;
     }
@@ -364,7 +359,7 @@
 }
 .email-subscription__button {
     @include fs-textSans(2);
-    background: colour(guardian-brand);
+    background: $guardian-brand;
     border: 0;
     color: #ffffff;
     cursor: pointer;
@@ -376,7 +371,7 @@
     }
 
     .email-subscription--subscribed & {
-        background: colour(neutral-2-contrasted);
+        background: $neutral-2-contrasted;
     }
 }
 
@@ -384,6 +379,51 @@
 
 /* Saved-content
    ========================================================================== */
+.saved-contents {
+    .fc-item__meta {
+        @include mq($until: desktop) {
+            position: relative;
+        }
+
+        @include mq(desktop) {
+            top: 0;
+        }
+    }
+
+    .has-flex-wrap & .fc-item--has-cutout .fc-item__content {
+        @include mq(tablet) {
+            max-width: none;
+            flex-basis: 100%;
+        }
+    }
+
+    .fc-item--has-cutout {
+        .fc-item__header,
+        .fc-item__standfirst {
+            @include mq(tablet) {
+                padding-right: 40%;
+            }
+        }
+    }
+
+    .fc-item__content,
+    .fc-item--has-metadata .fc-item__content {
+        @include mq($until: desktop) {
+            padding-bottom: $gs-baseline * 3;
+        }
+    }
+
+    .saved-content__button {
+        @include mq($until: desktop) {
+            right: $gs-gutter / 2;
+        }
+
+        @include mq(desktop) {
+            right: 0;
+            top: ($gs-baseline / 3) * 2;
+        }
+    }
+}
 
 .saved-content {
     margin-bottom: $gs-baseline*2;
@@ -408,7 +448,7 @@
 .saved-content__header__description {
     @include fs-headline(1);
     padding-bottom: $gs-baseline / 2;
-    color: colour(neutral-2);
+    color: $neutral-2;
 
     @include mq(tablet) {
         padding-bottom: $gs-baseline;
@@ -444,6 +484,10 @@
     text-align: right;
 }
 
+.saved-content__button {
+    position: absolute;
+}
+
 .save-for-later__delete-all-container {
     @include mq($from: mobileLandscape, $until: leftCol) {
         position: absolute;
@@ -456,22 +500,23 @@
 // due to *.head css appearing in the source BEFORE the global, which overides these as it loads
 .saved-content__button,
 .save-for-later__button--delete-all {
-    background-color: colour(neutral-5) !important;
-    color: colour(neutral-2) !important;
+    background-color: $neutral-5 !important;
+    color: $neutral-2 !important;
     border: 0 !important;
     cursor: pointer;
     margin-right: 0 !important;
+    padding-top: 0 !important;
 
     &:hover,
     &:active,
     &:focus {
-        background-color: colour(neutral-3) !important;
+        background-color: $neutral-3 !important;
     }
 
     .inline-icon {
         float: left;
         padding-right: .5em;
-        fill: colour(neutral-2);
+        fill: $neutral-2 !important;
 
         svg {
             width: 18px;
@@ -485,9 +530,9 @@
 }
 
 .save-for-later__button--delete-all--confirm {
-    color: colour(error) !important;
+    color: $error !important;
 
     .inline-icon {
-        fill: colour(error);
+        fill: $error;
     }
 }

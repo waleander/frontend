@@ -1,4 +1,4 @@
-module.exports = function(grunt, options) {
+module.exports = function (grunt, options) {
     return {
         options: {
             baseUrl: 'static/src/javascripts',
@@ -9,93 +9,195 @@ module.exports = function(grunt, options) {
                 membership:           'projects/membership',
                 bean:                 'components/bean/bean',
                 bonzo:                'components/bonzo/bonzo',
-                enhancer:             'components/enhancer/enhancer',
+                domReady:             'components/domready/ready',
                 EventEmitter:         'components/eventEmitter/EventEmitter',
-                fastclick:            'components/fastclick/fastclick',
                 fastdom:              'components/fastdom/index',
                 fence:                'components/fence/fence',
-                lodash:               'components/lodash',
+                lodash:               'components/lodash-amd',
                 picturefill:          'projects/common/utils/picturefill',
-                Promise:              'components/native-promise-only/npo.src',
+                Promise:              'components/when/Promise',
                 qwery:                'components/qwery/qwery',
                 raven:                'components/raven-js/raven',
-                react:                'components/react/react',
+                classnames:           'components/classnames/index',
                 reqwest:              'components/reqwest/reqwest',
-                omniture:             'vendor/omniture',
-                socketio:             'components/socket.io-client/socket.io',
                 stripe:               'vendor/stripe/stripe.min',
                 svgs:                 '../../../common/conf/assets/inline-svgs',
-                videojs:              'components/videojs/video',
+                videojs:              'components/video.js/video',
                 videojsads:           'components/videojs-contrib-ads/videojs.ads',
                 videojsembed:         'components/videojs-embed/videojs.embed',
                 videojsima:           'components/videojs-ima/videojs.ima',
                 videojspersistvolume: 'components/videojs-persistvolume/videojs.persistvolume',
-                videojsplaylist:      'components/videojs-playlist-audio',
+                videojsplaylist:      'components/videojs-playlist-audio/videojs.playlist',
                 // plugins
                 text:                 'components/requirejs-text/text',
                 inlineSvg:            'projects/common/utils/inlineSvg',
+
+                'react':              'empty:',
                 'ophan/ng':           'empty:'
             },
             optimize: options.isDev ? 'none' : 'uglify2',
             generateSourceMaps: true,
             preserveLicenseComments: false,
-            fileExclusionRegExp: /^bower_components|es6|test$/i
+            fileExclusionRegExp: /^bower_components/i
         },
-        common: {
+        boot: {
             options: {
-                dir: options.requirejsDir,
-                keepBuildDir: false,
-                shim: {
-                    omniture: {
-                        exports: 's'
-                    }
-                },
-                modules: [
-                    {
-                        name: 'core',
-                        exclude: [
-                            'text',
-                            'inlineSvg'
-                        ]
-                    },
-                    {
-                        name: 'bootstraps/app',
-                        exclude: [
-                            'core',
-                            'text',
-                            'inlineSvg'
-                        ]
-                    },
-                    {
-                        name: 'bootstraps/commercial',
-                        exclude: [
-                            'core',
-                            'text',
-                            'inlineSvg'
-                        ]
-                    }
-                ]
-            }
-        },
-        sudoku: {
-            options: {
-                name: 'bootstraps/sudoku',
-                out: options.staticTargetDir + 'javascripts/bootstraps/sudoku.js',
+                name: 'boot',
+                out: options.staticTargetDir + 'javascripts/boot.js',
+                include: 'bootstraps/standard/main',
+                insertRequire: ['boot'],
                 exclude: [
-                    'core',
-                    'bootstraps/app',
                     'text',
                     'inlineSvg'
                 ]
             }
         },
-        "image-content": {
+        commercial: {
             options: {
-                name: 'bootstraps/image-content',
-                out: options.staticTargetDir + 'javascripts/bootstraps/image-content.js',
+                name: 'bootstraps/commercial',
+                out: options.staticTargetDir + 'javascripts/bootstraps/commercial.js',
                 exclude: [
-                    'core',
-                    'bootstraps/app',
+                    'boot',
+                    'bootstraps/standard/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        enhanced: {
+            options: {
+                name: 'bootstraps/enhanced/main',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/main.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        article: {
+            options: {
+                name: 'bootstraps/enhanced/article',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/article.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        minute: {
+            options: {
+                name: 'bootstraps/enhanced/article-minute',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/article-minute.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        crosswords: {
+            options: {
+                name: 'bootstraps/enhanced/crosswords',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/crosswords.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        liveblog: {
+            options: {
+                name: 'bootstraps/enhanced/liveblog',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/liveblog.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        gallery: {
+            options: {
+                name: 'bootstraps/enhanced/gallery',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/gallery.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        trail: {
+            options: {
+                name: 'bootstraps/enhanced/trail',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/trail.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        profile: {
+            options: {
+                name: 'bootstraps/enhanced/profile',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/profile.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        sudoku: {
+            options: {
+                name: 'bootstraps/enhanced/sudoku',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/sudoku.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'text',
+                    'inlineSvg'
+                ]
+            }
+        },
+        'image-content': {
+            options: {
+                name: 'bootstraps/enhanced/image-content',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/image-content.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'text',
                     'inlineSvg'
                 ]
@@ -103,11 +205,13 @@ module.exports = function(grunt, options) {
         },
         facia: {
             options: {
-                name: 'bootstraps/facia',
-                out: options.staticTargetDir + 'javascripts/bootstraps/facia.js',
+                name: 'bootstraps/enhanced/facia',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/facia.js',
                 exclude: [
-                    'core',
-                    'bootstraps/app',
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'text',
                     'inlineSvg'
                 ]
@@ -115,11 +219,13 @@ module.exports = function(grunt, options) {
         },
         football: {
             options: {
-                name: 'bootstraps/football',
-                    out: options.staticTargetDir + 'javascripts/bootstraps/football.js',
-                    exclude: [
-                    'core',
-                    'bootstraps/app',
+                name: 'bootstraps/enhanced/football',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/football.js',
+                exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'text',
                     'inlineSvg'
                 ]
@@ -127,11 +233,13 @@ module.exports = function(grunt, options) {
         },
         preferences: {
             options: {
-                name: 'bootstraps/preferences',
-                out: options.staticTargetDir + 'javascripts/bootstraps/preferences.js',
+                name: 'bootstraps/enhanced/preferences',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/preferences.js',
                 exclude: [
-                    'core',
-                    'bootstraps/app',
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'text',
                     'inlineSvg'
                 ]
@@ -139,11 +247,13 @@ module.exports = function(grunt, options) {
         },
         identity: {
             options: {
-                name: 'bootstraps/membership',
-                out: options.staticTargetDir + 'javascripts/bootstraps/membership.js',
+                name: 'bootstraps/enhanced/membership',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/membership.js',
                 exclude: [
-                    'core',
-                    'bootstraps/app',
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'vendor/stripe/stripe.min',
                     'text',
                     'inlineSvg'
@@ -152,55 +262,49 @@ module.exports = function(grunt, options) {
         },
         ophan: {
             options: {
-                name: 'bootstraps/ophan',
-                out: options.staticTargetDir + 'javascripts/bootstraps/ophan.js'
+                name: 'bootstraps/enhanced/ophan',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/ophan.js'
             }
         },
-        video : {
+        admin: {
             options: {
-                name: 'bootstraps/video-player',
-                out: options.staticTargetDir + 'javascripts/bootstraps/video-player.js',
+                name: 'bootstraps/admin',
+                out: options.staticTargetDir + 'javascripts/bootstraps/admin.js',
                 shim: {
-                    videojs: {
-                        exports: 'videojs'
-                    },
-                    videojsads: {
-                        deps: ['videojs']
-                    },
-                    videojsima: {
-                        deps: ['videojs']
-                    },
-                    videojsplaylist: {
-                        deps: ['videojs']
-                    },
-                    videojsembed: {
-                        deps: ['videojs']
+                    omniture: {
+                        exports: 's'
                     }
-                },
-                wrapShim: true,
+                }
+            }
+        },
+        media: {
+            options: {
+                name: 'bootstraps/enhanced/media/main',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/media/main.js',
                 exclude: [
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
                     'text',
                     'inlineSvg'
                 ],
                 generateSourceMaps: true,
-                preserveLicenseComments: false
+                preserveLicenseComments: false,
+                shim: {
+                    videojsima: {
+                        deps: ['videojsads']
+                    },
+                    videojsads: {
+                        deps: ['bootstraps/enhanced/media/videojs-global']
+                    }
+                }
             }
         },
         videoEmbed : {
             options: {
                 name: 'bootstraps/video-embed',
                 out: options.staticTargetDir + 'javascripts/bootstraps/video-embed.js',
-                shim: {
-                    videojs: {
-                        exports: 'videojs'
-                    },
-                    videojsembed: {
-                        deps: ['videojs']
-                    },
-                    omniture: {
-                        exports: 's'
-                    }
-                },
                 exclude: [
                     'text',
                     'inlineSvg'
@@ -209,38 +313,16 @@ module.exports = function(grunt, options) {
                 preserveLicenseComments: false
             }
         },
-        dev: {
-            options: {
-                name: 'bootstraps/dev',
-                out: options.staticTargetDir + 'javascripts/bootstraps/dev.js',
-                exclude: [
-                    'core',
-                    'bootstraps/app',
-                    'text',
-                    'inlineSvg'
-                ]
-            }
-        },
-        creatives: {
-            options: {
-                name: 'bootstraps/creatives',
-                out: options.staticTargetDir + 'javascripts/bootstraps/creatives.js',
-                exclude: [
-                    'core',
-                    'bootstraps/app',
-                    'bootstraps/commercial',
-                    'text',
-                    'inlineSvg'
-                ]
-            }
-        },
         accessibility: {
             options: {
-                name: 'bootstraps/accessibility',
-                out: options.staticTargetDir + 'javascripts/bootstraps/accessibility.js',
+                name: 'bootstraps/enhanced/accessibility',
+                out: options.staticTargetDir + 'javascripts/bootstraps/enhanced/accessibility.js',
                 exclude: [
-                    'core',
-                    'bootstraps/app',
+                    'boot',
+                    'bootstraps/standard/main',
+                    'bootstraps/commercial',
+                    'bootstraps/enhanced/main',
+                    'bootstraps/enhanced/facia',
                     'text',
                     'inlineSvg'
                 ]

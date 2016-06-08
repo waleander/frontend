@@ -1,6 +1,7 @@
-@(faciaPage: model.PressedPage)(implicit request: RequestHeader)
 @import common.Edition
+@import common.commercial.ContainerModel
 @import views.support.RenderClasses
+@(faciaPage: model.PressedPage)(implicit request: RequestHeader)
 
 @defining((faciaPage.isSponsored(Some(Edition(request))),
         faciaPage.isAdvertisementFeature,
@@ -9,7 +10,7 @@
         <div class="l-side-margins">
             <div class="@RenderClasses(Map(
                 "fc-container--sponsored" -> isSponsored,
-                "fc-container--advertisement-feature" -> isAdFeature,
+                "fc-container--advertisement-feature paid-content--advertisement-feature" -> isAdFeature,
                 "js-sponsored-front" -> (isSponsored || isAdFeature || isFoundationFunded)
             ), "facia-page")"
             data-link-name="Front | @request.path"
@@ -21,13 +22,27 @@
                 }
             role="main">
 
-                @defining(layout.Front.fromPressedPage(faciaPage).containers) { collections =>
+            @if(isAdFeature){
+                @fragments.guBand()
+            }
+
+                @defining(layout.Front.fromPressedPage(faciaPage, Edition(request)).containers) { collections =>
 
                     @collections.map { containerDefinition =>
-                        @fragments.containers.facia_cards.container(containerDefinition, faciaPage.frontProperties)
+                        @fragments.containers.facia_cards.container(
+                            containerDefinition,
+                            faciaPage.frontProperties,
+                            Some(faciaPage.id),
+                            faciaPage.isAdvertisementFeature,
+                            faciaPage.collections.find {
+                                _.id == containerDefinition.dataId
+                            }.map {
+                                ContainerModel.fromPressedCollection(Edition(request))
+                            }
+                        )
                     }
 
-                    @defining(layout.Front.makeLinkedData(collections)) { linkedData =>
+                    @defining(layout.Front.makeLinkedData(faciaPage.metadata.url, collections)) { linkedData =>
                         <script data-schema="@{linkedData.`@type`}" type="application/ld+json">
                             @Html(model.meta.LinkedData.toJson(linkedData))
                         </script>

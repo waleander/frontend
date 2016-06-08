@@ -1,34 +1,21 @@
 package controllers
 
-import java.net.URLEncoder
-
 import common._
-import conf.Switches
-import play.api.mvc.{ Content => _, _ }
-import model.diagnostics.javascript.JavaScript
-import model.diagnostics.abtests.AbTests
+import org.joda.time.Instant
+import play.api.mvc._
 import model.diagnostics.analytics.Analytics
 import model.diagnostics.css.Css
-import model.{NoCache, TinyResponse}
+import model.diagnostics.csp.CSP
+import model.TinyResponse
 
 object DiagnosticsController extends Controller with Logging {
-
+  val r = scala.util.Random
 
   def acceptBeaconOptions = postOptions
 
   def acceptBeacon = Action { implicit request =>
     countsFromQueryString(request)
     TinyResponse.ok
-  }
-
-  def js = Action { implicit request =>
-    JavaScript.report(request)
-    TinyResponse.gif
-  }
-
-  def ab = Action { implicit request =>
-    AbTests.report(request.queryString)
-    TinyResponse.gif
   }
 
   def analytics(prefix: String) = Action { implicit request =>
@@ -49,15 +36,21 @@ object DiagnosticsController extends Controller with Logging {
   private lazy val jsonParser = parse.tolerantJson(1024 *1024)
 
   def css = Action(jsonParser) { implicit request =>
-    if (conf.Switches.CssLogging.isSwitchedOn) {
+    if (conf.switches.Switches.CssLogging.isSwitchedOn) {
       Css.report(request.body)
     }
     TinyResponse.noContent()
   }
 
-  def cssOptions = postOptions
+  def csp = Action(jsonParser) { implicit request =>
+    if (conf.switches.Switches.CspReporting.isSwitchedOn && r.nextInt(100) == 1) {
+      CSP.report(request.body)
+    }
 
-  private def postOptions: Action[AnyContent] = Action { implicit request =>
+    TinyResponse.noContent()
+  }
+
+  def postOptions: Action[AnyContent] = Action { implicit request =>
     TinyResponse.noContent(Some("POST, OPTIONS"))
   }
 }

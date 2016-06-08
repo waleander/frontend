@@ -30,6 +30,16 @@ create_install_vars() {
   fi
 }
 
+install_awscli() {
+  if ! installed aws; then
+    if linux; then
+      sudo apt-get install -y awscli
+    elif mac; then
+      brew install awscli
+    fi
+  fi
+}
+
 create_frontend_properties() {
   local path="$HOME/.gu"
   local filename="frontend.properties"
@@ -39,25 +49,21 @@ create_frontend_properties() {
       mkdir "$path"
     fi
 
-    touch "$path/$filename"
-    EXTRA_STEPS+=("Ask a colleague for frontend.properties and add the contents to $path/$filename")
+    aws s3 cp --profile frontend s3://aws-frontend-store/template-frontend.properties "$path/$filename"
   fi
 }
 
-create_aws_credentials() {
+create_aws_config() {
   local path="$HOME/.aws"
-  local filename="credentials"
+  local filename="config"
 
   if [[ ! -f "$path/$filename" ]]; then
     if [[ ! -d "$path" ]]; then
       mkdir "$path"
     fi
 
-    echo "[nextgen]
-    aws_access_key_id=[YOUR_AWS_ACCESS_KEY]
-    aws_secret_access_key=[YOUR_AWS_SECRET_ACCESS_KEY]
-    region=eu-west-1" > "$path/$filename"
-    EXTRA_STEPS+=("Add your AWS keys to $path/$filename")
+    echo "[profile nextgen]
+region = eu-west-1" > "$path/$filename"
   fi
 }
 
@@ -94,28 +100,7 @@ install_node() {
 
 install_grunt() {
   if ! installed grunt; then
-    sudo npm -g install grunt-cli
-  fi
-}
-
-install_jspm() {
-  if ! installed jspm; then
-    sudo npm -g install jspm
-    jspm registry config github
-    jspm registry create bower jspm-bower-endpoint
-  fi
-  jspm install
-}
-
-install_ruby() {
-  if linux; then
-    sudo apt-get install -y ruby1.9.1-full
-  fi
-}
-
-install_bundler() {
-  if ! installed bundle; then
-    sudo gem install bundler
+    npm -g install grunt-cli
   fi
 }
 
@@ -142,7 +127,7 @@ install_dependencies() {
 }
 
 compile() {
-  grunt compile
+  make install compile
 }
 
 report() {
@@ -157,16 +142,14 @@ report() {
 
 main() {
   create_install_vars
-  create_frontend_properties
-  create_aws_credentials
+  create_aws_config
   install_homebrew
+  install_awscli
+  create_frontend_properties
   install_jdk
   install_node
   install_gcc
   install_grunt
-  install_jspm
-  install_ruby
-  install_bundler
   install_libpng
   install_dependencies
   compile

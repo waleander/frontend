@@ -1,18 +1,14 @@
-define([
-    'common/utils/_'
-], function (
-    _
-) {
+define(function () {
 
     var documentObject;
 
     function getShortDomain() {
-        // Remove www (and dev bit, for localhost set up with dev.theguardian.com domain)
-        return getDocument().domain.replace(/^(www|dev)\./, '.');
+        // Trim subdomains for prod (www.theguardian), code (m.code.dev-theguardian) and dev (dev.theguardian, m.thegulocal)
+        return getDocument().domain.replace(/^(www|m\.code|dev|m)\./, '.');
     }
 
     function cleanUp(names) {
-        _.forEach(names, function (name) {
+        names.forEach(function (name) {
             remove(name);
         });
     }
@@ -67,7 +63,7 @@ define([
             nameEq = name + '=',
             cookies = getDocument().cookie.split(';');
 
-        _.forEach(cookies, function (cookie) {
+        cookies.forEach(function (cookie) {
             while (cookie.charAt(0) === ' ') {
                 cookie = cookie.substring(1, cookie.length);
             }

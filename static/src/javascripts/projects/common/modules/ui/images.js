@@ -1,35 +1,23 @@
 define([
-    'bonzo',
+    'qwery',
     'picturefill',
-    'common/utils/$',
-    'common/utils/$css',
     'common/utils/mediator'
 ],
 function (
-    bonzo,
+    qwery,
     picturefill,
-    $,
-    $css,
     mediator
 ) {
 
     var images = {
 
-        upgradePictures: function () {
-            var images = [].slice.call($('img[srcset]', document.body));
-            picturefill({ elements: images });
+        upgradePictures: function (context) {
+            picturefill({ elements: qwery('img[srcset], picture img', context || document) });
         },
 
         listen: function () {
             mediator.addListeners({
-                'ui:images:upgradePictures': function () {
-                    images.upgradePictures();
-                },
-                'ui:images:lazyLoaded': function (context) {
-                    picturefill({
-                        elements: [context]
-                    });
-                }
+                'ui:images:upgradePictures':  images.upgradePictures
             });
         }
 

@@ -1,0 +1,269 @@
+.new-header {
+    background-color: $guardian-brand;
+}
+
+.new-header__inner {
+    display: flex;
+    justify-content: space-between;
+
+    @include mq($until: phablet) {
+        align-items: flex-start;
+
+        // On mobile we want the nav to appear on a new line.
+        // This is achieved by allowing flex items to wrap, and placing a full
+        // width item after the logo.
+        // In the future this will be better achieved using display: contents
+        // http://stackoverflow.com/questions/29732575/line-break-in-multi-line-flexbox
+        flex-wrap: wrap;
+
+        &::after {
+            content: '';
+            width: 100%;
+        }
+    }
+
+    @include mq(phablet) {
+        align-items: center;
+        box-sizing: border-box;
+        padding-right: ($gs-gutter / 2);
+        padding-left: ($gs-gutter / 2);
+    }
+}
+
+.new-header__logo {
+    padding: ($gs-baseline / 2) ($gs-gutter / 2);
+
+    @include mq(phablet) {
+        order: 1;
+    }
+
+    svg {
+        // Removes extra spacing
+        display: block;
+
+        // Aspect ratio: 16:3
+        @include mq($until: phablet) {
+            width: 50vw;
+            // height: auto doesn't work in Safari
+            height: calc(3/16 * 46vw);
+            min-width: 147px;
+            min-height: 28px;
+        }
+
+        @include mq(tablet) {
+            width: 200px;
+            // height: auto doesn't work in Safari
+            height: calc(3/16 * 200px);
+        }
+    }
+}
+
+.new-header__edition-button {
+    @include fs-textSans(2);
+    order: -1;
+    color: $news-support-1;
+    // Override from fs-textSans mixin
+    line-height: 1;
+    // TODO: Use reset util?
+    // Unset button from user agent stylesheet
+    background: none;
+    // Unset button from user agent stylesheet
+    border: 0;
+    // Override button from user agent stylesheet
+    padding: ($gs-gutter / 2);
+
+    @include mq($from: mobile, $until: phablet) {
+        font-size: 3.8vw;
+    }
+
+    svg {
+        fill: currentColor;
+        // Spacing also due to inline elements
+        margin-right: 1px;
+        vertical-align: middle;
+
+        @include mq($until: mobile) {
+            // Align with cap height instead of x height
+            margin-top: -2px;
+        }
+
+        @include mq($from: mobile, $until: phablet) {
+            // Align with cap height instead of x height
+            margin-top: -.7vw;
+        }
+
+        @include mq($until: phablet) {
+            min-width: 14px;
+            min-height: 14px;
+            width: 4vw;
+            height: 4vw;
+        }
+    }
+}
+
+.new-header__nav {
+    @include fs-textSans(5);
+    display: flex;
+    align-items: center;
+    line-height: 1.3;
+
+    @include mq($from: mobile, $until: phablet) {
+        font-size: 5vw;
+    }
+
+    @include mq($until: phablet) {
+        padding-left: ($gs-gutter / 2);
+        padding-right: ($gs-gutter / 2);
+        // Position after pseudo element which forces line break
+        order: 1;
+        flex: 1;
+        justify-content: space-between;
+    }
+
+    // TODO: Line heights?
+    @include mq(tablet) {
+        font-size: 19px;
+    }
+
+    @include mq(desktop) {
+        font-size: 22px;
+    }
+}
+
+.new-header__nav__menu-button-and-user-button {
+    display: flex;
+    align-items: center;
+
+    @include mq($until: phablet) {
+        margin-left: 4px;
+    }
+}
+
+.new-header__nav__menu-button {
+    // Override button from user agent stylesheet
+    background-color: $news-main-2;
+    // Unset button from user agent stylesheet
+    border: 0;
+    // Override button from user agent stylesheet
+    // Must be square
+    padding: $gs-gutter * .6;
+    border-radius: 100%;
+    z-index: $zindex-modal;
+    height: 42px;
+    width: 42px;
+
+    @include mq($until: mobile) {
+        padding: 12px;
+        margin-right: 15px;
+        // Overlap
+        margin-top: -6px;
+        margin-bottom: -6px;
+        width: 38px;
+        height: 38px;
+    }
+
+    @include mq($from: mobile, $until: phablet) {
+        padding: 3vw;
+        margin-right: 4.7vw;
+        // Overlap
+        margin-top: -2vw;
+        margin-bottom: -2vw;
+        width: 12vw;
+        height: 12vw;
+    }
+}
+
+%new-header__burger-icon__line {
+    width: 100%;
+    height: 2px;
+    background-color: #ffffff;
+}
+
+.new-header__nav__menu-button__burger-icon {
+    @extend %new-header__burger-icon__line;
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 2px;
+    position: relative;
+
+    &:before,
+    &:after {
+        content: '';
+        position: absolute;
+        display: block;
+    }
+
+    &:before {
+        @extend %new-header__burger-icon__line;
+        top: 5px;
+    }
+
+    &:after {
+        @extend %new-header__burger-icon__line;
+        top: 10px;
+    }
+
+    @include mq($from: phablet, $until: tablet) {
+        padding: $gs-gutter * .7;
+        // Overlap
+        margin-top: -5px;
+        margin-bottom: -5px;
+        width: 45px;
+        height: 45px;
+    }
+
+    @include mq(tablet) {
+        padding: $gs-gutter * .9;
+        // Overlap
+        margin-top: -5px;
+        margin-bottom: -5px;
+        width: 60px;
+        height: 60px;
+    }
+
+    svg {
+        // Removes extra spacing
+        display: block;
+        fill: #ffffff;
+        width: 100%;
+        height: 100%;
+    }
+}
+
+.new-header__nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    // Unset ul from _lists.scss
+    margin-left: 0;
+    // Unset ul from user agent stylesheet
+    margin-top: 0;
+    // Unset ul from user agent stylesheet
+    margin-bottom: 0;
+
+    @include mq($until: phablet) {
+        order: -1;
+    }
+
+    @include mq(phablet) {
+        margin-left: $gs-gutter / 2;
+    }
+}
+
+.new-header__nav__list-item {
+    // Override inherited nav ul from _lists.scss
+    list-style: none;
+    white-space: nowrap;
+
+    &:not(:last-child) {
+        &:after {
+            content: '/';
+            color: $news-main-2;
+        }
+    }
+}
+
+.new-header__nav__link {
+    // Override a from _lists.scss
+    color: #ffffff;
+    padding: 2px;
+}

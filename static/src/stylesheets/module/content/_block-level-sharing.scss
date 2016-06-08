@@ -4,15 +4,15 @@
     display: block;
     float: left;
     cursor: pointer;
-    border: 1px solid colour(neutral-3);
+    border: 1px solid $neutral-3;
     margin-right: $gs-gutter / 4;
     width: $gs-baseline * 2;
     height: $gs-baseline * 2;
     box-sizing: border-box;
 
-    .i {
-        width: 100% !important;
-        height: 100% !important;
+    .inline-icon svg {
+        width: 23px;
+        height: 23px;
     }
 
     @if $old-ie {
@@ -21,113 +21,127 @@
 }
 
 .block-share__item--facebook {
-    border-color: colour(social-facebook);
-    color: colour(social-facebook);
-    .i { @include icon(share-facebook--blue); }
+    border-color: $social-facebook;
+    color: $social-facebook;
+    .inline-icon {
+        fill: $social-facebook;
+    }
 
     &:hover {
-        border-color: darken(colour(social-facebook), 15%);
-        .i { @include icon(share-facebook--blue-dark); }
+        border-color: darken($social-facebook, 15%);
+        .inline-icon {
+            fill: darken($social-facebook, 15%);
+        }
     }
 }
 
 .block-share__item--twitter {
-    border-color: colour(social-twitter);
-    color: colour(social-twitter);
-    .i { @include icon(share-twitter--blue); }
+    border-color: $social-twitter;
+    color: $social-twitter;
+    .inline-icon {
+        fill: $social-twitter;
+    }
 
     &:hover {
-        border-color: darken(colour(social-twitter), 15%);
-        .i { @include icon(share-twitter--blue-dark); }
+        border-color: darken($social-twitter, 15%);
+        .inline-icon {
+            fill: darken($social-twitter, 15%);
+        }
     }
 }
 
 .block-share__item--gplus {
-    border-color: colour(social-gplus);
-    color: colour(social-gplus);
-    .i { @include icon(share-gplus--red); }
+    border-color: $social-gplus;
+    color: $social-gplus;
+    .inline-icon {
+        fill: $social-gplus;
+    }
 
     &:hover {
-        border-color: darken(colour(social-gplus), 15%);
-        .i { @include icon(share-gplus--red-dark); }
+        border-color: darken($social-gplus, 15%);
+        .inline-icon {
+            fill: darken($social-gplus, 15%);
+        }
     }
 }
 
 .block-share__item--linkedin {
-    border-color: colour(social-linkedin);
-    color: colour(social-linkedin);
-    .i {
-        @include icon(share-linkedin--blue);
-        background-size: 58% !important;
-        background-position: center center !important;
+    border-color: $social-linkedin;
+    color: $social-linkedin;
+    .inline-icon {
+        fill: $social-linkedin;
     }
 
     &:hover {
-        border-color: darken(colour(social-linkedin), 15%);
-        .i {
-            @include icon(share-linkedin--blue-dark);
+        border-color: darken($social-linkedin, 15%);
+        .inline-icon {
+            fill: darken($social-linkedin, 15%);
         }
     }
 }
 
 .block-share__item--pinterest {
-    border-color: colour(social-pinterest);
-    color: colour(social-pinterest);
-    .i {
-        @include icon(share-pinterest--red);
-        background-size: 50% !important;
-        background-position: 49% center !important;
+    border-color: $social-pinterest;
+    color: $social-pinterest;
+    .inline-icon {
+        fill: $social-pinterest;
+    }
+
+    .block-share--article & {
+
     }
 
     &:hover {
-        border-color: darken(colour(social-pinterest), 15%);
-        .i {
-            @include icon(share-pinterest--red-dark);
+        border-color: darken($social-pinterest, 15%);
+        .inline-icon {
+            fill: darken($social-pinterest, 15%);
         }
     }
 }
 
 
 .share-modal__item--facebook {
-    background-color: colour(social-facebook);
+    background-color: $social-facebook;
     color: #ffffff;
-    .i { @include icon(share-facebook--white); }
 
     &:hover {
-        background-color: darken(colour(social-facebook), 15%);
+        background-color: darken($social-facebook, 15%);
     }
 }
 
 .share-modal__item--twitter {
-    background-color: colour(social-twitter);
+    background-color: $social-twitter;
     color: #ffffff;
-    .i { @include icon(share-twitter--white); }
 
     &:hover {
-        background-color: darken(colour(social-twitter), 15%);
+        background-color: darken($social-twitter, 15%);
     }
 }
 
 .share-modal__item--gplus {
-    background-color: colour(social-gplus);
+    background-color: $social-gplus;
     color: #ffffff;
-    .i { @include icon(share-gplus--white); }
 
     &:hover {
-        background-color: darken(colour(social-gplus), 15%);
+        background-color: darken($social-gplus, 15%);
     }
 }
 
 .share-modal__item--pinterest {
-    background-color: colour(social-pinterest);
+    background-color: $social-pinterest;
     color: #ffffff;
-    .i {
-        @include icon(share-pinterest--white);
-        margin-left: 6px !important;
-    }
 
     &:hover {
-        background-color: darken(colour(social-pinterest), 15%);
+        background-color: darken($social-pinterest, 15%);
+    }
+}
+
+.share-modal__item--email {
+    background-color: $social-email;
+    color: #ffffff;
+
+    &:hover {
+        background-color: darken($social-email, 15%);
     }
 }
 
@@ -144,7 +158,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    background-color: colour(neutral-8);
+    background-color: $neutral-8;
 }
 
 .share-modal__content {
@@ -153,8 +167,8 @@
 }
 
 .share-modal__title {
-    @include fs-data(4);
-    color: colour(neutral-2);
+    @include fs-textSans(3);
+    color: $neutral-2;
     text-align: center;
     margin-bottom: $gs-baseline * 3;
     font-weight: bold;
@@ -168,19 +182,28 @@
     position: relative;
     border: 0;
 
-    .i {
-        float: left;
+    &.inline-icon__fallback {
+        width: 150px;
+        position: relative;
+    }
+
+    .inline-icon {
         position: absolute;
         top: 0;
         bottom: 0;
         margin: auto 0;
         left: 5px;
+        svg {
+            width: 33px;
+            height: 33px;
+            vertical-align: middle;
+        }
     }
 }
 
 .share-modal__close {
-    border: 1px solid colour(neutral-2);
     @include circular;
+    border: 1px solid $neutral-2;
     width: 40px;
     height: 40px;
     padding: 0;
@@ -214,58 +237,40 @@
 
 // Gallery
 
-.block-share--gallery {
-    margin-top: $gs-baseline;
-    white-space: nowrap;
-    clear: both;
+.content--media:not(.paid-content--advertisement-feature) {
+    .block-share--gallery {
+        position: static;
 
-    @include mq(tablet, desktop) {
-        position: absolute;
-        top: -$gs-baseline / 3;
-        right: 0;
+        .block-share__item {
+            position: relative;
+            background-color: transparent;
+            border: 1px solid $neutral-2;
+            box-sizing: border-box;
+            transition: border-color .15s ease-out;
+            width: 32px;
+            height: 32px;
 
-        .gallery-lightbox & {
-            right: $gs-gutter / 2;
-        }
-    }
+            &:hover {
+                background-color: transparent;
+                border-color: $neutral-6;
+            }
 
-    .block-share__item {
-        transition: opacity .15s linear;
-    }
+            .inline-icon {
+                fill: $neutral-3;
 
-    .block-share__item--facebook {
-        background-color: colour(social-facebook);
-
-        &:hover {
-            background-color: colour-hover(social-facebook);
-        }
-
-        .i {
-            @include icon(share-facebook--white);
-        }
-    }
-
-    .block-share__item--twitter {
-        background-color: colour(social-twitter);
-
-        &:hover {
-            background-color: colour-hover(social-twitter);
-        }
-
-        .i {
-            @include icon(share-twitter--white);
-        }
-    }
-
-    .block-share__item--pinterest {
-        background-color: colour(social-pinterest);
-
-        &:hover {
-            background-color: colour-hover(social-pinterest);
-        }
-
-        .i {
-            @include icon(share-pinterest--white);
+                // Directly referencing the sizes in _social.scss
+                svg {
+                    height: 88%;
+                    width: 88%;
+                    vertical-align: middle;
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    right: 0;
+                    left: 0;
+                    margin: auto;
+                }
+            }
         }
     }
 }
@@ -277,7 +282,7 @@
 }
 
 .overlay--gallery {
-    background-color: colour(neutral-1);
+    background-color: $neutral-1;
     .share-modal__title {
         color: #ffffff;
     }
@@ -309,7 +314,7 @@
 
     .fig--border {
         @include mq(leftCol) {
-            border-bottom: 1px dotted colour(neutral-5) !important;
+            border-bottom: 1px dotted $neutral-5 !important;
         }
 
         &.element--thumbnail {

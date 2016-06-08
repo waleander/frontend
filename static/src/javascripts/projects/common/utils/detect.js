@@ -6,13 +6,19 @@
 /*global DocumentTouch: true */
 
 define([
-    'common/utils/_',
     'common/utils/mediator',
-    'common/utils/$'
+    'common/utils/take-while',
+    'common/utils/drop-while',
+    'lodash/functions/memoize',
+    'lodash/functions/compose',
+    'Promise'
 ], function (
-    _,
     mediator,
-    $
+    takeWhile,
+    dropWhile,
+    memoize,
+    compose,
+    Promise
 ) {
 
     var supportsPushState,
@@ -26,7 +32,7 @@ define([
         // These should match those defined in:
         //   stylesheets/_vars.scss
         //   common/app/layout/Breakpoint.scala
-        breakpoints = [
+            breakpoints = [
             {
                 name: 'mobile',
                 isTweakpoint: false,
@@ -85,30 +91,6 @@ define([
         };
     }
 
-    /**
-     * @param performance - Object allows passing in of window.performance, for testing
-     */
-    function getPageSpeed(performance) {
-
-        //https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/NavigationTiming/Overview.html#sec-window.performance-attribute
-
-        var startTime,
-            endTime,
-            totalTime,
-            perf = performance || window.performance || window.msPerformance || window.webkitPerformance || window.mozPerformance;
-
-        if (perf && perf.timing) {
-            startTime =  perf.timing.requestStart || perf.timing.fetchStart || perf.timing.navigationStart;
-            endTime = perf.timing.responseEnd;
-
-            if (startTime && endTime) {
-                totalTime = endTime - startTime;
-            }
-        }
-
-        return totalTime;
-    }
-
     function isReload() {
         var perf = window.performance || window.msPerformance || window.webkitPerformance || window.mozPerformance;
         if (!!perf && !!perf.navigation) {
@@ -149,6 +131,10 @@ define([
         return /\.facebook\.com/.test(document.referrer);
     }
 
+    function isGuardianReferral() {
+        return /\.theguardian\.com/.test(document.referrer);
+    }
+
     function socialContext() {
         var override = /socialContext=(facebook|twitter)/.exec(window.location.hash);
 
@@ -181,68 +167,6 @@ define([
             version: M[1]
         };
     })();
-
-    function getConnectionSpeed(performance, connection, reportUnknown) {
-
-        connection = connection || navigator.connection || navigator.mozConnection || navigator.webkitConnection || {type: 'unknown'};
-
-        var isMobileNetwork = connection.type === 3 // connection.CELL_2G
-                || connection.type === 4 // connection.CELL_3G
-                || /^[23]g$/.test(connection.type), // string value in new spec
-            loadTime,
-            speed;
-
-        if (isMobileNetwork) {
-            return 'low';
-        }
-
-        loadTime = getPageSpeed(performance);
-
-        // Assume high speed for non supporting browsers
-        speed = 'high';
-        if (reportUnknown) {
-            speed = 'unknown';
-        }
-
-        if (loadTime) {
-            if (loadTime > 1000) { // One second
-                speed = 'medium';
-                if (loadTime > 3000) { // Three seconds
-                    speed = 'low';
-                }
-            }
-        }
-
-        return speed;
-
-    }
-
-    function getFontFormatSupport(ua) {
-        ua = ua.toLowerCase();
-        var browserSupportsWoff2 = false,
-            // for now only Chrome 36+ supports WOFF 2.0.
-            // Opera/Chromium also support it but their share on theguardian.com is around 0.5%
-            woff2browsers = /Chrome\/([0-9]+)/i,
-            chromeVersion;
-
-        if (woff2browsers.test(ua)) {
-            chromeVersion = parseInt(woff2browsers.exec(ua)[1], 10);
-
-            if (chromeVersion >= 36) {
-                browserSupportsWoff2 = true;
-            }
-        }
-
-        if (browserSupportsWoff2) {
-            return 'woff2';
-        }
-
-        if (ua.indexOf('android') > -1) {
-            return 'ttf';
-        }
-
-        return 'woff';
-    }
 
     function hasTouchScreen() {
         return ('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch;
@@ -294,63 +218,61 @@ define([
         };
     }
 
-    /** TEMPORARY: I'm going to update lodash in a separate pull request. */
-    function takeWhile(xs, f) {
-        var acc = [],
-            i,
-            size = xs.length;
+    function getBreakpointName(breakpoint) {
+        return breakpoint.name;
+    }
 
-        for (i = 0; i < size; i++) {
-            if (f(xs[i])) {
-                acc.push(xs[i]);
-            } else {
-                break;
-            }
-        }
-
-        return acc;
+    function reverseArray(arr) {
+        return arr.reverse();
     }
 
     function getBreakpoint(includeTweakpoint) {
-        var viewportWidth = detect.getViewport().width,
-            index,
-            breakpoint = _.last(takeWhile(breakpoints, function (bp) {
-                return bp.width <= viewportWidth;
-            })).name;
-        if (!includeTweakpoint) {
-            index = _.findIndex(breakpoints, function (b) {
-                return b.name === breakpoint;
-            });
-            breakpoint = _(breakpoints)
-                .first(index + 1)
-                .findLast(function (b) {
-                    return !b.isTweakpoint;
-                })
-                .valueOf()
-                .name;
+        var viewportWidth = detect.getViewport().width;
+        var breakpoint;
+        if (includeTweakpoint) {
+            breakpoint = takeWhile(isMatchingBreakpoint, breakpoints).slice(-1)[0].name;
+        } else {
+            // Remember: (f ∘ g ∘ h)(x) = f(g(h(x)))
+            // If, 1. we take all breakpoints matching the viewport width, in increasing order
+            //     2. we reverse the array, effectively putting any tweakpoints first
+            //     3. we drop all tweakpoints from the beginning of the array
+            // Then, the first item is the largest breakpoint that is not a tweakpoint
+            var algo = compose(
+                dropWhile.bind(undefined, isTweakpoint),
+                reverseArray,
+                takeWhile.bind(undefined, isMatchingBreakpoint)
+            );
+            breakpoint = algo(breakpoints)[0].name;
         }
 
         return breakpoint;
+
+        function isMatchingBreakpoint(_) {
+            return _.width <= viewportWidth;
+        }
+
+        function isTweakpoint(_) {
+            return _.isTweakpoint;
+        }
     }
 
     function isBreakpoint(criteria) {
-        var c = _.defaults(
-                criteria,
-                {
-                    min: _.first(breakpoints).name,
-                    max: _.last(breakpoints).name
-                }
-            ),
-            currentBreakpoint = getBreakpoint(true);
-        return _(breakpoints)
-            .rest(function (breakpoint) {
-                return breakpoint.name !== c.min;
-            })
-            .initial(function (breakpoint) {
-                return breakpoint.name !== c.max;
-            })
-            .pluck('name')
-            .contains(currentBreakpoint);
+        criteria.min = criteria.min || breakpoints[0].name;
+        criteria.max = criteria.max || breakpoints[breakpoints.length - 1].name;
+
+        var currentBreakpoint = getBreakpoint(true);
+        // If, 1. we drop all breakpoints smaller than the breakpoint range (min)
+        //     2. we reverse the array, and...
+        //     3. we drop all breakpoints larger than the breakpoint range (max)
+        // Then, we get the range of matching breakpoints (in reverse order but
+        // it doesn't matter)
+        var algo = compose(
+            dropWhile.bind(undefined, function (_) { return _ !== criteria.max; }),
+            reverseArray,
+            dropWhile.bind(undefined, function (_) { return _ !== criteria.min; })
+        );
+
+        return algo(breakpoints.map(getBreakpointName)).indexOf(currentBreakpoint) !== -1;
     }
 
     // Page Visibility
@@ -404,57 +326,41 @@ define([
         return 'WebSocket' in window;
     }
 
-    // Determine if what type of font-hinting we want.
-    // Duplicated in /common/app/views/fragments/javaScriptLaterSteps.scala.html
-    function fontHinting() {
-        var ua = navigator.userAgent,
-            windowsNT = /Windows NT (\d\.\d+)/.exec(ua),
-            hinting = 'Off',
-            version;
-
-        if (windowsNT) {
-            version = parseFloat(windowsNT[1], 10);
-            // For Windows XP-7
-            if (version >= 5.1 && version <= 6.1) {
-                if (/Chrome/.exec(ua) && version < 6.0) {
-                    // Chrome on windows XP wants auto-hinting
-                    hinting = 'Auto';
-                } else {
-                    // All others use cleartype
-                    hinting = 'Cleartype';
-                }
-            }
-        }
-        return hinting;
+    function isEnhanced() {
+        return window.guardian.isEnhanced;
     }
 
-    function isModernBrowser() {
-        return window.guardian.isModernBrowser;
-    }
+    var createSacrificialAd = memoize(function () {
+        var sacrificialAd = '<div class="ad_unit" style="position: absolute; height: 10px; top: 0; left: 0; z-index: -1;">&nbsp;</div>';
+        document.body.insertAdjacentHTML('beforeend', sacrificialAd);
+        return document.body.lastChild;
+    });
+    // sync adblock detection is deprecated.
+    // it will be removed once sticky nav and omniture top up call are both removed
+    // this is soon - it's not worth refactoring them when they're off soon
+    //
+    // ** don't forget to remove them from the return object too **
+    var adblockInUseSync = memoize(function () {
+        return window.getComputedStyle(createSacrificialAd()).display === 'none';
+    });
+    // end sync adblock detection
 
-    function adblockInUse() {
-        var displayed = '',
-            isAdblock = false,
-            mozBinding = '',
-            mozBindingHidden = -1;
+    var adblockInUse = new Promise(function (resolve) {
+        if (window.guardian.adBlockers.hasOwnProperty('active')) {
+            // adblock detection has completed
+            resolve(window.guardian.adBlockers.active);
+        } else {
+            // Push a listener for when the JS loads
+            window.guardian.adBlockers.onDetect.push(resolve);
+        }
+    });
 
-        $.create('<div class="ad_unit"></div>').appendTo(document.body);
-        displayed = $('.ad_unit').css('display');
-        mozBinding = $('.ad_unit').css('-moz-binding');
-        if (typeof mozBinding !== 'undefined') {
-            mozBindingHidden = $('.ad_unit').css('-moz-binding').indexOf('elemhidehit');
-        }
-        $('.ad_unit').remove();
-        if (displayed === 'none' || (typeof mozBinding !== 'undefined' && mozBindingHidden !== -1)) {
-            isAdblock = true;
-        }
-        return isAdblock;
+    function getReferrer() {
+        return document.referrer || '';
     }
 
     detect = {
         hasCrossedBreakpoint: hasCrossedBreakpoint,
-        getConnectionSpeed: getConnectionSpeed,
-        getFontFormatSupport: getFontFormatSupport,
         getVideoFormatSupport: getVideoFormatSupport,
         hasTouchScreen: hasTouchScreen,
         hasPushStateSupport: hasPushStateSupport,
@@ -469,17 +375,18 @@ define([
         isTwitterApp: isTwitterApp,
         isFacebookReferral: isFacebookReferral,
         isTwitterReferral: isTwitterReferral,
+        isGuardianReferral: isGuardianReferral,
         socialContext: socialContext,
         isBreakpoint: isBreakpoint,
         isReload:  isReload,
         initPageVisibility: initPageVisibility,
         pageVisible: pageVisible,
         hasWebSocket: hasWebSocket,
-        getPageSpeed: getPageSpeed,
         breakpoints: breakpoints,
-        fontHinting: fontHinting(),
-        isModernBrowser: isModernBrowser,
-        adblockInUse: adblockInUse()
+        isEnhanced: isEnhanced,
+        adblockInUseSync: adblockInUseSync,
+        adblockInUse: adblockInUse,
+        getReferrer: getReferrer
     };
     return detect;
 });

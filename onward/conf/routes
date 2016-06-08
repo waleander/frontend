@@ -5,11 +5,23 @@
 # For dev machines
 GET        /assets/*path                              dev.DevAssetsController.at(path)
 
-GET        /_healthcheck                              conf.HealthCheck.healthcheck()
+GET        /_healthcheck                              controllers.HealthCheck.healthCheck()
 
 GET        /nav.json                                  controllers.NavigationController.nav()
 
 # Onward public endpoints
+
+#Weather
+GET        /weather/city/:id.json                     weather.controllers.WeatherController.forCity(id)
+GET        /weather/city.json                         weather.controllers.LocationsController.whatIsMyCity()
+GET        /weather/locations                         weather.controllers.LocationsController.findCity(query: String)
+GET        /weather/forecast/:id.json                 weather.controllers.WeatherController.forecastForCityId(id)
+
+GET        /weatherapi/city/:id.json                  weather.controllers.WeatherController.forCity(id)
+GET        /weatherapi/city.json                      weather.controllers.LocationsController.whatIsMyCity()
+GET        /weatherapi/locations                      weather.controllers.LocationsController.findCity(query: String)
+GET        /weatherapi/forecast/:id.json              weather.controllers.WeatherController.forecastForCityId(id)
+
 GET        /most-read-facebook.json                   controllers.MostViewedSocialController.renderMostViewed(socialContext: String = "facebook")
 GET        /most-read-twitter.json                    controllers.MostViewedSocialController.renderMostViewed(socialContext: String = "twitter")
 GET        /most-read.json                            controllers.MostPopularController.render(path = "")
@@ -30,6 +42,7 @@ GET        /preference/front-alphas/:optAction        controllers.ChangeAlphaCon
 GET        /:mediaType/section/:sectionId/*seriesId.json   controllers.MediaInSectionController.renderSectionMediaWithSeries(mediaType, sectionId, seriesId)
 GET        /:mediaType/section/:sectionId.json             controllers.MediaInSectionController.renderSectionMedia(mediaType, sectionId)
 GET        /video/most-viewed.json                    controllers.MostViewedVideoController.renderMostViewed()
+GET        /video/in-series/*series.json              controllers.MostViewedVideoController.renderInSeries(series: String)
 GET        /audio/most-viewed.json                    controllers.MostViewedAudioController.renderMostViewed()
 GET        /podcast/most-viewed.json                  controllers.MostViewedAudioController.renderMostViewedPodcast()
 GET        /gallery/most-viewed.json                  controllers.MostViewedGalleryController.renderMostViewed()
@@ -56,3 +69,8 @@ GET        /business-data/stocks.json                 controllers.StocksControll
 # User tech feedback
 GET        /info/tech-feedback                        controllers.TechFeedbackController.techFeedback(path = "")
 GET        /info/tech-feedback/*path                  controllers.TechFeedbackController.techFeedback(path)
+
+# AMP
+GET        /most-read-mf2.json                        controllers.MostPopularController.renderPopularMicroformat2()
+GET        /related-mf2/*path.json                    controllers.RelatedController.renderMf2(path)
+GET        /series-mf2/*path.json                     controllers.SeriesController.renderMf2SeriesStories(path)

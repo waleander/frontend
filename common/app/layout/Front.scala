@@ -1,15 +1,16 @@
 package layout
 
-import com.gu.facia.api.models.{CollectionConfig, CuratedContent, FaciaContent}
-import conf.Switches
-import dfp.{DfpAgent, SponsorshipTag}
-import implicits.FaciaContentFrontendHelpers._
-import implicits.FaciaContentImplicits._
-import model.PressedPage
+import common.dfp._
+import common.{Edition, LinkTo}
+import conf.switches.Switches
 import model.facia.PressedCollection
-import model.meta.{ListItem, ItemList}
+import model.meta.{ItemList, ListItem}
+import model.pressed.{CollectionConfig, PressedContent}
+import model.{ContentType, PressedPage}
 import org.joda.time.DateTime
-import services.{CollectionConfigWithId, FaciaContentConvert}
+import play.api.libs.json.Json
+import play.api.mvc.RequestHeader
+import services.CollectionConfigWithId
 import slices.{MostPopular, _}
 import views.support.CutOut
 
@@ -31,7 +32,8 @@ case class ContainerLayoutContext(
   private def dedupCutOut(cardAndContext: CardAndContext): CardAndContext = {
     val (content, context) = cardAndContext
 
-    if (content.snapStuff.map(_.snapType) == Some(FrontendLatestSnap)) {
+    val maybeSnapType: Option[SnapType] = content.snapStuff.map(_.snapType)
+    if (maybeSnapType.contains(FrontendLatestSnap)) {
       (content, context)
     } else {
       val newCard = if (content.cutOut.exists(cutOutsSeen.contains)) {
@@ -66,17 +68,8 @@ case class ContainerLayoutContext(
 object CollectionEssentials {
   /* FAPI Integration */
 
-  def fromCollection(collection: model.Collection) = CollectionEssentials(
-    collection.items.map(FaciaContentConvert.frontentContentToFaciaContent),
-    collection.treats.map(FaciaContentConvert.frontentContentToFaciaContent),
-    collection.displayName,
-    collection.href,
-    collection.lastUpdated,
-    if (collection.curated.isEmpty) Some(9) else None
-  )
-
   def fromPressedCollection(collection: PressedCollection) = CollectionEssentials(
-    collection.all,
+    collection.curatedPlusBackfillDeduplicated,
     collection.treats,
     Option(collection.displayName),
     collection.href,
@@ -84,7 +77,7 @@ object CollectionEssentials {
     if (collection.curated.isEmpty) Some(9) else None
   )
 
-  def fromFaciaContent(trails: Seq[FaciaContent]) = CollectionEssentials(
+  def fromFaciaContent(trails: Seq[PressedContent]) = CollectionEssentials(
     trails,
     Nil,
     None,
@@ -97,8 +90,8 @@ object CollectionEssentials {
 }
 
 case class CollectionEssentials(
-  items: Seq[FaciaContent],
-  treats: Seq[FaciaContent],
+  items: Seq[PressedContent],
+  treats: Seq[PressedContent],
   displayName: Option[String],
   href: Option[String],
   lastUpdated: Option[String],
@@ -106,31 +99,100 @@ case class CollectionEssentials(
 )
 
 object ContainerCommercialOptions {
-  def fromConfig(config: CollectionConfig) = ContainerCommercialOptions(
-    DfpAgent.isSponsored(config),
-    DfpAgent.isAdvertisementFeature(config),
-    DfpAgent.isFoundationSupported(config),
-    DfpAgent.sponsorshipTag(config),
-    DfpAgent.sponsorshipType(config)
-  )
+  def fromConfig(config: CollectionConfig) = {
+    DfpAgent.findContainerCapiTagIdAndDfpTag(config) map { tagData =>
+      val capiTagId = tagData.capiTagId
+      val dfpTag = tagData.dfpTag
+
+      val sponsor = {
+        def tagTypeAndIdMatch(): Boolean = {
+          (dfpTag.tagType == Series && capiTagId.contains("/series/")) ||
+          (dfpTag.tagType == Keyword && capiTagId.matches("(\\w+)/\\1"))
+        }
+        if (tagTypeAndIdMatch()) {
+          dfpTag.lineItems.headOption flatMap (_.sponsor)
+        } else {
+          None
+        }
+      }
+
+      ContainerCommercialOptions(
+        isSponsored = dfpTag.paidForType == Sponsored,
+        isPaidContainer = dfpTag.paidForType == AdvertisementFeature,
+        isFoundationSupported = dfpTag.paidForType == FoundationFunded,
+        sponsor,
+        sponsorshipTag = Some(SponsorshipTag(dfpTag.tagType, capiTagId)),
+        sponsorshipType = Some(dfpTag.paidForType.name),
+        omitMPU = false
+      )
+    } getOrElse empty
+  }
+
+  def fromCollection(collection: CollectionEssentials): ContainerCommercialOptions = {
+
+    def mkFromFirstItemInCollection(item: PressedContent): Option[ContainerCommercialOptions] = {
+
+      def sponsoredTagPair(content: ContentType): Option[CapiTagAndDfpTag] = {
+        DfpAgent.winningTagPair(
+          capiTags = content.tags.tags,
+          sectionId = Some(content.metadata.sectionId),
+          edition = None
+        )
+      }
+
+      def mkFromSponsoredTagPair(tagProps: CapiTagAndDfpTag): ContainerCommercialOptions = {
+        val capiTag = tagProps.capiTag
+        val dfpTag = tagProps.dfpTag
+
+        val sponsorshipTag = {
+          val maybeTagType = {
+            if (capiTag.isSeries) Some(Series)
+            else if (capiTag.isKeyword) Some(Keyword)
+            else None
+          }
+          maybeTagType map (tagType => SponsorshipTag(tagType, tagId = capiTag.id))
+        }
+
+        ContainerCommercialOptions(
+          isSponsored = dfpTag.paidForType == Sponsored,
+          isPaidContainer = dfpTag.paidForType == AdvertisementFeature,
+          isFoundationSupported = dfpTag.paidForType == FoundationFunded,
+          sponsor = dfpTag.lineItems.headOption flatMap (_.sponsor),
+          sponsorshipTag,
+          sponsorshipType = Some(dfpTag.paidForType.name),
+          omitMPU = false
+        )
+      }
+
+      item.properties.maybeContent flatMap (sponsoredTagPair(_) map mkFromSponsoredTagPair)
+    }
+
+    collection.items.headOption flatMap mkFromFirstItemInCollection getOrElse empty
+  }
 
   val empty = ContainerCommercialOptions(
     isSponsored = false,
-    isAdvertisementFeature = false,
+    isPaidContainer = false,
     isFoundationSupported = false,
+    sponsor = None,
     sponsorshipTag = None,
-    sponsorshipType = None
+    sponsorshipType = None,
+    omitMPU = false
   )
+
+  def mostPopular(omitMPU: Boolean) = empty.copy(omitMPU = omitMPU)
 }
 
 case class ContainerCommercialOptions(
   isSponsored: Boolean,
-  isAdvertisementFeature: Boolean,
+  isPaidContainer: Boolean,
   isFoundationSupported: Boolean,
+  sponsor: Option[String],
   sponsorshipTag: Option[SponsorshipTag],
-  sponsorshipType: Option[String]
+  sponsorshipType: Option[String],
+  omitMPU: Boolean
 ) {
-  val isPaidFor = isSponsored || isAdvertisementFeature || isFoundationSupported
+  val isPaidFor = isSponsored || isPaidContainer || isFoundationSupported
 }
 
 object FaciaContainer {
@@ -176,7 +238,8 @@ object FaciaContainer {
     config: CollectionConfigWithId,
     collectionEssentials: CollectionEssentials,
     containerLayout: Option[ContainerLayout],
-    componentId: Option[String]
+    componentId: Option[String],
+    omitMPU: Boolean = false
   ): FaciaContainer = FaciaContainer(
     index,
     config.id,
@@ -190,18 +253,21 @@ object FaciaContainer {
     config.config.showLatestUpdate,
     // popular containers should never be sponsored
     container match {
-      case MostPopular => ContainerCommercialOptions.empty
+      case MostPopular => ContainerCommercialOptions.mostPopular(omitMPU)
+      case Commercial(SingleCampaign(_)) => ContainerCommercialOptions.fromCollection(collectionEssentials)
+      case Commercial(MultiCampaign(_)) => ContainerCommercialOptions.empty
       case _ => ContainerCommercialOptions.fromConfig(config.config)
     },
-    None,
+    config.config.description.map(DescriptionMetaHeader),
     None,
     hideToggle = false,
     showTimestamps = false,
     None,
-    useShowMore = true
+    useShowMore = true,
+    hasShowMoreEnabled = !config.config.hideShowMore
   )
 
-  def forStoryPackage(dataId: String, items: Seq[FaciaContent], title: String, href: Option[String] = None) = {
+  def forStoryPackage(dataId: String, items: Seq[PressedContent], title: String, href: Option[String] = None) = {
     FaciaContainer(
       index = 2,
       container = Fixed(ContainerDefinition.fastForNumberOfItems(items.size)),
@@ -229,7 +295,8 @@ case class FaciaContainer(
   hideToggle: Boolean,
   showTimestamps: Boolean,
   dateLinkPath: Option[String],
-  useShowMore: Boolean
+  useShowMore: Boolean,
+  hasShowMoreEnabled: Boolean
 ) {
   def transformCards(f: ContentCard => ContentCard) = copy(
     containerLayout = containerLayout.map(_.transformCards(f))
@@ -241,12 +308,10 @@ case class FaciaContainer(
     } getOrElse "no-name"
   }
 
-  def latestUpdate = (collectionEssentials.items.flatMap(_.webPublicationDateOption) ++
-    collectionEssentials.lastUpdated.map(DateTime.parse(_))).sortBy(-_.getMillis).headOption
+  def latestUpdate = (collectionEssentials.items.flatMap(_.card.webPublicationDateOption) ++
+    collectionEssentials.lastUpdated.map(DateTime.parse)).sortBy(-_.getMillis).headOption
 
   def items = collectionEssentials.items
-
-  def contentItems = items collect { case c: FaciaContent => c }
 
   def withTimeStamps = transformCards(_.withTimeStamp)
 
@@ -254,7 +319,7 @@ case class FaciaContainer(
     val maybeDateHeadline = customHeader flatMap  {
       case MetaDataHeader(_, _, _, dateHeadline, _) => Some(dateHeadline)
       case LoneDateHeadline(dateHeadline) => Some(dateHeadline)
-      case SeriesDescriptionMetaHeader(_) => None
+      case DescriptionMetaHeader(_) => None
     }
 
     for {
@@ -283,7 +348,7 @@ case class FaciaContainer(
     "au/commentisfree/regular-stories"
   ).contains(dataId)
 
-  def addShowMoreClasses = useShowMore && containerLayout.exists(_.hasShowMore)
+  def addShowMoreClasses() = useShowMore && containerLayout.exists(_.hasShowMore)
 
   def shouldLazyLoad = Switches.LazyLoadContainersSwitch.isSwitchedOn && index > 8
 
@@ -293,6 +358,34 @@ case class FaciaContainer(
   }
 }
 
+case class DedupedItem(id: String)
+
+case class DedupedContainerResult(
+  containerId: String,
+  containerDisplayName: String,
+  deduped: List[DedupedItem],
+  validForDedupingButNotDeduped: List[DedupedItem])
+
+case class DedupedFrontResult(
+  path: String,
+  results: List[DedupedContainerResult]) {
+
+  def addResult(result: DedupedContainerResult): DedupedFrontResult =
+    this.copy(results = results :+ result)
+}
+
+object DedupedItem {
+  implicit val dedupedItemFormat = Json.format[DedupedItem]
+}
+
+object DedupedContainerResult {
+  implicit val dedupedContainerResultFormat = Json.format[DedupedContainerResult]
+}
+
+object DedupedFrontResult {
+  implicit val dedupedFrontResultFormat = Json.format[DedupedFrontResult]
+}
+
 object Front extends implicits.Collections {
   type TrailUrl = String
 
@@ -300,7 +393,7 @@ object Front extends implicits.Collections {
     containerDefinition.slices.flatMap(_.layout.columns.map(_.numItems)).sum
 
   // Never de-duplicate snaps.
-  def participatesInDeduplication(faciaContent: FaciaContent) = !faciaContent.embedType.isDefined
+  def participatesInDeduplication(faciaContent: PressedContent) = faciaContent.properties.embedType.isEmpty
 
   /** Given a set of already seen trail URLs, a container type, and a set of trails, returns a new set of seen urls
     * for further de-duplication and the sequence of trails in the order that they ought to be shown for that
@@ -309,8 +402,8 @@ object Front extends implicits.Collections {
   def deduplicate(
     seen: Set[TrailUrl],
     container: Container,
-    faciaContentList: Seq[FaciaContent]
-    ): (Set[TrailUrl], Seq[FaciaContent]) = {
+    faciaContentList: Seq[PressedContent]
+    ): (Set[TrailUrl], Seq[PressedContent], (Seq[DedupedItem], Seq[DedupedItem])) = {
     container match {
       case Dynamic(dynamicContainer) =>
         /** Although Dynamic Containers participate in de-duplication, insofar as trails that appear in Dynamic
@@ -318,30 +411,44 @@ object Front extends implicits.Collections {
           * matter what occurred further up the page.
           */
         dynamicContainer.containerDefinitionFor(
-          faciaContentList.collect({ case content: CuratedContent => content }).map(Story.fromFaciaContent)
+          faciaContentList.map(Story.fromFaciaContent)
         ) map { containerDefinition =>
           (seen ++ faciaContentList
-            .map(_.url)
-            .take(itemsVisible(containerDefinition)), faciaContentList)
+            .map(_.header.url)
+            .take(itemsVisible(containerDefinition)), faciaContentList, (Nil, Nil))
         } getOrElse {
-          (seen, faciaContentList)
+          (seen, faciaContentList, (Nil, Nil))
         }
 
       /** Singleton containers (such as the eyewitness one or the thrasher one) do not participate in deduplication */
       case Fixed(containerDefinition) if containerDefinition.isSingleton =>
-        (seen, faciaContentList)
+        (seen, faciaContentList, (Nil, Nil))
 
       case Fixed(containerDefinition) =>
         /** Fixed Containers participate in de-duplication.
           */
         val nToTake = itemsVisible(containerDefinition)
-        val notUsed = faciaContentList.filter(faciaContent => !seen.contains(faciaContent.url) || !participatesInDeduplication(faciaContent))
-          .distinctBy(_.url)
-        (seen ++ notUsed.take(nToTake).filter(participatesInDeduplication).map(_.url), notUsed)
+        val usedInThisIteration: Seq[PressedContent] =
+          faciaContentList
+            .filter(c => seen.contains(c.header.url))
+
+       val usedButNotDeduped = usedInThisIteration
+            .filter(c => !participatesInDeduplication(c))
+            .map(_.header.url)
+            .map(DedupedItem(_))
+
+        val usedAndDeduped = usedInThisIteration
+            .filter(participatesInDeduplication)
+            .map(_.header.url)
+            .map(DedupedItem(_))
+
+        val notUsed = faciaContentList.filter(faciaContent => !seen.contains(faciaContent.header.url) || !participatesInDeduplication(faciaContent))
+          .distinctBy(_.header.url)
+        (seen ++ notUsed.take(nToTake).filter(participatesInDeduplication).map(_.header.url), notUsed, (usedAndDeduped, usedButNotDeduped))
 
       case _ =>
         /** Nav lists and most popular do not participate in de-duplication at all */
-        (seen, faciaContentList)
+        (seen, faciaContentList, (Nil, Nil))
     }
   }
 
@@ -356,7 +463,9 @@ object Front extends implicits.Collections {
       configs.zipWithIndex.toList.mapAccumL(
         (Set.empty[TrailUrl], initialContext)
       ) { case ((seenTrails, context), (((config, collection), container), index)) =>
-        val (newSeen, newItems) = deduplicate(seenTrails, container, collection.items)
+
+        //We don't need the used in the case of fromConfigsAndContainers
+        val (newSeen, newItems, _) = deduplicate(seenTrails, container, collection.items)
 
         ContainerLayout.fromContainer(container, context, config, newItems) map {
           case (containerLayout, newContext) => ((newSeen, newContext), FaciaContainer.fromConfig(
@@ -388,22 +497,28 @@ object Front extends implicits.Collections {
     })
   }
 
-  def fromPressedPage(pressedPage: PressedPage,
-                      initialContext: ContainerLayoutContext = ContainerLayoutContext.empty): Front = {
+  def fromPressedPageWithDeduped(pressedPage: PressedPage,
+                                 edition: Edition,
+                                 initialContext: ContainerLayoutContext = ContainerLayoutContext.empty): ((Set[Front.TrailUrl], ContainerLayoutContext, DedupedFrontResult), List[FaciaContainer]) = {
     import scalaz.std.list._
     import scalaz.syntax.traverse._
 
-    Front(
-      pressedPage.collections.filterNot(_.all.isEmpty).zipWithIndex.mapAccumL(
-        (Set.empty[TrailUrl], initialContext)
-      ) { case ((seenTrails, context), (pressedCollection, index)) =>
-        val container = Container.fromPressedCollection(pressedCollection)
-        val (newSeen, newItems) = deduplicate(seenTrails, container, pressedCollection.all)
+    val emptyDedupedResultWithPath = DedupedFrontResult(pressedPage.id, Nil)
+
+    pressedPage.collections.filterNot(_.curatedPlusBackfillDeduplicated.isEmpty).zipWithIndex.mapAccumL(
+        (Set.empty[TrailUrl], initialContext, emptyDedupedResultWithPath)
+      ) { case ((seenTrails, context, dedupedFrontResult), (pressedCollection, index)) =>
+        val omitMPU = pressedPage.metadata.omitMPUsFromContainers(edition)
+        val container = Container.fromPressedCollection(pressedCollection, omitMPU)
+        val (newSeen, newItems, (usedAndDeduped, usedButNotDeduped)) = deduplicate(seenTrails, container, pressedCollection.curatedPlusBackfillDeduplicated)
+
+        val dedupedContainerResult: DedupedContainerResult = DedupedContainerResult(pressedCollection.id, pressedCollection.displayName, usedAndDeduped.toList, usedButNotDeduped.toList)
+
         val collectionEssentials = CollectionEssentials.fromPressedCollection(pressedCollection)
         val containerDisplayConfig = ContainerDisplayConfig.withDefaults(pressedCollection.collectionConfigWithId)
 
         ContainerLayout.fromContainer(container, context, containerDisplayConfig, newItems) map {
-          case (containerLayout, newContext) => ((newSeen, newContext), FaciaContainer.fromConfig(
+          case (containerLayout, newContext) => ((newSeen, newContext, dedupedFrontResult.addResult(dedupedContainerResult)), FaciaContainer.fromConfig(
             index,
             container,
             pressedCollection.collectionConfigWithId,
@@ -412,31 +527,35 @@ object Front extends implicits.Collections {
             None
           ))
         } getOrElse {
-          ((newSeen, context), FaciaContainer.fromConfig(
+          ((newSeen, context, dedupedFrontResult.addResult(dedupedContainerResult)), FaciaContainer.fromConfig(
             index,
             container,
             pressedCollection.collectionConfigWithId,
             collectionEssentials.copy(items = newItems),
             None,
-            None
+            None,
+            omitMPU
           ))
         }
-      }._2
-    )
-
+    }
   }
 
-  def makeLinkedData(collections: Seq[FaciaContainer]): ItemList = {
+  def fromPressedPage(pressedPage: PressedPage,
+                      edition: Edition,
+                      initialContext: ContainerLayoutContext = ContainerLayoutContext.empty): Front =
+    Front(fromPressedPageWithDeduped(pressedPage, edition, initialContext)._2)
+
+  def makeLinkedData(url: String, collections: Seq[FaciaContainer])(implicit request: RequestHeader): ItemList = {
     ItemList(
-      "", // relative iri so just resolves to the base
+      LinkTo(url),
       collections.zipWithIndex.map {
         case (collection, index) =>
           ListItem(position = index, item = Some(
             ItemList(
-              "", // don't have a uri for each container
+              LinkTo(url), // don't have a uri for each container
               collection.items.zipWithIndex.map {
-                case (item, index) =>
-                  ListItem(position = index, url = Some(item.url))
+                case (item, i) =>
+                  ListItem(position = i, url = Some(LinkTo(item.header.url)))
               }
             )
           ))

@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -o xtrace
+set -o nounset
+
+echo "Dist play jars."
+
+set +x
+echo "##teamcity[progressStart 'sbt test and dist']"
+set -x
+
+./dev/teamcity/sbt-tc "project root" compile assets testThenUpload
+exitcode=$?
+
+echo "Done disting."
+exit $exitcode

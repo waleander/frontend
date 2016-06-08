@@ -97,9 +97,18 @@ trait Competitions extends LiveMatches with Logging with implicits.Collections w
     DateTimeComparator.getInstance.asInstanceOf[Comparator[DateTime]]
   )
 
+  private def mostRecentCompetitionSeasons(competitions: List[Season]): List[Season] = {
+    competitionDefinitions.flatMap{ compDef =>
+      competitions.filter(_.competitionId == compDef.id)
+        .sortBy(_.startDate.toDateTimeAtStartOfDay.getMillis).reverse
+        .take(2)
+    }
+  }
+
   val competitionDefinitions = Seq(
     Competition("500", "/football/championsleague", "Champions League", "Champions League", "European", tableDividers = List(2, 6, 21)),
     Competition("100", "/football/premierleague", "Premier League", "Premier League", "English", showInTeamsList = true, tableDividers = List(4, 5, 17)),
+    Competition("300", "/football/fa-cup", "FA Cup", "FA Cup", "English"),
     Competition("650", "/football/laligafootball", "La Liga", "La Liga", "European", showInTeamsList = true, tableDividers = List(4, 6, 17)),
     Competition("625", "/football/bundesligafootball", "Bundesliga", "Bundesliga", "European", showInTeamsList = true, tableDividers = List(3, 4, 6, 15, 16)),
     Competition("635", "/football/serieafootball", "Serie A", "Serie A", "European", showInTeamsList = true, tableDividers = List(3, 5, 17)),
@@ -111,15 +120,16 @@ trait Competitions extends LiveMatches with Logging with implicits.Collections w
     Competition("121", "/football/scottish-championship", "Scottish Championship", "Scottish Championship", "Scottish", showInTeamsList = true, tableDividers = List(1, 8, 9)),
     Competition("122", "/football/scottish-league-one", "Scottish League One", "Scottish League One", "Scottish", showInTeamsList = true, tableDividers = List(1, 4, 8, 9)),
     Competition("123", "/football/scottish-league-two", "Scottish League Two", "Scottish League Two", "Scottish", showInTeamsList = true, tableDividers = List(1, 4)),
+    Competition("750", "/football/euro-2016", "Euro 2016", "Euro", "Internationals"),
     Competition("751", "/football/euro-2016-qualifiers", "Euro 2016 qualifying", "Euro 2016 qual.", "Internationals"),
     Competition("501", "/football/champions-league-qualifying", "Champions League qualifying", "Champions League qual.", "European"),
     Competition("510", "/football/uefa-europa-league", "Europa League", "Europa League", "European", tableDividers = List(2)),
-    Competition("300", "/football/fa-cup", "FA Cup", "FA Cup", "English"),
     Competition("301", "/football/capital-one-cup", "Capital One Cup", "Capital One Cup", "English"),
     Competition("400", "/football/community-shield", "Community Shield", "Community Shield", "English", showInTeamsList = true),
     Competition("320", "/football/scottishcup", "Scottish Cup", "Scottish Cup", "Scottish"),
     Competition("321", "/football/cis-insurance-cup", "Scottish League Cup", "Scottish League Cup", "Scottish"),
-    Competition("721", "/football/friendlies", "International friendlies", "Friendlies", "Internationals")
+    Competition("721", "/football/friendlies", "International friendlies", "Friendlies", "Internationals"),
+    Competition("870", "/football/women-s-world-cup-2015", "Women's World Cup 2015", "Women's World Cup", "Internationals", showInTeamsList = true, tableDividers = List(2))
 
   )
 
@@ -135,15 +145,23 @@ trait Competitions extends LiveMatches with Logging with implicits.Collections w
   //one http call updates all competitions
   def refreshCompetitionData() = {
     log.info("Refreshing competition data")
-    FootballClient.competitions.map(_.flatMap { season =>
-      competitionAgents.find(_.competition.id == season.id).map { agent =>
-        val newCompetition = agent.competition.startDate match {
-          case Some(existingStartDate) if season.startDate.isAfter(existingStartDate.toDateTimeAtStartOfDay) => agent.update(agent.competition.copy(startDate = Some(season.startDate)))
-          case None => agent.update(agent.competition.copy(startDate = Some(season.startDate)))
-          case _ =>
+    FootballClient.competitions.map { allComps =>
+      mostRecentCompetitionSeasons(allComps).map { season =>
+        competitionAgents.find(_.competition.id == season.id).map { agent =>
+          val newCompetition = agent.competition.startDate match {
+            case Some(existingStartDate) if season.startDate.isAfter(existingStartDate.toDateTimeAtStartOfDay) => {
+              log.info(s"updating competition: ${season.id} season: ${season.seasonId} startDate was: ${existingStartDate.toString} now: ${season.startDate.toString}")
+              agent.update(agent.competition.copy(startDate = Some(season.startDate)))
+            }
+            case None => {
+              log.info(s"setting competition: ${season.id} season: ${season.seasonId} startDate was: None now: ${season.startDate.toString}")
+              agent.update(agent.competition.copy(startDate = Some(season.startDate)))
+            }
+            case _ =>
+          }
         }
       }
-    })
+    }.recover(FootballClient.logErrors)
   }
 
   //one http call updates all competitions

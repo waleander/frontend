@@ -1,70 +1,108 @@
 package controllers.commercial
 
-import common.ExecutionContexts
+import common.commercial._
+import common.{ExecutionContexts, Logging, Edition}
 import model.commercial.{CapiAgent, Lookup}
 import model.{Cached, NoCache}
-import performance.MemcachedAction
 import play.api.mvc._
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
-object ContentApiOffersController extends Controller with ExecutionContexts with implicits.Requests {
+sealed abstract class SponsorType(val className: String)
+case object PaidFor extends SponsorType("paidfor")
+case object Supported extends SponsorType("supported")
 
-  private def renderItems(format: Format, isMulti: Boolean) = MemcachedAction { implicit request =>
+object ContentApiOffersController extends Controller with ExecutionContexts with implicits.Requests with Logging {
+
+  private val sponsorTypeToClassRefactor = Map(
+    "sponsored" -> Supported,
+    "advertisement-feature" -> PaidFor,
+    "foundation-supported" -> Supported
+  )
+
+  private val sponsorTypeToLabel = Map(
+    "sponsored" -> "Supported by",
+    "advertisement-feature" -> "Paid for by",
+    "foundation-supported" -> "Supported by"
+  )
+
+  private def renderItems(format: Format, isMulti: Boolean) = Action.async { implicit request =>
 
     val optKeyword = request.getParameter("k")
 
-    val optLogo = request.getParameter("l")
-
-    val optCapiTitle = request.getParameter("ct")
-
-    val optCapiLink = request.getParameter("cl")
-
-    val optCapiAbout = request.getParameter("cal")
-
-    val optCapiButtonText = request.getParameter("clt")
-
-    val optCapiReadMoreUrl = request.getParameter("rmd")
-
-    val optCapiReadMoreText = request.getParameter("rmt")
-
-    val optCapiAdFeature = request.getParameter("af")
-
-    val sponsorTypeToClass = Map (
-        "sponsored" -> "fc-container--sponsored",
-        "advertisement-feature" -> "fc-container--advertisement-feature",
-        "foundation-supported" -> "fc-container--foundation-supported"
-        )
-    val optSponsorType: Option[String] = optCapiAdFeature flatMap (feature => sponsorTypeToClass.get(feature))
-
-    val sponsorTypeToLabel = Map (
-        "sponsored" -> "Sponsored by",
-        "advertisement-feature" -> "Brought to you by",
-        "foundation-supported" -> "Supported by"
-        )
-    val optSponsorLabel: Option[String] = optCapiAdFeature flatMap (feature => sponsorTypeToLabel.get(feature))
-
-    val optClickMacro = request.getParameter("clickMacro")
-
-    val optOmnitureId = request.getParameter("omnitureId")
-
-    val futureLatestByKeyword = optKeyword.map { keyword =>
+    val eventualLatest = optKeyword.map { keyword =>
       // getting twice as many, as we filter out content without images
       Lookup.latestContentByKeyword(keyword, 8)
     }.getOrElse(Future.successful(Nil))
 
-    val futureContents = for {
-      specific <- CapiAgent.contentByShortUrls(specificIds)
-      latestByKeyword <- futureLatestByKeyword
-    } yield (specific ++ latestByKeyword.filter(_.trailPicture.nonEmpty)).distinct take 4
+    eventualLatest onFailure {
+      case NonFatal(e) => log.error(s"Looking up content by keyword failed: ${e.getMessage}")
+    }
 
-    futureContents map {
-      case Nil => NoCache(format.nilResult)
+    val eventualSpecific = CapiAgent.contentByShortUrls(specificIds)
+
+    eventualSpecific onFailure {
+      case NonFatal(e) => log.error(s"Looking up content by short URL failed: ${e.getMessage}")
+    }
+
+    val futureContents = for {
+      specific <- eventualSpecific
+      latestByKeyword <- eventualLatest
+    } yield {
+      (specific ++ latestByKeyword.filter(_.trail.trailPicture.nonEmpty)).distinct take 4
+    }
+
+    futureContents.map(_.toList) map {
+      case Nil => NoCache(format.nilResult.result)
       case contents => Cached(componentMaxAge) {
+
+        val edition = Edition(request)
+        val optSection = request.getParameter("s")
+        val optLogo = request.getParameter("l")
+        val optCapiTitle = request.getParameter("ct")
+        val optCapiLink = request.getParameter("cl")
+        val optCapiAbout = request.getParameter("cal")
+        val optCapiButtonText = request.getParameter("clt")
+        val optCapiReadMoreUrl = request.getParameter("rmd")
+        val optCapiReadMoreText = request.getParameter("rmt")
+        val optCapiAdFeature = request.getParameter("af")
+        val optClickMacro = request.getParameter("clickMacro")
+        val optOmnitureId = request.getParameter("omnitureId")
+        val omnitureId = optOmnitureId orElse optCapiTitle getOrElse ""
+        val optSponsorTypeRefactor = optCapiAdFeature flatMap (feature => sponsorTypeToClassRefactor.get(feature))
+        val optSponsorLabel = optCapiAdFeature flatMap (feature => sponsorTypeToLabel.get(feature))
+
         if (isMulti) {
-          format.result(views.html.contentapi.items(contents, optLogo, optCapiTitle, optCapiLink, optCapiAbout, optClickMacro, optOmnitureId, optCapiAdFeature, optSponsorType, optSponsorLabel))
+          format.result(views.html.contentapi.items(
+            contents map (CardContent.fromContentItem(_, edition, optClickMacro, withDescription = false)),
+            optSection,
+            optLogo,
+            optCapiTitle,
+            optCapiLink,
+            optCapiAbout,
+            optClickMacro,
+            omnitureId,
+            optCapiAdFeature,
+            optSponsorTypeRefactor,
+            optSponsorLabel)
+          )
         } else {
-          format.result(views.html.contentapi.item(contents.head, optLogo, optCapiTitle, optCapiLink, optCapiAbout, optCapiButtonText, optCapiReadMoreUrl, optCapiReadMoreText, optSponsorType, optSponsorLabel, optClickMacro, optOmnitureId))
+          format.result(views.html.contentapi.item(
+            CardContent.fromContentItem(contents.head, edition, optClickMacro, withDescription = true),
+            optSection,
+            optLogo,
+            optCapiTitle,
+            optCapiLink,
+            optCapiAbout,
+            optCapiButtonText,
+            optCapiReadMoreUrl,
+            optCapiReadMoreText,
+            optSponsorTypeRefactor,
+            optSponsorLabel,
+            optClickMacro,
+            omnitureId
+          ))
         }
       }
     }

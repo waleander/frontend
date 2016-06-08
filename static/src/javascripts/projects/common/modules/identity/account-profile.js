@@ -8,12 +8,18 @@ define([
     'common/utils/$',
     'bean',
     'bonzo',
-    'common/utils/url'
+    'common/utils/url',
+    'common/utils/config',
+    'common/utils/ajax',
+    'common/modules/avatar/api'
 ], function (
     $,
     bean,
     bonzo,
-    url
+    url,
+    config,
+    ajax,
+    avatarApi
 ) {
 
     var accountProfile = function () {
@@ -26,19 +32,18 @@ define([
             publicForm: '.js-public-profile-form',
             tabs: '.js-tabs',
             formError: '.form__error',
+            formSuccess: '.form__success',
             changed: 'js-form-changed',
             textInput: '.text-input',
             avatarUploadForm: '.js-avatar-upload-form',
+            avatarUploadButton: '.js-avatar-upload-button',
             memberShipContainer: '.js-memebership-tab-container'
         };
 
         self.messages = {
-            noCorsError: 'Cross-origin resource sharing is not supported by this browser. Please upgrade your browser to use this feature.',
-            noServerError: 'The image upload server could not be reached.'
-        };
-
-        self.urls = {
-            avatarTokenUrl: 'https://gu-image-upload.appspot.com/upload-endpoint-generator'
+            noServerError: 'Sorry, the Avatar upload service is currently unavailable. Please try again shortly.',
+            avatarUploadSuccess: 'Thank you for uploading your avatar. It will be checked by Guardian moderators shortly.',
+            avatarUploadFailure: 'Sorry, something went wrong. Please try again.'
         };
 
         self.unsavedFields = [];
@@ -57,7 +62,7 @@ define([
 
                     var tabs = self.accountProfileForms.querySelector(self.classes.tabs);
 
-                    require(['bootstraps/membership'], function (membershipTab) {
+                    require(['bootstraps/enhanced/membership'], function (membershipTab) {
                         membershipTab.init();
                     });
 
@@ -96,8 +101,31 @@ define([
         }
     };
 
+    accountProfile.prototype.avatarUploadByApi = function (avatarForm) {
+        var self = this;
+        var formData = new FormData(document.querySelector('form' + self.classes.avatarUploadForm));
+
+        // disable form while submitting to prevent overlapping submissions
+        document.querySelector(self.classes.avatarUploadButton).disabled = true;
+
+        avatarApi.updateAvatar(formData)
+            .then(function () {
+                self.prependSuccessMessage(self.messages.avatarUploadSuccess, avatarForm);
+            }, function (err) {
+                if (err.status >= 400 && err.status < 500) {
+                    self.prependErrorMessage(
+                        JSON.parse(err.responseText).message || self.messages.avatarUploadFailure,
+                        avatarForm);
+                } else {
+                    self.prependErrorMessage(self.messages.noServerError, avatarForm);
+                }
+
+                document.querySelector(self.classes.avatarUploadButton).disabled = false;
+            });
+    };
+
     /*
-    *   Request a new image upload token on submit of the image upload form.
+    *   Handle user avatar upload
     *   TO DO: Use html5 file api to validate file size prior to upload @chrisfinch
     */
     accountProfile.prototype.bindAvatarUpload = function () {
@@ -108,50 +136,27 @@ define([
             bean.on(avatarForm, 'submit', function (event) {
                 event.preventDefault();
 
-                var xhr = self.createCORSRequest('GET', self.urls.avatarTokenUrl);
-                if (!xhr) {
-                    self.prependErrorMessage(self.messages.noCorsError, avatarForm);
-                }
-
-                xhr.onerror = function () {
-                    self.prependErrorMessage(self.messages.noServerError, avatarForm);
-                };
-
-                xhr.onload = function () {
-                    avatarForm.setAttribute('action', xhr.responseText);
-                    avatarForm.submit();
-                };
-
-                xhr.send();
+                self.avatarUploadByApi(avatarForm);
             });
         }
 
     };
 
-    /*
-    *   Prepend an error message in to an element
-    */
-    accountProfile.prototype.prependErrorMessage = function (message, location) {
+    accountProfile.prototype.prependMessage = function (message, location, clazz) {
         var errorHtml = document.createElement('div');
         errorHtml.innerHTML = message;
-        errorHtml.className = this.classes.formError.replace('.', '');
+        errorHtml.className = clazz;
         location.insertBefore(errorHtml, location.firstChild);
     };
 
-    /*
-    *   Create a cross-origin resource sharing XHR request
-    */
-    accountProfile.prototype.createCORSRequest = function (method, url) {
-        var xhr = new XMLHttpRequest();
-        if ('withCredentials' in xhr) {
-            xhr.open(method, url, true);
-        } else if (typeof XDomainRequest !== 'undefined') {
-            xhr = new XDomainRequest();
-            xhr.open(method, url);
-        } else {
-            xhr = null; // CORS not supported
-        }
-        return xhr;
+    accountProfile.prototype.prependErrorMessage = function (message, location) {
+        var errorClass = this.classes.formError.replace('.', '');
+        this.prependMessage(message, location, errorClass);
+    };
+
+    accountProfile.prototype.prependSuccessMessage = function (message, location) {
+        var errorClass = this.classes.formSuccess.replace('.', '');
+        this.prependMessage(message, location, errorClass);
     };
 
     /*

@@ -1,15 +1,39 @@
-@(metaData: model.MetaData, projectName: Option[String] = None, head: Html, curlPaths: Map[String, String] = Map())(implicit request: RequestHeader)
+@(page: model.Page, projectName: Option[String] = None, head: Html)(implicit request: RequestHeader)
+@import model.Page.getContent
 
 <meta charset="utf-8" />
-<title>@views.support.Title(metaData)</title>
+<!--
+ __        __                      _     _      _
+ \ \      / /__    __ _ _ __ ___  | |__ (_)_ __(_)_ __   __ _
+  \ \ /\ / / _ \  / _` | '__/ _ \ | '_ \| | '__| | '_ \ / _` |
+   \ V  V /  __/ | (_| | | |  __/ | | | | | |  | | | | | (_| |
+    \_/\_/ \___|  \__,_|_|  \___| |_| |_|_|_|  |_|_| |_|\__, |
+                                                        |___/
+Ever thought about joining us?
+http://developers.theguardian.com/join-the-team.html
+-->
+<title>@views.support.Title(page)</title>
 
-@fragments.metaData(metaData)
+@fragments.metaData(page)
 @head
 
-@fragments.stylesheetsLoad(projectName)
+@* stylesheet <link>s - get the stylesheets downloading ASAP *@
+@fragments.stylesheets(projectName, getContent(page).exists(_.tags.isCrossword))
 
-@fragments.javaScriptFirstSteps(metaData)
+@if(!play.Play.isDev()) {
+    <link rel="prefetch" href="@Static("javascripts/app.js")">
+}
 
-@fragments.stylesheetsUse()
+@*
+Protect against ReferenceErrors in IE:
+`window.console` only exists when the dev tools are open. If you reference
+something that doesn't exist, JavaScript will throw a `ReferenceError`. Here, we
+ensure console always exists one can safely reference it.
+Example: http://output.jsbin.com/jodureg/1
+*@
+<script>
+    window.console = window.console || undefined;
+</script>
 
-@fragments.javaScriptLaterSteps(metaData, curlPaths)
+@* inline JS - blocking *@
+@fragments.inlineJSBlocking(page)

@@ -1,21 +1,27 @@
 define([
-    'common/utils/_',
     'qwery',
     'common/utils/$',
     'common/utils/config',
+    'common/utils/detect',
     'common/modules/component',
     'common/utils/mediator',
+    'common/modules/commercial/dfp/dfp-api',
     'common/modules/commercial/create-ad-slot',
-    'common/modules/commercial/dfp'
+    'common/modules/commercial/commercial-features',
+    'common/modules/experiments/ab',
+    'lodash/collections/contains'
 ], function (
-    _,
     qwery,
     $,
     config,
+    detect,
     Component,
     mediator,
+    dfp,
     createAdSlot,
-    dfp
+    commercialFeatures,
+    ab,
+    contains
 ) {
 
     function MostPopular() {
@@ -25,8 +31,9 @@ define([
         // Don't even come ask...
         var sectionsWithoutPopular = ['info', 'global'];
         mediator.emit('register:begin', 'popular-in-section');
-        this.hasSection = config.page && config.page.section && !_.contains(sectionsWithoutPopular, config.page.section);
+        this.hasSection = config.page && config.page.section && !contains(sectionsWithoutPopular, config.page.section);
         this.endpoint = '/most-read' + (this.hasSection ? '/' + config.page.section : '') + '.json';
+        this.$mpu = null;
     }
 
     Component.define(MostPopular);
@@ -35,12 +42,14 @@ define([
         this.fetch(qwery('.js-popular-trails'), 'html');
     };
 
+    MostPopular.prototype.mobileMaximumSlotsReached = function () {
+        return (detect.getBreakpoint() === 'mobile' && $('.ad-slot--inline').length > 1);
+    };
+
     MostPopular.prototype.prerender = function () {
-        if (!config.page.shouldHideAdverts) {
-            this.$mpu = $('.js-fc-slice-mpu-candidate', this.elem)
-                .append(createAdSlot('inline3', 'container-inline'));
-        } else {
-            this.$mpu = undefined;
+        if (commercialFeatures.popularContentMPU && !this.mobileMaximumSlotsReached()) {
+            var $mpuEl = $('.js-fc-slice-mpu-candidate', this.elem);
+            this.$mpu = $mpuEl.append(createAdSlot('mostpop', 'container-inline'));
         }
     };
 

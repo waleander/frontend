@@ -1,16 +1,18 @@
 package controllers
 
-import discussion.model.Profile
-import play.api.mvc.Action
-import model.{Page, Cached}
 import common.JsonComponent
+import discussion.model.Profile
+import model.{Cached, MetaData, SectionSummary, SimplePage}
+import play.api.mvc.Action
 
 object ProfileActivityController extends DiscussionController {
-  def profilePage(profile: Profile, pageType: String) = Page(
-    id = s"discussion/profile/${profile.userId}/$pageType",
-    section = "Discussion",
-    webTitle = s"${profile.displayName}'s activity",
-    analyticsName = s"GFE:Article:Profile activity page"
+  def profilePage(profile: Profile, pageType: String) = SimplePage(
+    metadata = MetaData.make(
+      id = s"discussion/profile/${profile.userId}/$pageType",
+      section = Some(SectionSummary.fromId("Discussion")),
+      webTitle = s"${profile.displayName}'s activity",
+      analyticsName = s"GFE:Article:Profile activity page"
+    )
   )
 
   def profileDiscussions(userId: String) = Action.async { implicit request =>

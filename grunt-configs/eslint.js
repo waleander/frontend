@@ -1,74 +1,36 @@
 'use strict';
-module.exports = function(grunt, options) {
+module.exports = function () {
     return {
-        self: [
+        options: {
+            rulePaths: ['./dev/eslint-rules']
+        },
+        'Gruntfile.js': [
             'Gruntfile.js'
         ],
-        es6: {
+        'grunt-configs': [
+            'grunt-configs/**/*.js'
+        ],
+        'static/test/javascripts': {
             files: [{
                 expand: true,
-                cwd: 'static/src/javascripts/es6',
-                src: [
-                    '**/*.js'
-                ]
-            }]
+                cwd: 'static/test/javascripts',
+                src: ['**/*.js']
+            }],
+            options: {
+                ignorePath: 'static/test/javascripts/.eslintignore',
+                quiet: true
+            }
         },
-        test: {
+        'static/src': {
             files: [{
                 expand: true,
-                cwd: 'static/src/javascripts/test',
-                src: [
-                    '**/*.js'
-                ]
-            }]
-        },
-        common: {
-            files: [{
-                expand: true,
-                cwd: 'static/src/javascripts/projects/common',
-                src: [
-                    '**/*.js',
-                    '!utils/atob.js'
-                ]
-            }]
-        },
-        facia: {
-            files: [{
-                expand: true,
-                cwd: 'static/src/javascripts/projects/facia',
-                src: [
-                    '**/*.js'
-                ]
-            }]
-        },
-        'facia-tool': {
-            files: [{
-                expand: true,
-                cwd: 'facia-tool/public/js/',
-                src: [
-                    '**/*.js',
-                    '!jspm-config.js',
-                    '!components/**/*.js'
-                ]
-            }]
-        },
-        membership: {
-            files: [{
-                expand: true,
-                cwd: 'static/src/javascripts/projects/membership',
-                src: [
-                    '**/*.js'
-                ]
-            }]
-        },
-        bootstraps: {
-            files: [{
-                expand: true,
-                cwd: 'static/src/javascripts/bootstraps',
-                src: [
-                    '**/*.js'
-                ]
-            }]
+                cwd: 'static/src',
+                src: ['**/*.js']
+            }],
+            options: {
+                ignorePath: 'static/src/.eslintignore',
+                quiet: true
+            }
         }
     };
 };

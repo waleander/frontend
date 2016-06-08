@@ -1,6 +1,15 @@
 'use strict';
 /* global module: false, process: false */
-var megalog = require('megalog');
+
+var task = process.argv[2];
+if (task !== 'install') {
+    var dependencyTest = require('check-dependencies').sync();
+
+    if (dependencyTest.status !== 0) {
+        console.error(dependencyTest.error.join('\n')); // eslint-disable-line no-console
+        process.exit(dependencyTest.status);
+    }
+}
 
 module.exports = function (grunt) {
 
@@ -10,10 +19,12 @@ module.exports = function (grunt) {
         isDev: (grunt.option('dev') !== undefined) ? Boolean(grunt.option('dev')) : process.env.GRUNT_ISDEV === '1',
         singleRun:       grunt.option('single-run') !== false,
         staticTargetDir: './static/target/',
+        staticPublicDir: './static/public/',
+        staticSrcDir:    './static/src/',
         staticHashDir:   './static/hash/',
         testConfDir:     './static/test/javascripts/conf/',
         requirejsDir:    './static/requirejs',
-        webfontsDir:     './static/src/stylesheets/components/guss-webfonts/webfonts/'
+        webfontsDir:     './static/src/fonts/'
     };
 
     options.propertiesFile = options.isDev ?
@@ -26,7 +37,7 @@ module.exports = function (grunt) {
         jitGrunt: {
             staticMappings: {
                 replace: 'grunt-text-replace',
-                scsslint: 'grunt-scss-lint',
+                sasslint: 'grunt-sass-lint',
                 cssmetrics: 'grunt-css-metrics',
                 assetmonitor: 'grunt-asset-monitor',
                 /*eslint-disable camelcase*/
@@ -37,97 +48,88 @@ module.exports = function (grunt) {
         }
     });
 
-    function isOnlyTask(task) {
-        return grunt.cli.tasks.length === 1 && grunt.cli.tasks[0] === task.name;
-    }
-
     if (options.isDev) {
         grunt.log.subhead('Running Grunt in DEV mode');
     }
 
-    // Default task
-    grunt.registerTask('default', ['install', 'clean', 'validate', 'compile', 'test', 'analyse']);
+    // Default task - used by grunt-tc
+    grunt.registerTask('default', function () {
+        grunt.task.run(['shell:install', 'clean', 'validate', 'compile-assets', 'test', 'analyse']);
+    });
+
+    /**
+     * Deprecated/retired tasks
+     */
+    grunt.registerTask('compile', function () {
+        require('megalog').error('`grunt compile` has been removed.\n\nUse `make compile` or `make compile-dev` instead.\n\nIf you’re developing, you might want to use `make watch`. Run `make` for more details.');
+    });
+
+    grunt.registerTask('install', function () {
+        require('megalog').error('`grunt install` has been removed.\n\nUse `make install` instead.');
+    });
+
+    grunt.registerTask('prepare', function () {
+        require('megalog').error('`grunt prepare` has been removed.\n\nUse `make install` instead… ');
+    });
+
+    grunt.registerTask('watch', function () {
+        require('megalog').error('`grunt watch` has been removed.\n\nUse `make watch` instead… ');
+    });
+
+    grunt.registerTask('csdevmode', function () {
+        require('megalog').error('`grunt csdevmode` has been removed.\n\nUse `make watch` instead… ');
+    });
 
     /**
      * Validate tasks
      */
-    grunt.registerTask('validate:css', ['compile:images', 'sass:compile', 'sass:compileStyleguide']);
-    grunt.registerTask('validate:sass', ['scsslint']);
-    grunt.registerTask('validate:js', function(app) {
+    grunt.registerTask('validate:css', ['compile:images', 'sass:compile']);
+    grunt.registerTask('validate:sass', ['sasslint']);
+    grunt.registerTask('validate:js', function (app) {
         var target = (app) ? ':' + app : '';
-        grunt.task.run(['jscs' + target]);
         grunt.task.run(['eslint' + target]);
     });
-    grunt.registerTask('validate', function(app) {
+    grunt.registerTask('validate', function (app) {
         grunt.task.run(['validate:css', 'validate:sass', 'validate:js:' + (app || '')]);
     });
 
     /**
      * Compile tasks
      */
-
     grunt.registerTask('sass:compile', ['concurrent:sass']);
 
     grunt.registerTask('compile:images', ['copy:images', 'shell:spriteGeneration']);
-    grunt.registerTask('compile:css', function(fullCompile) {
-        grunt.task.run(['clean:css', 'mkdir:css', 'compile:images', 'sass:compile', 'sass:compileStyleguide']);
+    grunt.registerTask('compile:css', function () {
+        grunt.task.run(['clean:css', 'mkdir:css', 'compile:images', 'sass:compile']);
 
-        if (options.isDev) {
-            grunt.task.run(['replace:cssSourceMaps', 'copy:css']);
+        if (!options.isDev) {
+            grunt.task.run(['shell:updateCanIUse']);
         }
 
-        grunt.task.run(['px_to_rem', 'shell:updateCanIUse', 'autoprefixer']);
-
-        if (isOnlyTask(this) && !fullCompile) {
-            grunt.task.run('asset_hash');
-        }
-
+        grunt.task.run(['px_to_rem', 'autoprefixer']);
     });
-    grunt.registerTask('compile:js', function(fullCompile) {
+    grunt.registerTask('compile:js', function () {
         grunt.task.run(['clean:js', 'compile:inlineSvgs']);
 
-        if (!options.isDev) {
-            grunt.task.run('shell:jspmBundleStatic');
-        }
-
-        if (options.isDev) {
-            grunt.task.run('replace:jspmSourceMaps');
-        }
-
-        grunt.task.run(['concurrent:requireJS', 'copy:javascript']);
-        if (!options.isDev) {
-            grunt.task.run('uglify:javascript');
-        }
-
-        if (isOnlyTask(this) && !fullCompile) {
-            grunt.task.run('asset_hash');
-        }
-
+        grunt.task.run(['concurrent:requireJS', 'copy:javascript', 'concat:app', 'concat:shivsAndShims', 'uglify:javascript']);
+    });
+    grunt.registerTask('develop:js', function () {
+        grunt.task.run(['copy:inlineSVGs', 'clean:js', 'copy:javascript']);
     });
     grunt.registerTask('compile:fonts', ['mkdir:fontsTarget', 'webfontjson']);
     grunt.registerTask('compile:flash', ['copy:flash']);
     grunt.registerTask('compile:inlineSvgs', ['copy:inlineSVGs', 'svgmin:inlineSVGs']);
-    grunt.registerTask('compile:conf', ['copy:headJs', 'copy:headCss', 'copy:assetMap', 'compile:inlineSvgs', 'uglify:conf']);
-    grunt.registerTask('compile', [
+    grunt.registerTask('compile:conf', ['copy:headJs', 'copy:inlineCss', 'copy:assetMaps', 'compile:inlineSvgs', 'uglify:conf']);
+    var identity = function (x) { return x; };
+    grunt.registerTask('compile-assets', [
         'compile:css',
-        'compile:js',
+        (options.isDev ? 'develop:js' : 'compile:js'),
         'compile:fonts',
         'compile:flash',
-        'asset_hash',
+        !options.isDev && 'makeDeploysRadiator',
+        !options.isDev && 'asset_hash',
         'compile:conf'
-    ]);
-
-    grunt.registerTask('install', ['install:npm', 'install:jspm']);
-    grunt.registerTask('install:jspm', ['shell:jspmInstallStatic', 'shell:jspmInstallFaciaTool']);
-    grunt.registerTask('install:npm', ['shell:npmInstall', 'shell:npmInstallFaciaTool']);
-
-    grunt.registerTask('prepare', function() {
-        megalog.error('`grunt prepare` has been removed.\n\nUse `grunt install` instead… ');
-    });
-
-    grunt.registerTask('jspmInstall', function() {
-        megalog.error('`grunt jspmInstall` has been removed.\n\nUse `grunt install:jspm` instead… ');
-    });
+    ].filter(identity));
 
     /**
      * compile:js:<requiretask> tasks. Generate one for each require task
@@ -136,18 +138,19 @@ module.exports = function (grunt) {
         if (!options.isDev && requirejsName !== 'common') {
             grunt.task.run('requirejs:common');
         }
-        grunt.task.run(['requirejs:' + requirejsName, 'copy:javascript', 'asset_hash']);
+        grunt.task.run(['requirejs:' + requirejsName, 'copy:javascript', 'concat:app', 'uglify:javascript', 'asset_hash']);
     }
     for (var requireTaskName in grunt.config('requirejs')) {
         if (requireTaskName !== 'options') {
-            grunt.registerTask('compile:js:' + requireTaskName, compileSpecificJs.bind(this, requireTaskName) );
+            grunt.registerTask('compile:js:' + requireTaskName, compileSpecificJs.bind(this, requireTaskName));
         }
     }
 
     /**
      * Test tasks
      */
-    grunt.registerTask('test:unit', function(app) {
+    grunt.registerTask('eslintTests', ['shell:eslintTests']);
+    grunt.registerTask('test:unit', function (app) {
         var target = app ? ':' + app : '';
         if (options.singleRun === false) {
             grunt.config.set('karma.options.singleRun', false);
@@ -156,9 +159,10 @@ module.exports = function (grunt) {
 
         grunt.task.run(['copy:inlineSVGs']);
         grunt.task.run('karma' + target);
+        grunt.task.run('eslintTests');
     });
     grunt.registerTask('test', ['test:unit']);
-    grunt.registerTask('coverage', function() {
+    grunt.registerTask('coverage', function () {
         var target = this.args.length ? ':' + this.args.join(':') : '';
         grunt.config.set('karma.options.reporters',
             grunt.config.get('karma.options.reporters').concat('coverage')
@@ -174,7 +178,7 @@ module.exports = function (grunt) {
      */
     grunt.registerTask('analyse:css', ['compile:css', 'cssmetrics:common']);
     grunt.registerTask('analyse:js', ['compile:js', 'bytesize:js']);
-    grunt.registerTask('analyse:performance', function(app) {
+    grunt.registerTask('analyse:performance', function (app) {
         var target = app ? ':' + app : '';
         grunt.task.run('pagespeed' + target);
     });
@@ -185,5 +189,6 @@ module.exports = function (grunt) {
      */
     grunt.registerTask('hookmeup', ['clean:hooks', 'shell:copyHooks']);
     grunt.registerTask('emitAbTestInfo', 'shell:abTestInfo');
+    grunt.registerTask('makeDeploysRadiator', 'shell:makeDeploysRadiator');
 
 };

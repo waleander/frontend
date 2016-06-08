@@ -3,24 +3,55 @@
     For example "comments throwing an exception should not stop auto refresh"
  */
 define([
-    'raven'
+    'common/utils/report-error'
 ], function (
-    raven
+    reportError
 ) {
-    function Robust(name, block, reporter) {
-
-        if (!reporter) {
-            reporter = raven.captureException;
-        }
-
+    var catchErrors = function (fn) {
+        var error;
         try {
-            block();
+            fn();
         } catch (e) {
-            reporter(e, { tags: { module: name } });
-            window.console.error(e);
+            error = e;
         }
+        return error;
+    };
+
+    var log = function (name, error, reporter) {
+        if (window.console && window.console.warn) {
+            window.console.warn('Caught error.', error.stack);
+        }
+        if (!reporter) {
+            reporter = reportError;
+        }
+        reporter(error, { module: name }, false);
+    };
+
+    var catchErrorsAndLog = function (name, fn, reporter) {
+        var error = catchErrors(fn);
+        if (error) {
+            log(name, error, reporter);
+        }
+    };
+
+    var catchErrorsAndLogAll = function (modules) {
+        modules.forEach(function (pair) {
+            var name = pair[0];
+            var fn = pair[1];
+            catchErrorsAndLog(name, fn);
+        });
+    };
+
+    function makeBlocks(codeBlocks) {
+        return codeBlocks.map(function (record) {
+            return catchErrorsAndLog.bind(this, record[0], record[1]);
+        });
     }
 
-    return Robust;
-
+    return {
+        catchErrorsAndLog: catchErrorsAndLog,
+        catchErrorsAndLogAll: catchErrorsAndLogAll,
+        makeBlocks: makeBlocks,
+        log: log
+    };
 });

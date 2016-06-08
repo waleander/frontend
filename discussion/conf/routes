@@ -5,7 +5,7 @@
 # For assets on dev machines
 GET         /assets/*path                                                       dev.DevAssetsController.at(path)
 
-GET         /_healthcheck                                                       conf.HealthCheck.healthcheck()
+GET         /_healthcheck                                                       controllers.HealthCheck.healthCheck()
 
 GET         /discussion/comment-counts                                          controllers.CommentCountController.commentCount(shortUrls: String)
 GET         /discussion/comment-counts.json                                     controllers.CommentCountController.commentCountJson(shortUrls: String)
@@ -28,5 +28,9 @@ GET         /discussion/profile/:id/discussions.json                            
 GET         /discussion/profile/:id/replies.json                                controllers.ProfileActivityController.profileReplies(id: String)
 GET         /discussion/profile/:id/picks.json                                  controllers.ProfileActivityController.profilePicks(id: String)
 GET         /discussion/profile/:id/witness.json                                controllers.WitnessActivityController.witnessActivity(id: String)
+
+GET         /discussion/report-abuse/:commentId/thankyou                        controllers.CommentsController.reportAbuseThankYou(commentId: Int)
+GET         /discussion/report-abuse/*commentId                                 controllers.CommentsController.reportAbuseForm(commentId: Int)
+POST        /discussion/report-abuse/*commentId                                 controllers.CommentsController.reportAbuseSubmission(commentId: Int)
 
 GET         /open/cta/article/*discussionKey.json                               controllers.CtaController.cta(discussionKey: discussion.model.DiscussionKey)

@@ -1,31 +1,33 @@
 define([
-    'fastdom',
     'Promise',
-    'common/utils/_',
     'common/utils/$',
     'common/utils/config',
     'common/utils/detect',
     'common/utils/mediator',
+    'common/utils/fastdom-idle',
     'common/modules/identity/api',
     'common/modules/experiments/ab',
+    'common/modules/commercial/dfp/dfp-api',
+    'common/modules/commercial/commercial-features',
     'common/modules/commercial/create-ad-slot',
-    'common/modules/commercial/dfp'
+    'lodash/objects/defaults'
 ], function (
-    fastdom,
     Promise,
-    _,
     $,
     config,
     detect,
     mediator,
+    idleFastdom,
     identityApi,
     ab,
+    dfp,
+    commercialFeatures,
     createAdSlot,
-    dfp
+    defaults
 ) {
-    function init(options) {
+    return function (options) {
         var adType,
-            opts = _.defaults(
+            opts = defaults(
                 options || {},
                 {
                     adSlotContainerSelector: '.js-discussion__ad-slot',
@@ -39,27 +41,21 @@ define([
         $adSlotContainer = $(opts.adSlotContainerSelector);
         $commentMainColumn = $(opts.commentMainColumn, '.js-comments');
 
-        if (!config.switches.standardAdverts ||
-            !ab.shouldRunTest('Viewability', 'variant') ||
-            !$adSlotContainer.length ||
-            !config.switches.discussion ||
-            !identityApi.isUserLoggedIn() ||
-            (config.page.isLiveBlog && detect.getBreakpoint() !== 'wide') ||
-            !config.page.commentable) {
+        if (!commercialFeatures.commentAdverts || !$adSlotContainer.length) {
             return false;
         }
 
         mediator.once('modules:comments:renderComments:rendered', function () {
-            fastdom.read(function () {
+            idleFastdom.read(function () {
                 //if comments container is lower than 280px
                 if ($commentMainColumn.dim().height < 280) {
                     return false;
                 }
 
-                fastdom.write(function () {
+                idleFastdom.write(function () {
                     $commentMainColumn.addClass('discussion__ad-wrapper');
 
-                    if (!config.page.isLiveBlog) {
+                    if (!config.page.isLiveBlog && !config.page.isMinuteArticle) {
                         $commentMainColumn.addClass('discussion__ad-wrapper-wider');
                     }
 
@@ -71,10 +67,5 @@ define([
                 });
             });
         });
-
-    }
-
-    return {
-        init: init
     };
 });

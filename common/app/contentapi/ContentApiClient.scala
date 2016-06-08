@@ -1,22 +1,26 @@
 package contentapi
 
 import akka.actor.ActorSystem
+import akka.pattern.CircuitBreaker
 import com.gu.contentapi.client.ContentApiClientLogic
-import common.ContentApiMetrics.ContentApiCircuitBreakerOnOpen
-import conf.Switches
-import scala.concurrent.{ExecutionContext, Future}
+import com.gu.contentapi.client.model.v1.ItemResponse
+import com.gu.contentapi.client.model._
+import com.gu.contentapi.client.utils.CapiModelEnrichment.RichCapiDateTime
 import common._
+import conf.Configuration
+import conf.Configuration.contentApi
+import conf.switches.Switches.{CircuitBreakerSwitch, ContentApiUseThrift}
+import metrics.{CountMetric, TimingMetric}
 import model.{Content, Trail}
 import org.joda.time.DateTime
 import org.scala_tools.time.Implicits._
-import conf.Configuration.contentApi
-import com.gu.contentapi.client.model.{SearchQuery, ItemQuery, ItemResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, MILLISECONDS}
-import akka.pattern.{CircuitBreakerOpenException, CircuitBreaker}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
-trait QueryDefaults extends implicits.Collections {
+object QueryDefaults extends implicits.Collections {
   // NOTE - do NOT add body to this list
   val trailFields = List(
     "byline",
@@ -47,15 +51,20 @@ trait QueryDefaults extends implicits.Collections {
       result.map { r =>
         val leadContentCutOff = DateTime.now.toLocalDate - leadContentMaxAge
 
-        val results = r.results.map(Content(_))
-        val editorsPicks = r.editorsPicks.map(Content(_))
+        val results = r.results.getOrElse(Nil).map(Content(_))
+        val editorsPicks = r.editorsPicks.getOrElse(Nil).map(Content(_))
 
         val leadContent = if (editorsPicks.isEmpty)
-            r.leadContent.filter(_.webPublicationDate >= leadContentCutOff.toDateTimeAtStartOfDay).map(Content(_)).take(1)
+            r.leadContent.getOrElse(Nil).filter(content => {
+              content.webPublicationDate
+                .map(date => date.toJodaDateTime)
+                .map(_ >= leadContentCutOff.toDateTimeAtStartOfDay)
+                .exists(identity)
+            }).map(Content(_)).take(1)
           else
             Nil
 
-        (editorsPicks ++ leadContent ++ results).distinctBy(_.id)
+        (editorsPicks ++ leadContent ++ results).distinctBy(_.metadata.id).map(_.trail)
       }
   }
 
@@ -63,7 +72,7 @@ trait QueryDefaults extends implicits.Collections {
     val tag = "tag=type/gallery|type/article|type/video|type/sudoku"
     val editorsPicks = "show-editors-picks=true"
     val showInlineFields = s"show-fields=$trailFields"
-    val showFields = "trailText,headline,shortUrl,liveBloggingNow,thumbnail,commentable,commentCloseDate,shouldHideAdverts,lastModified,byline,standfirst,starRating,showInRelatedContent,internalContentCode"
+    val showFields = "trailText,headline,shortUrl,liveBloggingNow,thumbnail,commentable,commentCloseDate,shouldHideAdverts,lastModified,byline,standfirst,starRating,showInRelatedContent,internalContentCode,internalPageCode"
     val showFieldsWithBody = showFields + ",body"
 
     val all = Seq(tag, editorsPicks, showInlineFields, showFields)
@@ -74,39 +83,63 @@ trait QueryDefaults extends implicits.Collections {
   }
 }
 
+trait ApiQueryDefaults extends Logging {
 
-trait ApiQueryDefaults extends QueryDefaults with implicits.Collections with Logging { self: ContentApiClientLogic =>
+  def item(id:String): ItemQuery
+  def search: SearchQuery
+
   def item(id: String, edition: Edition): ItemQuery = item(id, edition.id)
 
   //common fields that we use across most queries.
   def item(id: String, edition: String): ItemQuery = item(id)
     .edition(edition)
+    .showSection(true)
     .showTags("all")
-    .showFields(trailFields)
+    .showFields(QueryDefaults.trailFields)
     .showElements("all")
-    .showReferences(references)
-    .showStoryPackage(true)
+    .showReferences(QueryDefaults .references)
+    .showPackages(true)
+    .showRights("syndicatable")
 
   //common fields that we use across most queries.
   def search(edition: Edition): SearchQuery = search
     .showTags("all")
-    .showReferences(references)
-    .showFields(trailFields)
+    .showReferences(QueryDefaults.references)
+    .showFields(QueryDefaults.trailFields)
     .showElements("all")
 }
 
-trait ContentApiClient extends ContentApiClientLogic with ApiQueryDefaults with DelegateHttp with Logging {
-  override val apiKey = contentApi.key.getOrElse("")
+// This trait extends ContentApiClientLogic with Cloudwatch metrics that monitor
+// the average response time, and the number of timeouts, from Content Api.
+trait MonitoredContentApiClientLogic extends ContentApiClientLogic with ApiQueryDefaults with Logging {
+
+  def httpTimingMetric: TimingMetric
+  def httpTimeoutMetric: CountMetric
+
+  var _http: Http = new WsHttp(httpTimingMetric, httpTimeoutMetric)
+
+  override def get(url: String, headers: Map[String, String])(implicit executionContext: ExecutionContext): Future[HttpResponse] = {
+    val futureContent = _http.GET(url, headers) map { response: Response =>
+      HttpResponse(response.body, response.status, response.statusText)
+    }
+    futureContent.onFailure{ case t =>
+      val tryDecodedUrl: String = Try(java.net.URLDecoder.decode(url, "UTF-8")).getOrElse(url)
+      log.error(s"$t: $tryDecodedUrl")}
+    futureContent
+  }
 }
 
-trait CircuitBreakingContentApiClient extends ContentApiClient {
-  private final val circuitBreakerActorSystem = ActorSystem("content-api-client-circuit-breaker")
+final case class CircuitBreakingContentApiClient(
+  override val httpTimingMetric: TimingMetric,
+  override val httpTimeoutMetric: CountMetric,
+  override val targetUrl: String,
+  override val apiKey: String,
+  override val useThrift: Boolean) extends MonitoredContentApiClientLogic {
 
-  /** Read this:
-    *
-    * http://doc.akka.io/docs/akka/snapshot/common/circuitbreaker.html
-    */
-  private final val circuitBreaker = new CircuitBreaker(
+  private val circuitBreakerActorSystem = ActorSystem("content-api-client-circuit-breaker")
+
+  // http://doc.akka.io/docs/akka/snapshot/common/circuitbreaker.html
+  private val circuitBreaker = new CircuitBreaker(
     scheduler = circuitBreakerActorSystem.scheduler,
     maxFailures = contentApi.circuitBreakerErrorThreshold,
     callTimeout = Duration(contentApi.timeout, MILLISECONDS),
@@ -115,7 +148,6 @@ trait CircuitBreakingContentApiClient extends ContentApiClient {
 
   circuitBreaker.onOpen({
     log.error("Reached error threshold for Content API Client circuit breaker - breaker is OPEN!")
-    ContentApiCircuitBreakerOnOpen.increment()
   })
 
   circuitBreaker.onHalfOpen({
@@ -127,27 +159,77 @@ trait CircuitBreakingContentApiClient extends ContentApiClient {
   })
 
   override def fetch(url: String)(implicit executionContext: ExecutionContext) = {
-    if (Switches.CircuitBreakerSwitch.isSwitchedOn) {
-      val future = circuitBreaker.withCircuitBreaker(super.fetch(url)(executionContext))
-
-      future onFailure {
-        case e: CircuitBreakerOpenException =>
-          ContentApiMetrics.ContentApiCircuitBreakerRequestsMetric.record()
-      }
-
-      future
+    if (CircuitBreakerSwitch.isSwitchedOn) {
+      circuitBreaker.withCircuitBreaker(super.fetch(url)(executionContext))
     } else {
       super.fetch(url)
     }
   }
 }
 
-class ElasticSearchLiveContentApiClient extends CircuitBreakingContentApiClient {
-  lazy val httpTimingMetric = ContentApiMetrics.ElasticHttpTimingMetric
-  lazy val httpTimeoutMetric = ContentApiMetrics.ElasticHttpTimeoutCountMetric
-  override val targetUrl = contentApi.contentApiLiveHost
+object ContentApiClient extends ApiQueryDefaults {
+
+  // Public val for test.
+  val jsonClient = CircuitBreakingContentApiClient(
+    httpTimingMetric = ContentApiMetrics.HttpLatencyTimingMetric,
+    httpTimeoutMetric = ContentApiMetrics.HttpTimeoutCountMetric,
+    targetUrl = contentApi.contentApiHost,
+    apiKey = contentApi.key.getOrElse(""),
+    useThrift = false)
+
+  // Public val for test.
+  val thriftClient = CircuitBreakingContentApiClient(
+    httpTimingMetric = ContentApiMetrics.HttpLatencyTimingMetric,
+    httpTimeoutMetric = ContentApiMetrics.HttpTimeoutCountMetric,
+    targetUrl = contentApi.contentApiHost,
+    apiKey = contentApi.key.getOrElse(""),
+    useThrift = true)
+
+  private def getClient: CircuitBreakingContentApiClient = {
+    if (ContentApiUseThrift.isSwitchedOn) thriftClient else jsonClient
+  }
+
+  def item(id: String) = getClient.item(id)
+  def tags = getClient.tags
+  def search = getClient.search
+  def sections = getClient.sections
+  def editions = getClient.editions
+
+  def getResponse(itemQuery: ItemQuery)(implicit context: ExecutionContext) = getClient.getResponse(itemQuery)
+
+  def getResponse(searchQuery: SearchQuery)(implicit context: ExecutionContext) = getClient.getResponse(searchQuery)
+
+  def getResponse(tagsQuery: TagsQuery)(implicit context: ExecutionContext) = getClient.getResponse(tagsQuery)
+
+  def getResponse(sectionsQuery: SectionsQuery)(implicit context: ExecutionContext) = getClient.getResponse(sectionsQuery)
+
+  def getResponse(editionsQuery: EditionsQuery)(implicit context: ExecutionContext) = getClient.getResponse(editionsQuery)
+
+  // Used for testing, and training preview.
+  def setHttp(http: Http): Unit ={
+    thriftClient._http = http
+    jsonClient._http = http
+  }
 }
 
-class ElasticSearchPreviewContentApiClient extends ElasticSearchLiveContentApiClient {
-  override val targetUrl = contentApi.contentApiPreviewHost
+object DraftContentApi {
+  val client = CircuitBreakingContentApiClient(
+    httpTimingMetric = ContentApiMetrics.HttpLatencyTimingMetric,
+    httpTimeoutMetric = ContentApiMetrics.HttpTimeoutCountMetric,
+    targetUrl = Configuration.contentApi.contentApiDraftHost,
+    apiKey = contentApi.key.getOrElse(""),
+    useThrift = false
+  )
+}
+
+// The Admin server uses this PreviewContentApi to check the preview environment.
+// The Preview server uses the standard ContentApiClient object, configured with preview settings.
+object PreviewContentApi {
+  val client = CircuitBreakingContentApiClient(
+    httpTimingMetric = ContentApiMetrics.HttpLatencyTimingMetric,
+    httpTimeoutMetric = ContentApiMetrics.HttpTimeoutCountMetric,
+    targetUrl = Configuration.contentApi.previewHost,
+    apiKey = contentApi.key.getOrElse(""),
+    useThrift = false
+  )
 }

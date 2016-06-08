@@ -1,17 +1,16 @@
-@(metaData: model.MetaData, formstackForm: _root_.formstack.FormstackForm, projectName: Option[String] = Some(conf.Configuration.environment.projectName))(implicit request: RequestHeader)
+@(page: model.Page, formstackForm: _root_.formstack.FormstackForm, projectName: Option[String] = Some(conf.Configuration.environment.projectName))(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 <html class="js-off is-not-modern id--signed-out" lang="en-GB">
 <head>
     <meta charset="utf-8" />
-    <title>@Html(metaData.webTitle)</title>
-    @fragments.stylesheetsLoad(projectName)
+    <title>@Html(page.metadata.webTitle)</title>
 
-    @fragments.javaScriptFirstSteps(metaData)
+    @* get the stylesheets downloading ASAP *@
+    @fragments.stylesheets(projectName)
 
-    @fragments.stylesheetsUse()
-
-    @fragments.javaScriptLaterSteps(metaData)
+    @* inline JS - blocking *@
+    @fragments.inlineJSBlocking(page)
 </head>
 <body id="top">
 

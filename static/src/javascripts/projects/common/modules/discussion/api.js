@@ -1,51 +1,44 @@
 define([
     'common/modules/user-prefs',
     'common/utils/ajax',
-    'common/utils/config',
-    'common/utils/cookies'
+    'common/utils/config'
 ], function (
     prefs,
     ajax,
-    config,
-    cookies
+    config
 ) {
 
     /**
      * Singleton to deal with Discussion API requests
      * @type {Object}
      */
-    var Api = {
-        root: (document.location.protocol === 'https:')
-                ? config.page.secureDiscussionApiRoot
-                : config.page.discussionApiRoot,
-        proxyRoot: (prefs.isOn('discussion.useProxy') ? 'http://www.theguardian.com/guardianapis/discussion/discussion-api' : config.page.discussionApiRoot),
-        clientHeader: config.page.discussionApiClientHeader
-    };
+    var root = config.page.discussionApiUrl,
+        Api = {
+            root: root,
+            clientHeader: config.page.discussionApiClientHeader,
+            d2Uid: config.page.discussionD2Uid
+        };
 
     /**
      * @param {string} endpoint
      * @param {string} method
      * @param {Object.<string.*>} data
-     * @param {boolean} proxy use a non cross domain proxy to avoid needing CORS which is blocked by http1 proxies
      * @return {Reqwest} a promise
      */
-    Api.send = function (endpoint, method, data, proxy) {
-        var root = (proxy || false) ? Api.proxyRoot : Api.root;
+    Api.send = function (endpoint, method, data) {
         data = data || {};
-        if (cookies.get('GU_U')) {
-            data.GU_U = cookies.get('GU_U');
-        }
 
         var request = ajax({
-            url: root + endpoint,
+            url: Api.root + endpoint,
             type: (method === 'get') ? 'jsonp' : 'json',
             method: method,
             crossOrigin: true,
             data: data,
             headers: {
-                'D2-X-UID': 'zHoBy6HNKsk',
+                'D2-X-UID': Api.d2Uid,
                 'GU-Client': Api.clientHeader
-            }
+            },
+            withCredentials: true
         });
 
         return request;
@@ -60,7 +53,7 @@ define([
         var endpoint = '/discussion/' + discussionId + '/comment' +
             (comment.replyTo ? '/' + comment.replyTo.commentId + '/reply' : '');
 
-        return Api.send(endpoint, 'post', comment, true);
+        return Api.send(endpoint, 'post', comment);
     };
 
     /**

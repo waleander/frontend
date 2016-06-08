@@ -1,27 +1,32 @@
-import common.{ContentApiMetrics, CloudWatchApplicationMetrics}
-import conf.Filters
+import common.Logback.LogstashLifecycle
+import common._
+import conf._
+import conf.switches.SwitchboardLifecycle
 import contentapi.SectionsLookUpLifecycle
-import dev.DevParametersLifecycle
-import dfp.DfpAgentLifecycle
-import metrics.FrontendMetric
+import controllers.HealthCheck
+import model.ApplicationIdentity
 import ophan.SurgingContentAgentLifecycle
-import play.api.mvc.WithFilters
+import play.api.inject.ApplicationLifecycle
+import play.api.GlobalSettings
 import services.ConfigAgentLifecycle
 
-object Global extends WithFilters(Filters.common: _*)
-with ConfigAgentLifecycle
-with DevParametersLifecycle
-with CloudWatchApplicationMetrics
-with DfpAgentLifecycle
-with SurgingContentAgentLifecycle
-with SectionsLookUpLifecycle {
-  override lazy val applicationName = "frontend-rss"
+import scala.concurrent.ExecutionContext
 
-  override def applicationMetrics: List[FrontendMetric] = super.applicationMetrics ++ List(
-    ContentApiMetrics.ElasticHttpTimeoutCountMetric,
-    ContentApiMetrics.ElasticHttpTimingMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerRequestsMetric,
-    ContentApiMetrics.ContentApiCircuitBreakerOnOpen,
+object Global extends GlobalSettings with BackwardCompatibleLifecycleComponents {
+
+  val applicationMetrics = ApplicationMetrics(
+    ContentApiMetrics.HttpTimeoutCountMetric,
+    ContentApiMetrics.HttpLatencyTimingMetric,
     ContentApiMetrics.ContentApiErrorMetric
+  )
+
+  override def lifecycleComponents(appLifecycle: ApplicationLifecycle)(implicit ec: ExecutionContext): List[LifecycleComponent] = List(
+    new ConfigAgentLifecycle(appLifecycle),
+    new CloudWatchMetricsLifecycle(appLifecycle, ApplicationIdentity("frontend-rss"), applicationMetrics),
+    new SurgingContentAgentLifecycle(appLifecycle),
+    new SectionsLookUpLifecycle(appLifecycle),
+    new SwitchboardLifecycle(appLifecycle),
+    LogstashLifecycle,
+    new CachedHealthCheckLifeCycle(HealthCheck)
   )
 }

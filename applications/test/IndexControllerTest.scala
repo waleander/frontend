@@ -4,19 +4,13 @@ import contentapi.SectionsLookUp
 import play.api.test._
 import play.api.test.Helpers._
 import org.scalatest.{DoNotDiscover, BeforeAndAfterAll, Matchers, FlatSpec}
-import conf.Switches.MemcachedSwitch
 
 @DoNotDiscover class IndexControllerTest extends FlatSpec with Matchers with BeforeAndAfterAll with ConfiguredTestSuite{
 
   val section = "books"
 
   override def beforeAll(): Unit = {
-    MemcachedSwitch.switchOff()
     SectionsLookUp.refresh()
-  }
-
-  override def afterAll(): Unit = {
-    MemcachedSwitch.switchOn()
   }
 
   "Index Controller" should "200 when content type is front" in {
@@ -142,7 +136,7 @@ import conf.Switches.MemcachedSwitch
   }
 
   it should "serve RSS for a section" in {
-    val result = controllers.IndexController.render("film")(TestRequest("/film/rss"))
+    val result = controllers.IndexController.render("books")(TestRequest("/books/rss"))
     status(result) should be(200)
     contentType(result) should be(Some("text/xml"))
     contentAsString(result) should startWith("<?xml")

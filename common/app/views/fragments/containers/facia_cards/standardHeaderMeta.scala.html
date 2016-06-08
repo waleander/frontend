@@ -1,21 +1,28 @@
 @(containerDefinition: layout.FaciaContainer, frontProperties: model.FrontProperties)(implicit request: RequestHeader)
 
-@import views.support.{ImgSrc, Item140, RenderClasses}
+@import common.{LinkTo, Localisation}
 @import views.html.fragments.containers.facia_cards.{date, latestUpdate}
-@import common.LinkTo
-@import common.Localisation
-
+@import views.support.{ImgSrc, Item140, RenderClasses}
+@import conf.switches.Switches._
+@import model.Badges.badgeFor
 
 @defining((containerDefinition.displayName, containerDefinition.href)) { case (title, href) =>
-    <div class="fc-container__header js-container__header">
+    <div class="fc-container__header  @if(containerDefinition.customHeader.isEmpty) {js-container__header}">
         @title.map { title =>
-            @defining(frontProperties.editorialType.contains("contributor")) { isContributor =>
+            @defining(frontProperties.editorialType.contains("Contributor")) { isContributor =>
                 <div class="@RenderClasses(Map(
                     "fc-container__header__title" -> true,
                     "tone-comment" -> isContributor,
                     "tone-colour" -> isContributor))">
                     @href.map { href =>
                     <a data-link-name="section heading" href="@LinkTo {/@href}">
+                    @if(ArticleBadgesSwitch.isSwitchedOn){
+                        @badgeFor(containerDefinition).map { badge => 
+                            <div class="badge-slot badge-slot--election">
+                                <img class="badge-slot__img" src="@badge.imageUrl"/>
+                            </div>
+                        }
+                    }
                         @Localisation(title)
                     </a>
                     }.getOrElse {

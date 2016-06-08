@@ -6,7 +6,8 @@ define([
     'common/utils/cookies',
     'common/utils/mediator',
     'common/utils/storage',
-    'common/modules/asyncCallMerger'
+    'common/modules/asyncCallMerger',
+    'Promise'
 ], function (
     ajax,
     utilAtob,
@@ -14,7 +15,8 @@ define([
     cookies,
     mediator,
     storage,
-    asyncCallMerger
+    asyncCallMerger,
+    Promise
 ) {
 
     /**
@@ -67,10 +69,11 @@ define([
             var cookieData = cookies.get(Id.cookieName),
             userData = cookieData ? JSON.parse(Id.decodeBase64(cookieData.split('.')[0])) : null;
             if (userData) {
+                var displayName = decodeURIComponent(userData[2]);
                 userFromCookieCache = {
                     id: userData[0],
                     primaryEmailAddress: userData[1], // not sure where this is stored now - not in the cookie any more
-                    displayName: userData[2],
+                    displayName: displayName,
                     accountCreatedDate: userData[6],
                     emailVerified: userData[7],
                     rawResponse: cookieData
@@ -186,21 +189,6 @@ define([
         return false;
     };
 
-    Id.refreshCookie = function () {
-        if (Id.isUserLoggedIn()) {
-            var lastRefresh = storage.local.get(Id.lastRefreshKey),
-                currentTime = new Date().getTime();
-            if (Id.shouldRefreshCookie(lastRefresh, currentTime)) {
-                Id.getUserFromApiWithRefreshedCookie();
-                storage.local.set(Id.lastRefreshKey, currentTime);
-            }
-        }
-    };
-
-    Id.shouldRefreshCookie = function (lastRefresh, currentTime) {
-        return (!lastRefresh) || (currentTime > (parseInt(lastRefresh, 10) + (1000 * 86400 * 30)));
-    };
-
     /**
      * Returns true if a there is no signed in user and the user has not signed in the last 24 hours
      */
@@ -230,6 +218,21 @@ define([
         return request;
     };
 
+    Id.getUserEmailSignUps = function () {
+        if (Id.getUserFromCookie()) {
+            var endpoint = '/useremails/' + Id.getUserFromCookie().id,
+                request = ajax({
+                    url: Id.idApiRoot + endpoint,
+                    type: 'jsonp',
+                    crossOrigin: true
+                });
+
+            return request;
+        }
+
+        return Promise.resolve(null);
+    };
+
     Id.sendValidationEmail = function () {
         var endpoint = '/user/send-validation-email',
             request = ajax({
@@ -257,14 +260,17 @@ define([
     };
 
     Id.saveToArticles = function (data) {
-        var endpoint = '/syncedPrefs/me/savedArticles',
+        var endpoint = '/syncedPrefs/cors/me/savedArticles',
             request = ajax({
                 url: Id.idApiRoot + endpoint,
-                type: 'jsonp',
+                type: 'json',
                 crossOrigin: true,
-                data: {
-                    body: JSON.stringify(data),
-                    method: 'post'
+                method: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(data),
+                withCredentials: true,
+                headers: {
+                    'X-GU-ID-Client-Access-Token':  'Bearer ' + config.page.idApiJsClientToken
                 }
             });
 

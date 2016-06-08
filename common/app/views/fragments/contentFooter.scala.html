@@ -1,66 +1,32 @@
-@(content: model.Content, related: model.RelatedContent, cssClass: String = "")(implicit request: RequestHeader)
-
-@import conf.Switches._
+@(content: model.ContentType, related: model.RelatedContent, cssClass: String = "")(implicit request: RequestHeader)
+@import common.Edition
+@import views.support.ContentFooterContainersLayout
 
 <div class="content-footer @if(cssClass){content-footer--@cssClass}">
+    @fragments.discussionFooter(content.content, content.trail.isCommentable, content.trail.isClosedForComments, content.content.shortUrlId)
 
-    @fragments.discussionFooter(content.isCommentable, content.isClosedForComments, content.shortUrlId)
-
-    @* majority of footer components we don't want to appear on advertisement feature articles *@
-    @if(!content.isAdvertisementFeature) {
-        @if((Switches.FacebookMostViewed.isSwitchedOn || Switches.TwitterMostViewed.isSwitchedOn) && content.showFooterContainers) {
-            @fragments.mostPopularSocial()
-        }
-
-        @if(!content.shouldHideAdverts && !(mvt.CMHRTest.isParticipating || mvt.CMOutbrainTest.isParticipating)) {
-            <div class="fc-container fc-container--commercial-high">
-                @fragments.commercial.commercialComponentHigh()
-            </div>
-        }
-
+    @ContentFooterContainersLayout(content.content, related, content.commercial.isAdvertisementFeature) {
         @fragments.storyPackagePlaceholder(content, related)
-        @if(Switches.RelatedContentSwitch.isSwitchedOn && mvt.CMOutbrainTest.isParticipating && content.showFooterContainers) {
-            <div class="fc-container fc-container--outbrain hide-on-childrens-books-site">
-                @fragments.outbrainPlaceholder()
-                @fragments.gravityPlaceholder()
-                @fragments.taboolaPlaceholder()
-            </div>
-        }
+    } {
         @fragments.onwardPlaceholder()
-        @if(!Switches.RelatedContentSwitch.isSwitchedOn && mvt.CMOutbrainTest.isParticipating && content.showFooterContainers) {
-            <div class="fc-container fc-container--outbrain hide-on-childrens-books-site">
-                @fragments.outbrainPlaceholder()
-                @fragments.gravityPlaceholder()
-                @fragments.taboolaPlaceholder()
-            </div>
+    } {
+        <div class="js-fronts-section" data-link-name="fronts-on-articles | section-front"></div>
+    } {
+        <div class="js-fronts-network-1" data-link-name="fronts-on-articles | network-front | block-1"></div>
+    } {
+        <div class="js-repositioned-comments content__repositioned-comments"></div>
+    } {
+        @fragments.mostPopularPlaceholder(content.metadata.sectionId)
+    } {
+        <div class="js-fronts-network-2" data-link-name="fronts-on-articles | network-front | block-2"></div>
+    } {
+        @if(content.commercial.needsHighMerchandisingSlot(Edition(request))) {
+            <div class="fc-container fc-container--commercial-high">@fragments.commercial.commercialComponentHigh()</div>
         }
-
-        @if(content.isCommentable) {
-            <div class="js-repositioned-comments content__repositioned-comments"></div>
-        }
-
-        @if(!content.shouldHideAdverts && (mvt.CMHRTest.isParticipating || mvt.CMOutbrainTest.isParticipating)) {
-            <div class="fc-container fc-container--commercial-high">
-                @fragments.commercial.commercialComponentHigh()
-            </div>
-        }
-        @fragments.mostPopularPlaceholder(content.section)
-
-        @if(!mvt.CMOutbrainTest.isParticipating && content.showFooterContainers) {
-            <div class="fc-container fc-container--outbrain hide-on-childrens-books-site">
-                @fragments.outbrainPlaceholder()
-                @fragments.gravityPlaceholder()
-                @fragments.taboolaPlaceholder()
-            </div>
-        }
-
-        @if(!content.shouldHideAdverts) {
-            <div class="fc-container fc-container--commercial">
-                @fragments.commercial.commercialComponent()
-            </div>
-        }
-    } else {
-        @fragments.storyPackagePlaceholder(content, related)
+    } {
+        <div class="fc-container fc-container--commercial js-container--commercial">@fragments.commercial.commercialComponent()</div>
+    } {
+        @fragments.externalContentPlaceholder()
     }
 
 </div>

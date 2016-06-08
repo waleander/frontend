@@ -1,17 +1,17 @@
 package common
 
 import common.editions._
-import model.MetaData
-import org.scalatest.{OptionValues, Matchers, FlatSpec}
+import model.{MetaData, SectionSummary, SimplePage}
+import org.scalatest.{FlatSpec, Matchers, OptionValues}
 
 class NavigationTest extends FlatSpec with Matchers with OptionValues {
   "topLevelItem" should "return culture for games" in {
-    Navigation.topLevelItem(Uk.briefNav, new MetaData {
-      override def id: String = "technology/games"
-      override def section: String = "technology"
-      override def analyticsName: String = ???
-      override def webTitle: String = ???
-    }).value.name.title shouldEqual "culture"
+    Navigation.topLevelItem(Uk.briefNav, SimplePage(MetaData.make(
+      id = "technology/games",
+      section = Some(SectionSummary.fromId("technology")),
+      analyticsName = "",
+      webTitle= "")
+    )).value.name.title shouldEqual "culture"
   }
   "UK brief nav 'world'" should "contain 'cities'" in {
     Uk.briefNav.filter(_.name.title == "world").flatMap {
