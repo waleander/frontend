@@ -3,7 +3,8 @@ define([
     'bonzo',
     'fastdom',
     'qwery',
-    'common/utils/_',
+    'lodash/collections/filter',
+    'lodash/collections/forEach',
     'common/utils/$',
     'common/utils/ajax-promise',
     'common/utils/config',
@@ -13,7 +14,8 @@ define([
     bonzo,
     fastdom,
     qwery,
-    _,
+    filter,
+    forEach,
     $,
     ajaxPromise,
     config,
@@ -100,7 +102,7 @@ define([
             };
 
             ajaxPromise(request).then(function (data) {
-                var playlistItems = _.filter(data.response.results, function (result) { return result.id != config.page.pageId}),
+                var playlistItems = filter(data.response.results, function (result) { return result.id != config.page.pageId}),
                     $audioPlaylist = $.create('<div class="audio-player-playlist"></div>'),
                     playlistPosition = 1,
                     currentPageItem = {
@@ -111,7 +113,7 @@ define([
                 // Add the current page item to the start of the list.
                 playlistItems.unshift(currentPageItem);
 
-                _.forEach(playlistItems, function (playlistItem) {
+                forEach(playlistItems, function (playlistItem) {
                     var webTitle = playlistItem.webTitle.split(' – ')[0].split(' - ')[0];
                     var $newItem = $.create(template('<div class="audio-player-playlist--item"><span class="audio-player-playlist--item-position"><%=position%></span> <a class="audio-player-playlist--item-title" api-url="<%=apiUrl%>"><%=title%></a></div>',
                     {
