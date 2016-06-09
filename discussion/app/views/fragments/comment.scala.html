@@ -70,14 +70,6 @@
                     data-user-id="@comment.profile.userId"
                     data-recommend-count="@comment.numRecommends"
                     title="@comment.numRecommends recommendations">
-                    <button class="u-button-reset d-comment__recommend-button rounded-icon" @if(!isClosedForRecommendation){data-link-name="Recommend comment"} @if(isClosedForRecommendation){disabled="true"}>
-                        <span class="d-comment__recommend-pulse"></span>
-                        @fragments.inlineSvg("arrow-up-white", "icon")
-                    </button>
-                    <span class="d-comment__recommend-count js-recommend-count">
-                        <span class="d-comment__recommend-count--old">@comment.numRecommends</span>
-                        <span class="d-comment__recommend-count--new">@(comment.numRecommends+1)</span>
-                    </span>
                 </div>
             }
 
