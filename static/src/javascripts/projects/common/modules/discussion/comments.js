@@ -480,7 +480,6 @@ Comments.prototype.shouldShowPageSizeMessage = function() {
 };
 
 function reactify(comments) {
-
     var allReactionSets = comments.map(function (el) {
         return $(el.querySelector('.js-reactions'));
     });
@@ -489,12 +488,20 @@ function reactify(comments) {
         var reactions = $(el.querySelector('.js-reactions'));
         var reactBtn = $(el.querySelector('.js-react'));
 
+        // Open dialogue
         bean.on(reactBtn[0], 'click', function () {
             allReactionSets.forEach(function (r) {
                 r.addClass('u-h');
             });
             reactions.removeClass('u-h');
         });
+
+        // Handle reactions
+        var firstReaction = $('button', reactions)[0];
+        bean.on(firstReaction, 'click', function () {
+            window.alert('You reacted!');
+        });
+
     });
 
 }
