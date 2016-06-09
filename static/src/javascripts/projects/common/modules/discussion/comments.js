@@ -528,6 +528,7 @@ function ReactionService() {
     };
 }
 
+// for testing
 window.reactions = new ReactionService();
 
 return Comments;
