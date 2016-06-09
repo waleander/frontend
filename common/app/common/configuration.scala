@@ -280,7 +280,7 @@ class GuardianConfiguration(val application: String, val webappConfDirectory: St
     lazy val dfpAdUnitGuRoot = configuration.getMandatoryStringProperty("guardian.page.dfpAdUnitRoot")
     lazy val dfpFacebookIaAdUnitRoot = configuration.getMandatoryStringProperty("guardian.page.dfp.facebookIaAdUnitRoot")
     lazy val dfpMobileAppsAdUnitRoot = configuration.getMandatoryStringProperty("guardian.page.dfp.mobileAppsAdUnitRoot")
-    lazy val dfpAccountId = configuration.getMandatoryStringProperty("guardian.page.dfpAccountId")
+    lazy val dfpAccountId = configuration.getMandatoryStringProperty("api.dfp.networkCode")
 
     lazy val books_url = configuration.getMandatoryStringProperty("commercial.books_url")
     lazy val masterclasses_url =

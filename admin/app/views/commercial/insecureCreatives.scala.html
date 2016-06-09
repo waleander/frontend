@@ -1,10 +1,5 @@
 @(env: String, creatives: Seq[common.dfp.GuCreative])(implicit request: RequestHeader)
-@import model.{SimplePage, MetaData}
-
-@main(
-    SimplePage(MetaData.make("commercial-insecure-creatives", "admin", "Commercial Insecure Creatives", "Commercial Insecure Creatives"))
-) { } {
-
+@admin_main("SLL-non-compliant Creatives", env, isAuthed = true, hasCharts = false) {
     <div class="l-side-margins">
         <div class="facia-container facia-container--layout-front">
 
