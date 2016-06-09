@@ -218,6 +218,8 @@ Comments.prototype.renderComments = function(resp) {
     this.emit('rendered', resp.paginationHtml);
 
     mediator.emit('modules:comments:renderComments:rendered');
+
+    reactify(comments);
 };
 
 Comments.prototype.showHiddenComments = function(e) {
@@ -476,6 +478,26 @@ Comments.prototype.shouldShowPageSizeMessage = function() {
     this.options.pagesize === 'All' &&
     this.wholeDiscussionErrors;
 };
+
+function reactify(comments) {
+
+    var allReactionSets = comments.map(function (el) {
+        return $(el.querySelector('.js-reactions'));
+    });
+
+    comments.forEach(function (el) {
+        var reactions = $(el.querySelector('.js-reactions'));
+        var reactBtn = $(el.querySelector('.js-react'));
+
+        bean.on(reactBtn[0], 'click', function () {
+            allReactionSets.forEach(function (r) {
+                r.addClass('u-h');
+            });
+            reactions.removeClass('u-h');
+        });
+    });
+
+}
 
 return Comments;
 });
