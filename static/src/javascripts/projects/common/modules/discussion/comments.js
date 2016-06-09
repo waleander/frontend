@@ -514,7 +514,8 @@ function ReactionService() {
             offtopic : 2
         }
     };
-    var data = localStorage.getItem('reactions') || defaultReactions;
+    var savedData = localStorage.getItem('reactions');
+    var data = savedData ? JSON.parse(savedData) : defaultReactions;
 
     this.getReactions = function(id) {
         return data[id] || {};
