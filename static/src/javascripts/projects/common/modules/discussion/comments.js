@@ -499,5 +499,36 @@ function reactify(comments) {
 
 }
 
+function ReactionService() {
+    var defaultReactions = {
+        54414704 : {
+            disagree : 5,
+            funny : 2
+        },
+        54415824 : {
+            goodpoint : 5,
+            funny : 2
+        },
+        54417430 : {
+            foilhat : 5,
+            offtopic : 2
+        }
+    };
+    var data = localStorage.getItem('reactions') || defaultReactions;
+
+    this.getReactions = function(id) {
+        return data[id] || {};
+    };
+
+    this.addReaction = function(id, reaction) {
+        data[id] = data[id] || {};
+        data[id][reaction] = data[id][reaction] || 0;
+        data[id][reaction] = data[id][reaction] + 1;
+        localStorage.setItem('reactions', JSON.stringify(data));
+    };
+}
+
+window.reactions = new ReactionService();
+
 return Comments;
 });
