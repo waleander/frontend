@@ -218,6 +218,8 @@ Comments.prototype.renderComments = function(resp) {
     this.emit('rendered', resp.paginationHtml);
 
     mediator.emit('modules:comments:renderComments:rendered');
+
+    reactify(comments);
 };
 
 Comments.prototype.showHiddenComments = function(e) {
@@ -476,6 +478,59 @@ Comments.prototype.shouldShowPageSizeMessage = function() {
     this.options.pagesize === 'All' &&
     this.wholeDiscussionErrors;
 };
+
+function reactify(comments) {
+
+    var allReactionSets = comments.map(function (el) {
+        return $(el.querySelector('.js-reactions'));
+    });
+
+    comments.forEach(function (el) {
+        var reactions = $(el.querySelector('.js-reactions'));
+        var reactBtn = $(el.querySelector('.js-react'));
+
+        bean.on(reactBtn[0], 'click', function () {
+            allReactionSets.forEach(function (r) {
+                r.addClass('u-h');
+            });
+            reactions.removeClass('u-h');
+        });
+    });
+
+}
+
+function ReactionService() {
+    var defaultReactions = {
+        54414704 : {
+            disagree : 5,
+            funny : 2
+        },
+        54415824 : {
+            goodpoint : 5,
+            funny : 2
+        },
+        54417430 : {
+            foilhat : 5,
+            offtopic : 2
+        }
+    };
+    var savedData = localStorage.getItem('reactions');
+    var data = savedData ? JSON.parse(savedData) : defaultReactions;
+
+    this.getReactions = function(id) {
+        return data[id] || {};
+    };
+
+    this.addReaction = function(id, reaction) {
+        data[id] = data[id] || {};
+        data[id][reaction] = data[id][reaction] || 0;
+        data[id][reaction] = data[id][reaction] + 1;
+        localStorage.setItem('reactions', JSON.stringify(data));
+    };
+}
+
+// for testing
+window.reactions = new ReactionService();
 
 return Comments;
 });
