@@ -420,7 +420,6 @@ define([
                 ['c-save-for-later', modules.saveForLater],
                 ['c-show-membership-messages', modules.showMembershipMessages],
                 ['c-email', modules.initEmail],
-                ['c-user-features', userFeatures.refresh],
                 ['c-headlines-test-analytics', modules.headlinesTestAnalytics],
                 ['c-hosted-about-lightbox', modules.initHostedAboutLightbox]
             ]), function (fn) {
