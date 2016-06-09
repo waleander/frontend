@@ -63,15 +63,6 @@
         </div>
 
         <div class="d-comment__content">
-        <div>
-            <button>@fragments.inlineSvg("disagree", "reaction")</button>
-            <button>@fragments.inlineSvg("foilhat", "reaction")</button>
-            <button>@fragments.inlineSvg("funny", "reaction")</button>
-            <button>@fragments.inlineSvg("good point", "reaction")</button>
-            <button>@fragments.inlineSvg("guardian gold", "reaction")</button>
-            <button>@fragments.inlineSvg("offtopic", "reaction")</button>
-        </div>
-
             @if(!comment.isBlocked){ @* Change here should be double check for functionality relating to wether recs should show when recs are closed *@
                 <div
                     class="d-comment__recommend js-recommend-comment"
@@ -107,12 +98,24 @@
                     }
                 </div>
                 @if(!comment.isBlocked){
-                    <div class="d-comment__actions d-comment__actions--left modern-visible">
+                    <div class="d-comment__actions--left modern-visible">
                         <a class="d-comment__action d-comment__action--reply" href="https://profile.theguardian.com/signin?returnUrl=@comment.webUrl"
                                 data-link-name="reply to comment" data-comment-id="@comment.id" role="button">
                             @fragments.inlineSvg("reply", "icon", List("blue"))
                             Reply
                         </a>
+                        <span class="d-comment__action d-comment__action--reply" data-link-name="react to comment" data-comment-id="@comment.id" role="button" onclick="console.log('test');">
+                            @fragments.inlineSvg("reply", "icon", List("blue"))
+                            React
+                        </span>
+                        <div id="reactions" display="none">
+                            <button>@fragments.inlineSvg("good point", "reaction")</button>
+                            <button>@fragments.inlineSvg("funny", "reaction")</button>
+                            <button>@fragments.inlineSvg("disagree", "reaction")</button>
+                            <button>@fragments.inlineSvg("foilhat", "reaction")</button>
+                            <button>@fragments.inlineSvg("offtopic", "reaction")</button>
+                            <button>@fragments.inlineSvg("guardian gold", "reaction")</button>
+                        </div>
 
                         <span class="d-comment__action-separator d-staff-required">|</span>
 
