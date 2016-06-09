@@ -1,4 +1,4 @@
-@(comment: Comment, isClosedForRecommendation: Boolean = true, isResponse: Boolean = false)(implicit request: RequestHeader)
+@(comment: Comment, isClosedForRecommendation: Boolean = true, isGilded: Boolean = false, isResponse: Boolean = false)(implicit request: RequestHeader)
 @import conf.Configuration
 
 @* Please don't use the isTopComment switch - we've kept it pretty clean without it, but just need a solution for IDs *@
@@ -63,6 +63,14 @@
         </div>
 
         <div class="d-comment__content">
+        <div>
+            <button>@fragments.inlineSvg("disagree", "reaction")</button>
+            <button>@fragments.inlineSvg("foilhat", "reaction")</button>
+            <button>@fragments.inlineSvg("funny", "reaction")</button>
+            <button>@fragments.inlineSvg("good point", "reaction")</button>
+            <button>@fragments.inlineSvg("guardian gold", "reaction")</button>
+            <button>@fragments.inlineSvg("offtopic", "reaction")</button>
+        </div>
 
             @if(!comment.isBlocked){ @* Change here should be double check for functionality relating to wether recs should show when recs are closed *@
                 <div
