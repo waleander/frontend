@@ -506,8 +506,6 @@ function reactify(comments) {
         return $(el.querySelector('.js-reactions'));
     });
 
-
-
     comments.forEach(function (el) {
         var commentId = el.getAttribute('data-comment-id');
 
@@ -522,10 +520,11 @@ function reactify(comments) {
         // Open dialogue
         if (reactBtn) {
             bean.on(reactBtn, 'click', function () {
+                var isOpen = reactions.hasClass('u-h');
                 allReactionSets.forEach(function (r) {
                     r.addClass('u-h');
                 });
-                reactions.removeClass('u-h');
+                isOpen ? reactions.addClass('u-h') : reactions.removeClass('u-h');
             });
         }
 
