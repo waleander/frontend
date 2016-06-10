@@ -536,13 +536,15 @@ function ReactionService() {
         changeSubs.forEach(function (fn) {
             try {
                 fn();
-            } catch (e) {}
+            } catch (e) {
+                // whatever
+            }
         });
     };
 
     this.subscribeChange = function(fn) {
         changeSubs.push(fn);
-    }
+    };
 }
 
 // for testing
