@@ -1,12 +1,18 @@
 package controllers
 
+import com.gu.contentapi.client.model.v1.Content
+import com.gu.contentapi.client.model.v1.ContentType.{Article => CapiArticle}
+import com.gu.contentapi.json.JsonParser
+import com.gu.facia.api.models.{FaciaContent, FaciaImage, Groups, CuratedContent => FapiCuratedContent}
+import com.gu.facia.api.utils._
+import com.gu.facia.client.models.{CollectionConfigJson, TrailMetaData}
 import common._
 import controllers.front._
 import layout.{CollectionEssentials, FaciaContainer, Front}
-import model.Cached.{WithoutRevalidationResult, RevalidatableResult}
+import model.Cached.{RevalidatableResult, WithoutRevalidationResult}
 import model._
 import model.facia.PressedCollection
-import model.pressed.CollectionConfig
+import model.pressed.{CollectionConfig, CuratedContent}
 import play.api.libs.json._
 import play.api.mvc._
 import play.twirl.api.Html
@@ -14,9 +20,12 @@ import services.{CollectionConfigWithId, ConfigAgent}
 import slices._
 import views.html.fragments.containers.facia_cards.container
 import views.support.FaciaToMicroFormat2Helpers.getCollection
+import play.api.libs.ws.WS
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import play.api.Play.current
 
 trait FaciaController extends Controller with Logging with ExecutionContexts with implicits.Collections with implicits.Requests {
 
@@ -119,7 +128,9 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
   def rootEditionRedirect() = renderFront(path = "")
   def renderFront(path: String) = Action.async { implicit request =>
     log.info(s"Serving Path: $path")
-    if (shouldEditionRedirect(path))
+    if (path == "search-hackday")
+      renderSearchFront()
+    else if (shouldEditionRedirect(path))
       redirectTo(Editionalise(path, Edition(request)))
     else if (!ConfigAgent.shouldServeFront(path) || request.getQueryString("page").isDefined)
       applicationsRedirect(path)
@@ -165,6 +176,132 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
       case None => successful(Cached(60)(WithoutRevalidationResult(NotFound)))}
 
     futureResult.onFailure { case t: Throwable => log.error(s"Failed rendering $path with $t", t)}
+    futureResult
+  }
+
+  private def mockPressedPage (collections: List[PressedCollection]) : PressedPage = {
+    PressedPage(
+      id= "search-hackday",
+      seoData = SeoData(
+        id = "search",
+        navSection = "uk",
+        webTitle = "Search",
+        title = Some("Advanced search for hackday"),
+        description = None
+      ),
+      frontProperties = FrontProperties(None, None, None, None, false, None, None),
+      collections = collections
+    )
+  }
+
+  private def mockCollection (
+            contentList: List[CuratedContent],
+            collectionConfig: com.gu.facia.api.models.CollectionConfig
+  ): PressedCollection = {
+    val listOfGroups = Some(List("0", "1", "2", "3"))
+    PressedCollection(
+      id = "search-result",
+      displayName = collectionConfig.displayName.get,
+      curated = contentList,
+      backfill = Nil,
+      treats = Nil,
+      lastUpdated = None,
+      updatedBy = None,
+      updatedEmail = None,
+      href = None,
+      description = None,
+      collectionType = collectionConfig.collectionType,
+      groups = listOfGroups,
+      uneditable = true,
+      showTags = false,
+      showSections = false,
+      hideKickers = false,
+      showDateHeader = false,
+      showLatestUpdate = false,
+      config = CollectionConfig.make(collectionConfig)
+    )
+  }
+
+  private def mockContent(capiContent: Content, group: String, collectionConfig: com.gu.facia.api.models.CollectionConfig) : CuratedContent = {
+    CuratedContent.make(
+      FapiCuratedContent.fromTrailAndContent(
+        content = capiContent,
+        trailMetaData = TrailMetaData.withDefaults("group" -> JsString(group)),
+        maybeFrontPublicationDate = None,
+        collectionConfig = collectionConfig
+      )
+    )
+  }
+
+  private[controllers] def renderSearchFront()(implicit request: RequestHeader) = {
+    val query = request.queryString.getOrElse("query", Nil)
+    query match {
+      case Seq(key) => searchFrontFromCapi(key)
+      case _ => successful(Cached(60)(WithoutRevalidationResult(NotFound)))
+    }
+  }
+
+  private def createCollectionConfig(displayName: String, cType: String, groups: List[String]): com.gu.facia.api.models.CollectionConfig = {
+    com.gu.facia.api.models.CollectionConfig(
+      displayName = Some(displayName),
+      backfill = None,
+      metadata = None,
+      collectionType = cType,
+      href = None,
+      description = None,
+      groups = Some(Groups(groups)),
+      uneditable = false,
+      showTags = false,
+      showSections = false,
+      hideKickers = false,
+      showDateHeader = false,
+      showLatestUpdate = false,
+      excludeFromRss = true,
+      showTimestamps = false,
+      hideShowMore = false
+    )
+  }
+
+  private def searchFrontFromCapi (key: String)(implicit request: RequestHeader) = {
+    val later = WS.url(s"https://powerful-fortress-59898.herokuapp.com/content?q=$key").get().map { response =>
+      println("respo", response.json)
+      val listFromApi = response.json match {
+        case array: JsArray => {
+          val collectionConfig = createCollectionConfig("results", "dynamic/slow", List("0", "1", "2", "3"))
+          val listOfContent = array.value.map {
+            case thing: JsObject => {
+              val content = JsonParser.parseContent(Json.stringify(thing))
+              mockContent(content, "1", collectionConfig)
+            }
+            case _ => ???
+          }
+          List(mockCollection(listOfContent.toList, collectionConfig))
+        }
+        case _ => Nil
+      }
+
+      Option(mockPressedPage(listFromApi))
+    }
+    val futureResult = later.flatMap {
+      case Some(faciaPage) =>
+        successful(
+          if (request.isRss) {
+            val body = TrailsToRss.fromPressedPage(faciaPage)
+            Cached(faciaPage) {
+              RevalidatableResult(Ok(body).as("text/xml; charset=utf-8"), body)
+            }
+          }
+          else if (request.isJson)
+            Cached(faciaPage)(JsonFront(faciaPage))
+          else {
+            Cached(faciaPage) {
+              RevalidatableResult.Ok(views.html.front(faciaPage))
+            }
+          }
+        )
+      case None => successful(Cached(60)(WithoutRevalidationResult(NotFound)))}
+
+    futureResult.onFailure { case t: Throwable => log.error(s"Failed rendering search hackday with $t", t)}
     futureResult
   }
 
