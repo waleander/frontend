@@ -219,7 +219,7 @@ Comments.prototype.renderComments = function(resp) {
 
     mediator.emit('modules:comments:renderComments:rendered');
 
-    reactify(comments);
+    //reactify(comments);
 };
 
 Comments.prototype.showHiddenComments = function(e) {
