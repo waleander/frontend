@@ -1480,9 +1480,16 @@ $comment-recommend-button-size: 19px;
 
 // Hackathon 2016
 
+.dropdown-mooring {
+    display: inline-block;
+    position: absolute;
+    z-index: 99;
+}
+
 .reaction-dropdown {
     border: 1px solid #909090;
     padding: 4px;
+    margin-left: 8px;
 }
 
 .reaction-container {
