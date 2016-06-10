@@ -531,12 +531,10 @@ function reactify(comments) {
                 var $el = $(el);
                 var key = $el.data('reaction');
                 bean.on(el, 'click', function() {
-                    console.log('set', commentId, 'to', key);
-                })
+                    reactionService.addReaction(commentId, key);
+                });
             });
         }
-
-
 
     });
 
