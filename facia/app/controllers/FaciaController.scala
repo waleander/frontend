@@ -262,25 +262,46 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
     )
   }
 
+  private def listOfCapiArticles (array: JsArray, collectionConfig: com.gu.facia.api.models.CollectionConfig): List[CuratedContent] = {
+    val listOfContent = array.value.map {
+      case thing: JsObject => {
+        val content = JsonParser.parseContent(Json.stringify(thing))
+        mockContent(content, "1", collectionConfig)
+      }
+      case _ => ???
+    }
+    listOfContent.toList
+  }
+
+  private def listFromLayout (layout: String): List[String] = {
+    layout match {
+      case "dynamic/slow" => List("0", "1", "2", "3")
+      case _ => List("0")
+    }
+  }
+
   private def searchFrontFromCapi (key: String)(implicit request: RequestHeader) = {
     val later = WS.url(s"https://powerful-fortress-59898.herokuapp.com/content?q=$key").get().map { response =>
       println("respo", response.json)
-      val listFromApi = response.json match {
+      val listFromApi: Seq[PressedCollection] = response.json match {
         case array: JsArray => {
-          val collectionConfig = createCollectionConfig("results", "dynamic/slow", List("0", "1", "2", "3"))
-          val listOfContent = array.value.map {
-            case thing: JsObject => {
-              val content = JsonParser.parseContent(Json.stringify(thing))
-              mockContent(content, "1", collectionConfig)
-            }
-            case _ => ???
+          array.value.flatMap {
+            case collectionDescription: JsValue =>
+              for {
+                name <- (collectionDescription \ "name").asOpt[String]
+                layout <- (collectionDescription \ "layout").asOpt[String]
+                list <- (collectionDescription \ "results").asOpt[JsArray]
+              } yield {
+                val collectionConfig = createCollectionConfig(name, layout, listFromLayout(layout))
+                val stories = listOfCapiArticles(list, collectionConfig)
+                mockCollection(stories, collectionConfig)
+              }
           }
-          List(mockCollection(listOfContent.toList, collectionConfig))
         }
         case _ => Nil
       }
 
-      Option(mockPressedPage(listFromApi))
+      Option(mockPressedPage(listFromApi.toList))
     }
     val futureResult = later.flatMap {
       case Some(faciaPage) =>
