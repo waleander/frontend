@@ -101,12 +101,28 @@
                             React
                         </span>
                         <div class="js-reactions u-h" style="display: inline-block; vertical-align: middle">
-                            <span>@fragments.inlineSvg("good point", "reaction")</span>
-                            <span>@fragments.inlineSvg("funny", "reaction")</span>
-                            <span>@fragments.inlineSvg("disagree", "reaction")</span>
-                            <span>@fragments.inlineSvg("foilhat", "reaction")</span>
-                            <span>@fragments.inlineSvg("offtopic", "reaction")</span>
-                            <span>@fragments.inlineSvg("guardian gold", "reaction")</span>
+                            <div class="reaction-container reaction-conspiracy">
+                                <span class="reaction">@fragments.inlineSvg("conspiracy", "reaction")</span>
+                                <span class="reaction-count"></span>
+                            </div>
+                            <div class="reaction-container reaction-food-for-thought">
+                                <span class="reaction">@fragments.inlineSvg("food-for-thought", "reaction")</span>
+                                <span class="reaction-count"></span>
+                            </div>
+                            <div class="reaction-container reaction-laugh">
+                                <span class="reaction">@fragments.inlineSvg("laugh", "reaction")</span>
+                                <span class="reaction-count"></span>
+                            </div>
+                            <div class="reaction-container reaction-solidarity">
+                                <span class="reaction">@fragments.inlineSvg("solidarity", "reaction")</span>
+                                <span class="reaction-count"></span>
+                            </div>
+                            <div class="reaction-container reaction-troll-face">
+                                <span class="reaction">@fragments.inlineSvg("troll-face", "reaction")</span>
+                                <span class="reaction-count"></span>
+                            </div>
+
+
                         </div>
 
                         <span class="d-comment__action-separator d-staff-required">|</span>

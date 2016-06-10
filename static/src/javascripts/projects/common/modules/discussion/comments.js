@@ -506,16 +506,16 @@ function reactify(comments) {
 function ReactionService() {
     var defaultReactions = {
         54414704 : {
-            disagree : 5,
-            funny : 2
+            'food-for-thought' : 5,
+            'laugh' : 2
         },
         54415824 : {
-            goodpoint : 5,
-            funny : 2
+            'solidarity' : 5,
+            'troll-face' : 2
         },
         54417430 : {
-            foilhat : 5,
-            offtopic : 2
+            'conspiracy' : 5,
+            'laugh' : 2
         }
     };
     var savedData = localStorage.getItem('reactions');
