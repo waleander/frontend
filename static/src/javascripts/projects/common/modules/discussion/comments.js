@@ -517,12 +517,21 @@ function reactify(comments) {
             });
         }
 
+        // Close dialogue
+        if (reactions[0]) {
+            bean.on(reactions[0], 'click', function () {
+                reactions.addClass('u-h');
+            });
+        }
+
 
     });
 
 }
 
 function ReactionService() {
+    var changeSubs = [];
+
     var defaultReactions = {
         54414704 : {
             'food-for-thought' : 5,
@@ -549,6 +558,18 @@ function ReactionService() {
         data[id][reaction] = data[id][reaction] || 0;
         data[id][reaction] = data[id][reaction] + 1;
         localStorage.setItem('reactions', JSON.stringify(data));
+
+        changeSubs.forEach(function (fn) {
+            try {
+                fn();
+            } catch (e) {
+                // whatever
+            }
+        });
+    };
+
+    this.subscribeChange = function(fn) {
+        changeSubs.push(fn);
     };
 }
 

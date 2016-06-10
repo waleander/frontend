@@ -1477,3 +1477,39 @@ $comment-recommend-button-size: 19px;
     background-color: colour(neutral-3);
     border-color: colour(neutral-3);
 }
+
+// Hackathon 2016
+
+.dropdown-mooring {
+    display: inline-block;
+    position: absolute;
+    z-index: 99;
+}
+
+.reaction-dropdown {
+    border: 1px solid #909090;
+    margin-left: 8px;
+    background: #ffffff;
+}
+
+.reaction-container {
+    padding: 4px;
+}
+
+.reaction-container:hover {
+    background: #d3d3d3;
+}
+
+.reaction-desc, .reaction {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.reaction-desc {
+    padding-left: 4px;
+}
+
+.reaction-desc {
+    font-family: 'Guardian Text Sans Web', Helvetica, sans-serif;
+    font-size: 12px;
+}
