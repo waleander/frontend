@@ -524,9 +524,26 @@ function reactify(comments) {
             });
         }
 
+        // Add reaction responses
+        if (reactions[0]) {
+            var reactionBtns = toArray(reactions[0].querySelectorAll('[data-reaction]'));
+            reactionBtns.forEach(function (el) {
+                var $el = $(el);
+                var key = $el.data('reaction');
+                bean.on(el, 'click', function() {
+                    console.log('set', commentId, 'to', key);
+                })
+            });
+        }
+
+
 
     });
 
+}
+
+function toArray(t) {
+    return Array.prototype.slice.call(t);
 }
 
 function ReactionService() {
@@ -572,6 +589,9 @@ function ReactionService() {
         changeSubs.push(fn);
     };
 }
+
+// for testing
+window.reactions = new ReactionService();
 
 return Comments;
 });
