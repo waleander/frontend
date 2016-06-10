@@ -263,10 +263,10 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
   }
 
   private def listOfCapiArticles (array: JsArray, collectionConfig: com.gu.facia.api.models.CollectionConfig): List[CuratedContent] = {
-    val listOfContent = array.value.map {
-      case thing: JsObject => {
+    val listOfContent = array.value.zipWithIndex.map {
+      case (thing: JsObject, index) => {
         val content = JsonParser.parseContent(Json.stringify(thing))
-        mockContent(content, "1", collectionConfig)
+        mockContent(content, randomGroupFromLayout(collectionConfig.collectionType, index), collectionConfig)
       }
       case _ => ???
     }
@@ -277,6 +277,20 @@ trait FaciaController extends Controller with Logging with ExecutionContexts wit
     layout match {
       case "dynamic/slow" => List("0", "1", "2", "3")
       case _ => List("0")
+    }
+  }
+
+  private def randomGroupFromLayout (layout: String, index: Int) = {
+    layout match {
+      case "dynamic/slow" =>
+        if (index == 0 || index == 1) {
+          "2"
+        } else if (index == 2 || index == 3) {
+          "1"
+        } else {
+          "0"
+        }
+      case _ => "0"
     }
   }
 
