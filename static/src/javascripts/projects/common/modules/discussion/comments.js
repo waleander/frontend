@@ -484,10 +484,29 @@ function reactify(comments) {
         return $(el.querySelector('.js-reactions'));
     });
 
-    comments.forEach(function (el) {
-        var reactions = $(el.querySelector('.js-reactions'));
-        var reactBtn = $(el.querySelector('.js-react'))[0];
+    var reactionService = new ReactionService();
+    var reactionsList = ['conspiracy', 'food-for-thought', 'laugh', 'solidarity', 'troll-face'];
 
+    comments.forEach(function (el) {
+        var commentId = el.getAttribute('data-comment-id');
+        var userCommentReactions = reactionService.getReactions(commentId);
+
+        if(userCommentReactions) {
+            $(el.querySelector('.js-user-reactions')).removeClass('u-h');
+            reactionsList.forEach(function (reactionName) {
+                var reactionCount = userCommentReactions[reactionName];
+                if (reactionCount) {
+                    var userReaction = $(el.querySelector('.reaction-' + reactionName));
+                    if (userReaction[0]) {
+                        userReaction.removeClass('u-h');
+                        userReaction[0].querySelector('.reaction-count').innerHTML = reactionCount;
+                    }
+                }
+            });
+        }
+
+        var reactBtn = $(el.querySelector('.js-react'))[0];
+        var reactions = $(el.querySelector('.js-reactions'));
         // Open dialogue
         if (reactBtn) {
             bean.on(reactBtn, 'click', function () {
@@ -532,9 +551,6 @@ function ReactionService() {
         localStorage.setItem('reactions', JSON.stringify(data));
     };
 }
-
-// for testing
-window.reactions = new ReactionService();
 
 return Comments;
 });
