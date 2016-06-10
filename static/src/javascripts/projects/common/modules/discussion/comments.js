@@ -45,6 +45,9 @@ var Comments = function(options) {
     this.setOptions(options);
 };
 
+var reactionService = new ReactionService();
+var reactionsList = ['conspiracy', 'food-for-thought', 'laugh', 'solidarity', 'troll-face'];
+
 Component.define(Comments);
 
 Comments.prototype.componentClass = 'd-comments';
@@ -479,8 +482,8 @@ Comments.prototype.shouldShowPageSizeMessage = function() {
     this.wholeDiscussionErrors;
 };
 
-    function showCurrentReactions(el) {
-        var commentId = el.getAttribute('data-comment-id');
+    function showCurrentReactions(el, commentId) {
+
         var userCommentReactions = reactionService.getReactions(commentId);
 
         if(userCommentReactions) {
@@ -503,11 +506,16 @@ function reactify(comments) {
         return $(el.querySelector('.js-reactions'));
     });
 
-    var reactionService = new ReactionService();
-    var reactionsList = ['conspiracy', 'food-for-thought', 'laugh', 'solidarity', 'troll-face'];
+
 
     comments.forEach(function (el) {
-        showCurrentReactions(el);
+        var commentId = el.getAttribute('data-comment-id');
+
+        showCurrentReactions(el, commentId);
+
+        reactionService.subscribeChange(function(){
+            showCurrentReactions(el, commentId);
+        });
 
         var reactBtn = $(el.querySelector('.js-react'))[0];
         var reactions = $(el.querySelector('.js-reactions'));
