@@ -498,6 +498,13 @@ function reactify(comments) {
             });
         }
 
+        // Close dialogue
+        if (reactions[0]) {
+            bean.on(reactions[0], 'click', function () {
+                reactions.addClass('u-h');
+            });
+        }
+
 
     });
 
