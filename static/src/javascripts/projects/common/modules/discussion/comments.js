@@ -479,15 +479,7 @@ Comments.prototype.shouldShowPageSizeMessage = function() {
     this.wholeDiscussionErrors;
 };
 
-function reactify(comments) {
-    var allReactionSets = comments.map(function (el) {
-        return $(el.querySelector('.js-reactions'));
-    });
-
-    var reactionService = new ReactionService();
-    var reactionsList = ['conspiracy', 'food-for-thought', 'laugh', 'solidarity', 'troll-face'];
-
-    comments.forEach(function (el) {
+    function showCurrentReactions(el) {
         var commentId = el.getAttribute('data-comment-id');
         var userCommentReactions = reactionService.getReactions(commentId);
 
@@ -504,6 +496,18 @@ function reactify(comments) {
                 }
             });
         }
+    }
+
+function reactify(comments) {
+    var allReactionSets = comments.map(function (el) {
+        return $(el.querySelector('.js-reactions'));
+    });
+
+    var reactionService = new ReactionService();
+    var reactionsList = ['conspiracy', 'food-for-thought', 'laugh', 'solidarity', 'troll-face'];
+
+    comments.forEach(function (el) {
+        showCurrentReactions(el);
 
         var reactBtn = $(el.querySelector('.js-react'))[0];
         var reactions = $(el.querySelector('.js-reactions'));
