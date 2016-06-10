@@ -484,7 +484,7 @@ function reactify(comments) {
         return $(el.querySelector('.js-reactions'));
     });
 
-    comments.forEach(function (el, i) {
+    comments.forEach(function (el) {
         var reactions = $(el.querySelector('.js-reactions'));
         var reactBtn = $(el.querySelector('.js-react'))[0];
 
