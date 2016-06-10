@@ -496,12 +496,6 @@ function reactify(comments) {
             reactions.removeClass('u-h');
         });
 
-        // Handle reactions
-        var firstReaction = $('button', reactions)[0];
-        bean.on(firstReaction, 'click', function () {
-            window.alert('You reacted!');
-        });
-
     });
 
 }
