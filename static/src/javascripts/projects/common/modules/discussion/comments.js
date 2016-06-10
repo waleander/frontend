@@ -603,5 +603,9 @@ function ReactionService() {
 // for testing
 window.reactions = new ReactionService();
 
+window.reset = function () {
+   localStorage.removeItem('reactions');
+};
+
 return Comments;
 });
