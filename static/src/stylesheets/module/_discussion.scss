@@ -1488,13 +1488,16 @@ $comment-recommend-button-size: 19px;
 
 .reaction-dropdown {
     border: 1px solid #909090;
-    padding: 4px;
     margin-left: 8px;
+    background: white;
 }
 
 .reaction-container {
     padding: 4px;
-    display: table-row;
+}
+
+.reaction-container:hover {
+    background: lightgrey;
 }
 
 .reaction-desc, .reaction {
