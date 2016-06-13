@@ -21,6 +21,15 @@ define([
     config,
     template
 ) {
+    // uh oh -  open -a Google\ Chrome --args --disable-web-security --user-data-dir
+    // cors isnt working. maybe options fault.
+
+    // remove capi requests.
+    // tidy up html and css.
+    // commented code.
+    // resize canvas, use upscale?
+
+
     function EnhancedAudio(player) {
         this.player = player;
         this.audioElement = qwery('audio', player.el())[0];
