@@ -133,4 +133,14 @@ trait ABTestSwitches {
     sellByDate = new LocalDate(2016, 6, 21),
     exposeClientSide = true
   )
+
+  val ABVideoMainMediaToThirdItem = Switch(
+    SwitchGroup.ABTests,
+    "ab-video-main-media-to-third-item",
+    "Move main media video to third item",
+    owners = Seq(Owner.withGithub("akash1810")),
+    safeState = Off,
+    sellByDate = new LocalDate(2016, 6, 14),
+    exposeClientSide = true
+  )
 }

@@ -200,7 +200,11 @@ define([
             // These are set to the safest defaults that will always play video.
             var defaultVideoInfo = {
                 expired: false,
-                shouldHideAdverts: shouldHideAdverts
+                shouldHideAdverts: shouldHideAdverts,
+
+                // `tone/news` is the default tone tag before the new ones were introduced
+                // e.g. https://gu.com/p/4t7k4
+                tone: 'tone/news'
             };
 
             if (!canonicalUrl) {
@@ -420,9 +424,25 @@ define([
         $('.media-primary').addClass('media-primary--showcase');
     }
 
+    function moveMainMedia() {
+        // moves main media to after the second paragraph of article if there are at least 3 paragraphs
+        var videoFigureEl = $('[data-component=\'main video\']')[0];
+        var content = $('.content__article-body')[0];
+        var paragraphs = $('.content__article-body p');
+
+        if (paragraphs.length > 3) {
+            var secondParagraph = paragraphs[1];
+            content.insertBefore(videoFigureEl, secondParagraph.nextSibling);
+        }
+    }
+    
     function initTests() {
         if(ab.isInVariant('VideoMainMediaAlwaysShowcase', 'variant')) {
             showcaseMainMedia();
+        }
+
+        if(ab.isInVariant('MainMediaToThirdItem', 'variant')) {
+            moveMainMedia();
         }
     }
 

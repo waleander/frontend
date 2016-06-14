@@ -23,8 +23,15 @@ object MediaController extends Controller with RendersItemResponse with Logging 
 
   def renderInfoJson(path: String) = Action.async { implicit request =>
     lookup(path) map {
-      case Left(model)  => MediaInfo(expired = false, shouldHideAdverts = model.media.content.shouldHideAdverts)
-      case Right(other) => MediaInfo(expired = other.header.status == GONE, shouldHideAdverts = true)
+      case Left(model)  => {
+        val toneId = model.media.tags.tones.headOption match {
+          case Some(tone) => Some(tone.id)
+          case _ => None
+        }
+
+        MediaInfo(expired = false, shouldHideAdverts = model.media.content.shouldHideAdverts, toneId)
+      }
+      case Right(other) => MediaInfo(expired = other.header.status == GONE, shouldHideAdverts = true, None)
     } map { mediaInfo =>
       Cached(60)(JsonComponent(Json.toJson(mediaInfo).as[JsObject]))
     }
@@ -64,7 +71,7 @@ object MediaController extends Controller with RendersItemResponse with Logging 
   override def canRender(i: ItemResponse): Boolean = i.content.exists(isSupported)
 }
 
-case class MediaInfo(expired: Boolean, shouldHideAdverts: Boolean)
+case class MediaInfo(expired: Boolean, shouldHideAdverts: Boolean, tone: Option[String])
 object MediaInfo {
   implicit val jsonFormats: Format[MediaInfo] = Json.format[MediaInfo]
 }
