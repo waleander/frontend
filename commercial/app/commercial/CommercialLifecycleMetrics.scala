@@ -9,40 +9,26 @@ object FeedAction {
   case object Parse extends FeedAction { override def toString = "parse" }
 }
 
-private[commercial] case class CommercialFeedEvent(feedName: String, feedAction: FeedAction, success: Boolean) {
-
-  val result: String = if (success) "success" else "failure"
-  val actionAndResult: String = s"$feedAction-$result"
-  val actionNameAndResult: String = s"$feedAction-$feedName-$result"
+private[commercial] case class CommercialFeedEvent(feedName: String,
+                                                   feedAction: FeedAction,
+                                                   success: Boolean){
+  val actionAndResult: String = s"$feedAction-${if (success) "success" else "failure"}"
 }
 
 private object CommercialLifecycleMetrics extends Logging {
 
   val feedEvents = AkkaAgent[Seq[CommercialFeedEvent]](Seq.empty)
 
-  private[commercial] def logMetric(metric: CommercialFeedEvent) = feedEvents.send(_ :+ metric)
+  private[commercial] def logEvent(event: CommercialFeedEvent) = feedEvents.send(_ :+ event)
 
   def updateMetrics(): Unit = {
 
-    def toAggregatedMap(metricName: String, events: Seq[CommercialFeedEvent]) = metricName -> events.size.toDouble
+    def aggregate(key: String, events: Seq[CommercialFeedEvent]) = key -> events.size.toDouble
 
-    def pushAggregateMetrics() = {
-      val metricsByActionAndResult = feedEvents.get groupBy (_.actionAndResult) map Function.tupled(toAggregatedMap _)
-      log.info(s"Updating commercial feeds 'aggregate' metric: $metricsByActionAndResult")
-      CommercialMetrics.metrics.put(metricsByActionAndResult)
-    }
-
-    def pushIndividualFeedMetrics() = {
-      val failingFeedsByActionAndName = feedEvents.get filterNot (_.success) groupBy (_.actionNameAndResult) map Function.tupled(toAggregatedMap _)
-      log.info(s"Updating commercial feeds 'failing' metric: $failingFeedsByActionAndName")
-      CommercialMetrics.metrics.put(failingFeedsByActionAndName)
-    }
-
-    def resetMetrics(): Unit = feedEvents.send(Seq.empty)
-
-    pushAggregateMetrics()
-    pushIndividualFeedMetrics()
+    val metricsByActionAndResult = feedEvents.get groupBy (_.actionAndResult) map Function.tupled(aggregate _)
+    log.info(s"Updating commercial feed metrics: $metricsByActionAndResult")
+    CommercialMetrics.metrics.put(metricsByActionAndResult)
     CommercialMetrics.metrics.upload()
-    resetMetrics()
+    feedEvents.send(Seq.empty)
   }
 }

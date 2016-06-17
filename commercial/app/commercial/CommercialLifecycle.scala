@@ -39,13 +39,13 @@ class CommercialLifecycle(appLifecycle: ApplicationLifecycle)(implicit ec: Execu
         case e: SwitchOffException =>
           log.warn(s"$msgPrefix failed: ${e.getMessage}")
         case NonFatal(e) =>
-          CommercialLifecycleMetrics.logMetric(CommercialFeedEvent(feedName, FeedAction.Fetch, false))
+          CommercialLifecycleMetrics.logEvent(CommercialFeedEvent(feedName, FeedAction.Fetch, success = false))
           log.error(s"$msgPrefix failed: ${e.getMessage}", e)
       }
       eventualResponse onSuccess {
         case response =>
           S3FeedStore.put(feedName, response.feed)
-          CommercialLifecycleMetrics.logMetric(CommercialFeedEvent(feedName, FeedAction.Fetch, true))
+          CommercialLifecycleMetrics.logEvent(CommercialFeedEvent(feedName, FeedAction.Fetch, success = true))
           log.info(s"$msgPrefix succeeded in ${response.duration}")
       }
       eventualResponse.map(_ => ())
@@ -62,12 +62,12 @@ class CommercialLifecycle(appLifecycle: ApplicationLifecycle)(implicit ec: Execu
         case e: SwitchOffException =>
           log.warn(s"$msgPrefix failed: ${e.getMessage}")
         case NonFatal(e) =>
-          CommercialLifecycleMetrics.logMetric(CommercialFeedEvent(feedName, FeedAction.Parse, false))
+          CommercialLifecycleMetrics.logEvent(CommercialFeedEvent(feedName, FeedAction.Parse, success = false))
           log.error(s"$msgPrefix failed: ${e.getMessage}", e)
       }
       parsedFeed onSuccess {
         case feed =>
-          CommercialLifecycleMetrics.logMetric(CommercialFeedEvent(feedName, FeedAction.Parse, true))
+          CommercialLifecycleMetrics.logEvent(CommercialFeedEvent(feedName, FeedAction.Parse, success = true))
           log.info(s"$msgPrefix succeeded: parsed ${feed.contents.size} $feedName in ${feed.parseDuration}")
       }
       parsedFeed.map(_ => ())
