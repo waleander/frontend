@@ -443,6 +443,12 @@ define([
         }
     }
 
+    function supersizeMainMedia() {
+        $('.content__meta-container').addClass('content__meta-container--supersize');
+        $('.media-primary').addClass('media-primary--supersize');
+        $('div').removeClass('.gs-container');
+    }
+
     function init() {
         // The `hasMultipleVideosInPage` flag is temporary until the # will be fixed
         var shouldPreroll = commercialFeatures.videoPreRolls &&
@@ -466,6 +472,7 @@ define([
         initMoreInSection();
         initOnwardContainer();
         initTests();
+        supersizeMainMedia();
     }
 
     return {
