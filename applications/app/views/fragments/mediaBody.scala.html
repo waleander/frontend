@@ -6,7 +6,7 @@
 @import views.support.{RenderClasses, SeoOptimisedContentImage, StripHtmlTags, Video640}
 
 @defining(page.media, page.media match { case _: Audio => "audio" case _ => "video" }){ case (media, mediaType) =>
-<div class="l-side-margins @if(!page.media.commercial.isAdvertisementFeature){l-side-margins--media}">
+<div class="l-side-margins">
 
     <article id="article" class="@RenderClasses(
             Map(
@@ -135,7 +135,7 @@
         </div>
     </article>
 
-    @if(mediaType != "video" && mediaType != "audio" && page.media.commercial.isAdvertisementFeature) {
+    <!-- @if(mediaType != "video" && mediaType != "audio" && page.media.commercial.isAdvertisementFeature) {
         <div class="fc-container fc-container--media">
             <div class="js-media-popular tonal--@toneClass(media)">
                 <div class="fc-container fc-container--popular">
@@ -149,7 +149,7 @@
                 </div>
             </div>
         </div>
-    }
+    } -->
 </div>
 
 <div class="l-side-margins">

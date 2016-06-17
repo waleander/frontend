@@ -514,6 +514,13 @@
     }
 }
 
+.content__meta-container.content__meta-container--supersize {
+    @include mq(leftCol) {
+        float: left;
+        position: static;
+    }
+}
+
 .content__mobile-full-width {
     @include mq(mobile, tablet) {
         width: auto;
