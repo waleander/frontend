@@ -2,7 +2,6 @@
 // can trigger adblocker rules, and make the module fail to load in dev.
 
 define([
-    'bean',
     'bonzo',
     'qwery',
     'Promise',
@@ -23,7 +22,7 @@ define([
     'common/modules/commercial/build-page-targeting',
     'common/modules/commercial/commercial-features',
     'common/modules/commercial/dfp/ophan-tracking',
-    'common/modules/commercial/dfp/breakout-iframe',
+    'common/modules/commercial/dfp/apply-creative-template',
     'common/modules/commercial/dfp/PrebidService',
     'common/modules/commercial/dfp/track-ad-load',
     'common/modules/onward/geo-most-popular',
@@ -41,12 +40,10 @@ define([
     'lodash/collections/map',
     'lodash/collections/filter',
     'common/utils/chain',
-    'lodash/collections/find',
     'lodash/arrays/last',
     'lodash/arrays/intersection',
     'lodash/arrays/initial'
 ], function (
-    bean,
     bonzo,
     qwery,
     Promise,
@@ -67,7 +64,7 @@ define([
     buildPageTargeting,
     commercialFeatures,
     ophanTracking,
-    breakoutIFrame,
+    applyCreativeTemplate,
     PrebidService,
     trackAdLoad,
     geoMostPopular,
@@ -85,7 +82,6 @@ define([
     map,
     filter,
     chain,
-    find,
     last,
     intersection,
     initial
@@ -454,6 +450,8 @@ define([
             if (mobileAdSizes && mobileAdSizes.indexOf(adSizes.stickyMpu) > -1) {
                 stickyMpu($adSlot);
             }
+        } else if ($adSlot.hasClass('ad-slot--facebook')) {
+            $adSlot.addClass('ad-slot--fluid');
         }
     };
     callbacks[adSizes.outOfPage] = function (event, $adSlot) {
@@ -541,8 +539,7 @@ define([
             });
 
             // Check if creative is a new gu style creative and place labels accordingly.
-            // Use public method so that tests can stub it out.
-            return dfp.checkForBreakout($adSlot).then(function () {
+            return applyCreativeTemplate($adSlot).then(function () {
                 addLabel($adSlot);
 
                 size = event.size.join(',');
@@ -569,47 +566,6 @@ define([
         });
     }
 
-    /**
-     * Checks the contents of the ad for special breakout classes.
-     *
-     * If one of these classes is detected, then the contents of that iframe is retrieved
-     * and written onto the parent page.
-     *
-     * Currently this is being used for sponsored logos and commercial components so they
-     * can inherit fonts.
-     */
-    function checkForBreakout($adSlot) {
-        return new Promise(function (resolve, reject) {
-            // DFP sometimes sends back two iframes, one with actual ad and one with 0,0 sizes and __hidden__ 'paramter'
-            // The later one will never go to 'complete' state on IE so lets avoid it.
-            var iFrame = find($('iframe', $adSlot), function (iframe) { return iframe.id.match('__hidden__') === null; });
-
-            // No iFrame, no work to do
-            if (typeof iFrame === 'undefined') {
-                reject();
-            }
-            // IE needs the iFrame to have loaded before we can interact with it
-            else if (iFrame.readyState && iFrame.readyState !== 'complete') {
-                bean.on(iFrame, 'readystatechange', function (e) {
-                    var updatedIFrame = e.srcElement;
-
-                    if (
-                        /*eslint-disable valid-typeof*/
-                    updatedIFrame &&
-                    typeof updatedIFrame.readyState !== 'unknown' &&
-                    updatedIFrame.readyState === 'complete'
-                    /*eslint-enable valid-typeof*/
-                    ) {
-                        bean.off(updatedIFrame, 'readystatechange');
-                        resolve(breakoutIFrame(updatedIFrame, $adSlot));
-                    }
-                });
-            } else {
-                resolve(breakoutIFrame(iFrame, $adSlot));
-            }
-        });
-    }
-
     function addLabel($adSlot) {
         fastdom.write(function () {
             if (shouldRenderLabel($adSlot)) {
@@ -621,6 +577,7 @@ define([
     function shouldRenderLabel($adSlot) {
         return !$adSlot.hasClass('ad-slot--frame') &&
             !$adSlot.hasClass('gu-style') &&
+            !$adSlot.hasClass('ad-slot--facebook') &&
             ($adSlot.data('label') !== false && qwery('.ad-slot__label', $adSlot[0]).length === 0);
     }
 
@@ -783,7 +740,6 @@ define([
         // Used privately but exposed only for unit testing
         getAdverts:     getAdverts,
         shouldLazyLoad: shouldLazyLoad,
-        checkForBreakout: checkForBreakout,
 
         // testing
         reset: function () {
