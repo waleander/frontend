@@ -25,12 +25,12 @@
     }
     @renderFooter(maybeResults)
     @if(maybeResults.isEmpty) {
-        <button class="button button--xlarge button--primary" type="submit">Submit answers</button>
+        <button class="button button--xlarge button--primary js-atom-quiz--submit" type="submit">Submit answers</button>
     }
 </form>
 
 @renderQuestion(question: Question, field: play.api.data.Field, maybeUserAnswer: Option[Answer]) = {
-    <fieldset class="atom-quiz__question farage-is-a-boy-botherer">
+    <fieldset class="atom-quiz__question js-atom__quiz_question">
         <legend class="atom-quiz__question-text">@question.text</legend>
 
         @question.imageMedia.map { image =>

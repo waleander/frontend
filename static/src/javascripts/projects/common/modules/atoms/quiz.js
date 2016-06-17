@@ -21,11 +21,13 @@ define([
 
 
                 if ($quizzes.length > 0) {
+                    //var $questions = $('.js-atom__quiz_question').length;
                     bean.on(document, 'click', toArray($quizzes), function (e) {
                         var quiz = e.currentTarget,
                             total = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
 
-                        console.log("+++ Click complete " + total);
+                        //console.log("+++ Click : " + total + " Of: " + $questions);
+                        console.log("+++ Clicker : " + total + " Of: " );
 
                         if (quiz.checkValidity()) { // the form (quiz) is complete
                             console.log("+++ Click complete " + total);
@@ -55,12 +57,16 @@ define([
 
                     //Here, there's no instant reveal, handle clicks and and counts
                     var $quizzes = $('.js-atom-quiz');
-                    console.log("++ Other: " + $quizzes.length);
-
-
-
-
-
+                    console.log("++ The Others Ones: " + $quizzes.length);
+                    if ($quizzes.length > 0) {
+                        bean.on(document, 'click', toArray($quizzes), function(e) {
+                            var quiz = e.currentTarget,
+                            total = $(':checked + .atom-quiz__answer__item', quiz).length
+                        });
+                        bean.on($quizzes[0], 'click', '.js-atom-quiz--submit', function(){
+                            console.log("++ Completo");
+                        })
+                    }
                 }
             }
         }
