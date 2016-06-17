@@ -8,6 +8,7 @@
 
 <form action="@postUrl(quiz)" method="POST" class="@RenderClasses(Map(
     ("atom-quiz", true),
+    ("js-atom-quiz", true),
     ("atom-quiz--personality", quiz.quizType == "personality"),
     ("atom-quiz--knowledge", quiz.quizType == "knowledge"),
     ("atom-quiz--is-not-results", !showResults),
@@ -29,7 +30,7 @@
 </form>
 
 @renderQuestion(question: Question, field: play.api.data.Field, maybeUserAnswer: Option[Answer]) = {
-    <fieldset class="atom-quiz__question">
+    <fieldset class="atom-quiz__question farage-is-a-boy-botherer">
         <legend class="atom-quiz__question-text">@question.text</legend>
 
         @question.imageMedia.map { image =>

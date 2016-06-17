@@ -19,12 +19,17 @@ define([
                 // we'll run this code only if it's an instant-reveal quiz
                 var $quizzes = $('.js-atom-quiz--instant-reveal');
 
+
                 if ($quizzes.length > 0) {
                     bean.on(document, 'click', toArray($quizzes), function (e) {
-                        var quiz = e.currentTarget;
+                        var quiz = e.currentTarget,
+                            total = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
+
+                        console.log("+++ Click complete " + total);
+
                         if (quiz.checkValidity()) { // the form (quiz) is complete
-                            var $bucket__message = null,
-                                total = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
+                            console.log("+++ Click complete " + total);
+                            var $bucket__message = null;
                             do {
                                 // try and find a .bucket__message for your total
                                 $bucket__message = $('.js-atom-quiz__bucket-message--' + total, quiz);
@@ -45,6 +50,17 @@ define([
                             } while (total >= 0); // the lowest we'll look is for 0 correct answers
                         }
                     });
+                }
+                else {
+
+                    //Here, there's no instant reveal, handle clicks and and counts
+                    var $quizzes = $('.js-atom-quiz');
+                    console.log("++ Other: " + $quizzes.length);
+
+
+
+
+
                 }
             }
         }
