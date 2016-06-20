@@ -13,41 +13,35 @@ define([
 ) {
     var hostedThrasherTemplate;
 
-    var HostedThrasherMulti = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params = params;
-    };
+    return HostedThrasherMulti;
 
-    HostedThrasherMulti.prototype.create = function () {
+    function HostedThrasherMulti(adSlot, params) {
         hostedThrasherTemplate = template(hostedThrasherStr);
 
         return fastdom.write(function () {
-            this.setAdditionalParams(this.params);
+            setAdditionalParams(params);
 
-            this.$adSlot.append(hostedThrasherTemplate({ data: this.params }));
-            if (this.params.trackingPixel) {
-                addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            adSlot.insertAdjacentHTML('beforeend', hostedThrasherTemplate({ data: params }));
+            if (params.trackingPixel) {
+                addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
             }
-        }, this);
-    };
+        });
 
-    HostedThrasherMulti.prototype.setAdditionalParams = function () {
-        for (var i = 1; i <= this.params.elementsNo; i++) {
-            var videoLength = this.params['videoLength' + i];
-            if (videoLength){
-                var seconds = videoLength % 60;
-                var minutes = (videoLength - seconds) / 60;
-                this.params['timeString' + i] = minutes + (seconds < 10 ? ':0' : ':') + seconds;
+        function setAdditionalParams() {
+            for (var i = 1; i <= params.elementsNo; i++) {
+                var videoLength = params['videoLength' + i];
+                if (videoLength){
+                    var seconds = videoLength % 60;
+                    var minutes = (videoLength - seconds) / 60;
+                    params['timeString' + i] = minutes + (seconds < 10 ? ':0' : ':') + seconds;
+                }
+
+                params['linkTracking' + i] = 'Labs hosted container' +
+                ' | ' + config.page.edition +
+                ' | ' + config.page.section +
+                ' | ' + params['subHeader' + i] +
+                ' | ' + params.sponsorName;
             }
-
-            this.params['linkTracking' + i] = 'Labs hosted container' +
-            ' | ' + config.page.edition +
-            ' | ' + config.page.section +
-            ' | ' + this.params['subHeader' + i] +
-            ' | ' + this.params.sponsorName;
         }
-    };
-
-    return HostedThrasherMulti;
-
+    }
 });

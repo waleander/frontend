@@ -15,38 +15,32 @@ define([
 ) {
     var hostedThrasherTemplate;
 
-    var HostedThrasher = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params = params;
-    };
+    return HostedThrasher;
 
-    HostedThrasher.prototype.create = function () {
+    function HostedThrasher(adSlot, params) {
         hostedThrasherTemplate = hostedThrasherTemplate || template(hostedThrasherStr);
 
         return fastdom.write(function () {
-            var title = this.params.header2 || 'unknown';
+            var title = params.header2 || 'unknown';
             var sponsor = 'Renault';
-            var videoLength = this.params.videoLength;
+            var videoLength = params.videoLength;
             if(videoLength){
                 var seconds = videoLength % 60;
                 var minutes = (videoLength - seconds) / 60;
-                this.params.timeString = minutes + (seconds < 10 ? ':0' : ':') + seconds;
+                params.timeString = minutes + (seconds < 10 ? ':0' : ':') + seconds;
             }
 
-            this.params.linkTracking = 'Labs hosted container' +
+            params.linkTracking = 'Labs hosted container' +
                 ' | ' + config.page.edition +
                 ' | ' + config.page.section +
                 ' | ' + title +
                 ' | ' + sponsor;
-            this.$adSlot.append(hostedThrasherTemplate({ data: this.params }));
-            if (this.params.trackingPixel) {
-                addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            adSlot.insertAdjacentHTML('beforeend', hostedThrasherTemplate({ data: params }));
+            if (params.trackingPixel) {
+                addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
             }
-        }, this).then(hostedVideo.init).then(function () {
+        }).then(hostedVideo.init).then(function () {
             return true;
         });
-    };
-
-    return HostedThrasher;
-
+    }
 });
