@@ -27,180 +27,168 @@ define([
     merge,
     addTrackingPixel
 ) {
+    var hasScrollEnabled = !detect.isIOS() && !detect.isAndroid();
+
+    return ExpandableV3;
 
     /**
      * https://www.google.com/dfp/59666047#delivery/CreateCreativeTemplate/creativeTemplateId=10028247
      */
-    var ExpandableV3 = function ($adSlot, params) {
-        this.$adSlot      = $adSlot;
-        this.params       = params;
-        this.isClosed     = true;
-        this.initialExpandCounter = false;
+    function ExpandableV3(adSlot, params) {
+        var $ad, $button;
+
+        var isClosed     = true;
+        var initialExpandCounter = false;
+        var closedHeight, openedHeight;
 
         if (detect.isBreakpoint({min: 'tablet'})) {
-            this.closedHeight = 250;
-            this.openedHeight = 500;
+            closedHeight = 250;
+            openedHeight = 500;
         } else {
-            this.closedHeight = 150;
-            this.openedHeight = 300;
+            closedHeight = 150;
+            openedHeight = 300;
         }
-
-        bindAll(this, 'updateBgPosition', 'listener');
-    };
-
-    /**
-     * TODO: rather blunt instrument this, due to the fact *most* mobile devices don't have a fixed
-     * background-attachment - need to make this more granular
-     */
-    ExpandableV3.hasScrollEnabled = !detect.isIOS() && !detect.isAndroid();
-
-    ExpandableV3.prototype.updateBgPosition = function () {
-        var scrollY = window.pageYOffset,
-            viewportHeight = bonzo.viewport().height,
-            adSlotTop = this.$adSlot.offset().top,
-            that = this,
-
-            adHeight = (this.isClosed) ?
-                this.closedHeight : this.openedHeight,
-            inViewB = ((scrollY + viewportHeight) > adSlotTop),
-            inViewT = ((scrollY - (adHeight * 2)) < adSlotTop + 20),
-            topCusp = (inViewT &&
-                ((scrollY + (viewportHeight * 0.4) - adHeight) > adSlotTop)) ?
-                'true' : 'false',
-            bottomCusp = (inViewB &&
-                (scrollY + (viewportHeight * 0.5)) < adSlotTop) ?
-                'true' : 'false',
-            bottomScroll = (bottomCusp === 'true') ?
-                50 - ((scrollY + (viewportHeight * 0.5) - adSlotTop) * -0.2) : 50,
-            topScroll = (topCusp === 'true') ?
-                ((scrollY + (viewportHeight * 0.4) - adSlotTop - adHeight) * 0.2) : 0;
-
-        switch (this.params.backgroundImagePType) {
-            case 'split':
-                this.scrollAmount = bottomScroll + topScroll + '%';
-                fastdom.write(function () {
-                    $('.ad-exp--expand-scrolling-bg', that.$adSlot).css({
-                        'background-repeat': 'no-repeat',
-                        'background-position': '50%' + that.scrollAmount
-                    });
-                });
-                break;
-            case 'fixed':
-                this.scrollAmount = (scrollY - adSlotTop) + 'px';
-                fastdom.write(function () {
-                    $('.ad-exp--expand-scrolling-bg', that.$adSlot).css('background-position', '50%' + that.scrollAmount);
-                });
-                break;
-            case 'fixed matching fluid250':
-                fastdom.write(function () {
-                    $('.ad-exp--expand-scrolling-bg', that.$adSlot).addClass('ad-exp--expand-scrolling-bg-fixed');
-                });
-                break;
-            case 'parallax':
-                this.scrollAmount = Math.ceil((scrollY - adSlotTop) * 0.3 * -1) + 20;
-                this.scrollAmountP = this.scrollAmount + '%';
-                fastdom.write(function () {
-                    $('.ad-exp--expand-scrolling-bg', that.$adSlot).addClass('ad-exp--expand-scrolling-bg-parallax');
-                    $('.ad-exp--expand-scrolling-bg', that.$adSlot).css('background-position', '50%' + that.scrollAmountP);
-                });
-                break;
-        }
-    };
-
-    ExpandableV3.prototype.listener = function () {
-        var that = this;
-        if (!this.initialExpandCounter && (window.pageYOffset + bonzo.viewport().height) > that.$adSlot.offset().top + this.openedHeight) {
-            var itemId = $('.ad-slot__content', that.$adSlot).attr('id'),
-                itemIdArray = itemId.split('/');
-
-            if (!storage.local.get('gu.commercial.expandable.' + itemIdArray[1])) {
-                // expires in 1 week
-                var week = 1000 * 60 * 60 * 24 * 7;
-                fastdom.write(function () {
-                    storage.local.set('gu.commercial.expandable.' + itemIdArray[1], true, { expires: Date.now() + week });
-                    that.$button.addClass('button-spin');
-                    $('.ad-exp__open-chevron').removeClass('chevron-up').addClass('chevron-down');
-                    that.$ad.css('height', that.openedHeight);
-                    that.isClosed = false;
-                    that.initialExpandCounter = true;
-                });
-            } else if (this.isClosed) {
-                fastdom.write(function () {
-                    $('.ad-exp__open-chevron').addClass('chevron-up');
-                });
-            }
-            return true;
-        }
-    };
-
-    ExpandableV3.prototype.create = function () {
-        var videoHeight = this.closedHeight - 24,
+        var videoHeight = closedHeight - 24,
             videoWidth = (videoHeight * 16) / 9,
-            leftMargin = (this.params.videoPositionH === 'center' ?
+            leftMargin = (params.videoPositionH === 'center' ?
                 'margin-left: ' + videoWidth / -2 + 'px; ' : ''
             ),
-            leftPosition = (this.params.videoPositionH === 'left' ?
-                'left: ' + this.params.videoHorizSpace + 'px; ' : ''
+            leftPosition = (params.videoPositionH === 'left' ?
+                'left: ' + params.videoHorizSpace + 'px; ' : ''
             ),
-            rightPosition = (this.params.videoPositionH === 'right' ?
-                'right: ' + this.params.videoHorizSpace + 'px; ' : ''
+            rightPosition = (params.videoPositionH === 'right' ?
+                'right: ' + params.videoHorizSpace + 'px; ' : ''
             ),
             videoDesktop = {
-                video: (this.params.videoURL !== '') ?
-                    '<iframe id="myYTPlayer" width="' + videoWidth + '" height="' + videoHeight + '" src="' + this.params.videoURL + '?rel=0&amp;controls=0&amp;showinfo=0&amp;title=0&amp;byline=0&amp;portrait=0" frameborder="0" class="expandable_video expandable_video--horiz-pos-' + this.params.videoPositionH + '" style="' + leftMargin + leftPosition + rightPosition + '"></iframe>' : ''
+                video: (params.videoURL !== '') ?
+                    '<iframe id="myYTPlayer" width="' + videoWidth + '" height="' + videoHeight + '" src="' + params.videoURL + '?rel=0&amp;controls=0&amp;showinfo=0&amp;title=0&amp;byline=0&amp;portrait=0" frameborder="0" class="expandable_video expandable_video--horiz-pos-' + params.videoPositionH + '" style="' + leftMargin + leftPosition + rightPosition + '"></iframe>' : ''
             },
             showmoreArrow = {
-                showArrow: (this.params.showMoreType === 'arrow-only' || this.params.showMoreType === 'plus-and-arrow') ?
+                showArrow: (params.showMoreType === 'arrow-only' || params.showMoreType === 'plus-and-arrow') ?
                     '<button class="ad-exp__open-chevron ad-exp__open">' + svgs('arrowdownicon') + '</button>' : ''
             },
             showmorePlus = {
-                showPlus: (this.params.showMoreType === 'plus-only' || this.params.showMoreType === 'plus-and-arrow') ?
+                showPlus: (params.showMoreType === 'plus-only' || params.showMoreType === 'plus-and-arrow') ?
                     '<button class="ad-exp__close-button ad-exp__open">' + svgs('closeCentralIcon') + '</button>' : ''
             },
             scrollingbg = {
-                scrollbg: (this.params.backgroundImagePType !== '' || this.params.backgroundImagePType !== 'none') ?
-                    '<div class="ad-exp--expand-scrolling-bg" style="background-image: url(' + this.params.backgroundImageP + '); background-position: ' + this.params.backgroundImagePPosition + ' 50%; background-repeat: ' + this.params.backgroundImagePRepeat + ';"></div>' : ''
+                scrollbg: (params.backgroundImagePType !== '' || params.backgroundImagePType !== 'none') ?
+                    '<div class="ad-exp--expand-scrolling-bg" style="background-image: url(' + params.backgroundImageP + '); background-position: ' + params.backgroundImagePPosition + ' 50%; background-repeat: ' + params.backgroundImagePRepeat + ';"></div>' : ''
             },
-            $expandableV3 = $.create(template(expandableV3Tpl, { data: merge(this.params, showmoreArrow, showmorePlus, videoDesktop, scrollingbg) }));
+            $expandableV3 = $.create(template(expandableV3Tpl, { data: merge(params, showmoreArrow, showmorePlus, videoDesktop, scrollingbg) }));
 
-        mediator.on('window:throttledScroll', this.listener);
+        mediator.on('window:throttledScroll', listener);
 
-        bean.on(this.$adSlot[0], 'click', '.ad-exp__open', function () {
+        bean.on(adSlot, 'click', '.ad-exp__open', function () {
             fastdom.write(function () {
                 $('.ad-exp__close-button').toggleClass('button-spin');
                 $('.ad-exp__open-chevron').removeClass('chevron-up').toggleClass('chevron-down');
-                this.$ad.css('height', this.isClosed ? this.openedHeight : this.closedHeight);
-                this.isClosed = !this.isClosed;
-                this.initialExpandCounter = true;
-            }.bind(this));
-        }.bind(this));
+                $ad.css('height', isClosed ? openedHeight : closedHeight);
+                isClosed = !isClosed;
+                initialExpandCounter = true;
+            });
+        });
 
-        if (ExpandableV3.hasScrollEnabled) {
+        if (hasScrollEnabled) {
             // update bg position
-            this.updateBgPosition();
+            updateBgPosition();
 
-            mediator.on('window:throttledScroll', this.updateBgPosition);
+            mediator.on('window:throttledScroll', updateBgPosition);
             // to be safe, also update on window resize
-            mediator.on('window:resize', this.updateBgPosition);
+            mediator.on('window:resize', updateBgPosition);
         }
-
 
         return fastdom.write(function () {
 
-            this.$ad     = $('.ad-exp--expand', $expandableV3).css('height', this.closedHeight);
-            this.$button = $('.ad-exp__open', $expandableV3);
+            $ad     = $('.ad-exp--expand', $expandableV3).css('height', closedHeight);
+            $button = $('.ad-exp__open', $expandableV3);
 
-            $('.ad-exp-collapse__slide', $expandableV3).css('height', this.closedHeight);
+            $('.ad-exp-collapse__slide', $expandableV3).css('height', closedHeight);
 
-            if (this.params.trackingPixel) {
-                addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            if (params.trackingPixel) {
+                addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
             }
 
-            $expandableV3.appendTo(this.$adSlot);
+            $expandableV3.appendTo(adSlot);
             return true;
-        }, this);
-    };
+        });
 
-    return ExpandableV3;
+        function updateBgPosition() {
+            var scrollAmount, scrollAmountP;
+            var scrollY = window.pageYOffset,
+                viewportHeight = bonzo.viewport().height,
+                adSlotTop = scrollY + adSlot.getBoundingClientRect().top,
 
+                adHeight = (isClosed) ?
+                    closedHeight : openedHeight,
+                inViewB = ((scrollY + viewportHeight) > adSlotTop),
+                inViewT = ((scrollY - (adHeight * 2)) < adSlotTop + 20),
+                topCusp = (inViewT &&
+                    ((scrollY + (viewportHeight * 0.4) - adHeight) > adSlotTop)) ?
+                    'true' : 'false',
+                bottomCusp = (inViewB &&
+                    (scrollY + (viewportHeight * 0.5)) < adSlotTop) ?
+                    'true' : 'false',
+                bottomScroll = (bottomCusp === 'true') ?
+                    50 - ((scrollY + (viewportHeight * 0.5) - adSlotTop) * -0.2) : 50,
+                topScroll = (topCusp === 'true') ?
+                    ((scrollY + (viewportHeight * 0.4) - adSlotTop - adHeight) * 0.2) : 0;
+
+            switch (params.backgroundImagePType) {
+                case 'split':
+                    scrollAmount = bottomScroll + topScroll + '%';
+                    fastdom.write(function () {
+                        $('.ad-exp--expand-scrolling-bg', adSlot).css({
+                            'background-repeat': 'no-repeat',
+                            'background-position': '50%' + scrollAmount
+                        });
+                    });
+                    break;
+                case 'fixed':
+                    scrollAmount = (scrollY - adSlotTop) + 'px';
+                    fastdom.write(function () {
+                        $('.ad-exp--expand-scrolling-bg', adSlot).css('background-position', '50%' + scrollAmount);
+                    });
+                    break;
+                case 'fixed matching fluid250':
+                    fastdom.write(function () {
+                        $('.ad-exp--expand-scrolling-bg', adSlot).addClass('ad-exp--expand-scrolling-bg-fixed');
+                    });
+                    break;
+                case 'parallax':
+                    scrollAmount = Math.ceil((scrollY - adSlotTop) * 0.3 * -1) + 20;
+                    scrollAmountP = scrollAmount + '%';
+                    fastdom.write(function () {
+                        $('.ad-exp--expand-scrolling-bg', adSlot).addClass('ad-exp--expand-scrolling-bg-parallax');
+                        $('.ad-exp--expand-scrolling-bg', adSlot).css('background-position', '50%' + scrollAmountP);
+                    });
+                    break;
+            }
+        }
+
+        function listener() {
+            if (!initialExpandCounter && (bonzo.viewport().height) > adSlot.getBoundingClientRect().top + openedHeight) {
+                var itemId = $('.ad-slot__content', adSlot).attr('id'),
+                    itemIdArray = itemId.split('/');
+
+                if (!storage.local.get('gu.commercial.expandable.' + itemIdArray[1])) {
+                    // expires in 1 week
+                    var week = 1000 * 60 * 60 * 24 * 7;
+                    fastdom.write(function () {
+                        storage.local.set('gu.commercial.expandable.' + itemIdArray[1], true, { expires: Date.now() + week });
+                        $button.addClass('button-spin');
+                        $('.ad-exp__open-chevron').removeClass('chevron-up').addClass('chevron-down');
+                        $ad.css('height', openedHeight);
+                        isClosed = false;
+                        initialExpandCounter = true;
+                    });
+                } else if (isClosed) {
+                    fastdom.write(function () {
+                        $('.ad-exp__open-chevron').addClass('chevron-up');
+                    });
+                }
+                return true;
+            }
+        }
+    }
 });
