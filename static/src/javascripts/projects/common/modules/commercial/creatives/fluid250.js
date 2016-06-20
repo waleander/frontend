@@ -33,12 +33,11 @@ define([
     var iframeVideoTpl;
     var scrollBgTpl;
 
-    var Fluid250 = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params = params;
-    };
+    return Fluid250;
 
-    Fluid250.prototype.create = function () {
+    function Fluid250(adSlot, params) {
+        var scrollingBg, layer2;
+
         if (!fluid250Tpl) {
             fluid250Tpl = template(fluid250Str);
             iframeVideoTpl = template(iframeVideoStr);
@@ -46,76 +45,74 @@ define([
         }
 
         var position = {
-            position: this.params.videoPositionH === 'left' || this.params.videoPositionH === 'right' ?
-                this.params.videoPositionH + ':' + this.params.videoHorizSpace + 'px;' :
+            position: params.videoPositionH === 'left' || params.videoPositionH === 'right' ?
+                params.videoPositionH + ':' + params.videoHorizSpace + 'px;' :
                 ''
         };
 
         var templateOptions = {
-            creativeHeight: this.params.creativeHeight || '',
-            isFixedHeight: this.params.creativeHeight === 'fixed',
-            showLabel: this.params.showAdLabel !== 'hide',
-            video: this.params.videoURL ? iframeVideoTpl(merge(this.params, position)) : '',
-            hasContainer: 'layerTwoAnimation' in this.params,
-            layerTwoBGPosition: this.params.layerTwoBGPosition && (
-                !this.params.layerTwoAnimation ||
-                this.params.layerTwoAnimation === 'disabled' ||
-                (!isEnhanced && this.params.layerTwoAnimation === 'enabled')
+            creativeHeight: params.creativeHeight || '',
+            isFixedHeight: params.creativeHeight === 'fixed',
+            showLabel: params.showAdLabel !== 'hide',
+            video: params.videoURL ? iframeVideoTpl(merge(params, position)) : '',
+            hasContainer: 'layerTwoAnimation' in params,
+            layerTwoBGPosition: params.layerTwoBGPosition && (
+                !params.layerTwoAnimation ||
+                params.layerTwoAnimation === 'disabled' ||
+                (!isEnhanced && params.layerTwoAnimation === 'enabled')
             ) ?
-                this.params.layerTwoBGPosition :
+                params.layerTwoBGPosition :
                 '0% 0%',
-            scrollbg: this.params.backgroundImagePType && this.params.backgroundImagePType !== 'none' ?
-                scrollBgTpl(this.params) :
+            scrollbg: params.backgroundImagePType && params.backgroundImagePType !== 'none' ?
+                scrollBgTpl(params) :
                 false
         };
 
-        this.$adSlot.append(fluid250Tpl({ data: merge(this.params, templateOptions) }));
+        adSlot.insertAdjacentHTML('beforeend', fluid250Tpl({ data: merge(params, templateOptions) }));
         if (templateOptions.scrollbg) {
-            this.scrollingBg = $('.ad-scrolling-bg', this.$adSlot[0]);
-            this.layer2 = $('.hide-until-tablet .fluid250_layer2', this.$adSlot[0]);
+            scrollingBg = $('.ad-scrolling-bg', adSlot);
+            layer2 = $('.hide-until-tablet .fluid250_layer2', adSlot);
 
             if (hasScrollEnabled) {
                 // update bg position
-                fastdom.read(this.updateBgPosition, this);
-                mediator.on('window:throttledScroll', this.updateBgPosition.bind(this));
+                fastdom.read(updateBgPosition);
+                mediator.on('window:throttledScroll', updateBgPosition);
                 // to be safe, also update on window resize
-                mediator.on('window:resize', this.updateBgPosition.bind(this));
+                mediator.on('window:resize', updateBgPosition);
             }
         }
 
-        if (this.params.trackingPixel) {
-            addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+        if (params.trackingPixel) {
+            addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
         }
 
         return Promise.resolve(true);
-    };
 
-    Fluid250.prototype.updateBgPosition = function () {
-        if (this.params.backgroundImagePType === 'parallax') {
-            var scrollAmount = Math.ceil((window.pageYOffset - this.$adSlot.offset().top) * 0.3 * -1) + 20;
-            fastdom.write(function () {
-                bonzo(this.scrollingBg)
-                    .addClass('ad-scrolling-bg-parallax')
-                    .css('background-position', '50% ' + scrollAmount + '%');
-            }, this);
+
+        function updateBgPosition() {
+            if (params.backgroundImagePType === 'parallax') {
+                var scrollAmount = Math.ceil(adSlot.getBoundingClientRect().top * 0.3 * -1) + 20;
+                fastdom.write(function () {
+                    bonzo(scrollingBg)
+                        .addClass('ad-scrolling-bg-parallax')
+                        .css('background-position', '50% ' + scrollAmount + '%');
+                });
+            }
+
+            layer2Animation();
         }
 
-        this.layer2Animation();
-    };
-
-    Fluid250.prototype.layer2Animation = function () {
-        var inViewB;
-        if (this.params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE9OrLess) {
-            inViewB = (window.pageYOffset + bonzo.viewport().height) > this.$adSlot.offset().top;
-            fastdom.write(function () {
-                bonzo(this.layer2).addClass('ad-scrolling-text-hide' + (this.params.layerTwoAnimationPosition ? '-' + this.params.layerTwoAnimationPosition : ''));
-                if (inViewB) {
-                    bonzo(this.layer2).addClass('ad-scrolling-text-animate' + (this.params.layerTwoAnimationPosition ? '-' + this.params.layerTwoAnimationPosition : ''));
-                }
-            }, this);
+        function layer2Animation() {
+            var inViewB;
+            if (params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE9OrLess) {
+                inViewB = bonzo.viewport().height > adSlot.getBoundingClientRect().top;
+                fastdom.write(function () {
+                    bonzo(layer2).addClass('ad-scrolling-text-hide' + (params.layerTwoAnimationPosition ? '-' + params.layerTwoAnimationPosition : ''));
+                    if (inViewB) {
+                        bonzo(layer2).addClass('ad-scrolling-text-animate' + (params.layerTwoAnimationPosition ? '-' + params.layerTwoAnimationPosition : ''));
+                    }
+                });
+            }
         }
-    };
-
-    return Fluid250;
-
+    }
 });

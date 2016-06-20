@@ -1,40 +1,23 @@
 define([
-    'bean',
-    'bonzo',
     'Promise',
-    'common/utils/$',
-    'common/utils/mediator',
-    'common/utils/storage',
     'common/utils/template',
     'text!common/views/commercial/creatives/fluid250GoogleAndroid.html',
     'common/modules/commercial/creatives/add-tracking-pixel'
 ], function (
-    bean,
-    bonzo,
     Promise,
-    $,
-    mediator,
-    storage,
     template,
     fluid250GoogleAndroidTpl,
     addTrackingPixel
 ) {
-    var Fluid250GoogleAndroid = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params = params;
-    };
+    return Fluid250GoogleAndroid;
 
-    Fluid250GoogleAndroid.prototype.create = function () {
-
-        $.create(template(fluid250GoogleAndroidTpl, this.params)).appendTo(this.$adSlot);
+    function Fluid250GoogleAndroid(adSlot, params) {
+        adSlot.insertAdjacentHTML('beforeend', template(fluid250GoogleAndroidTpl, params));
 
         if (this.params.trackingPixel) {
-            addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
         }
 
         return Promise.resolve(true);
-    };
-
-    return Fluid250GoogleAndroid;
-
+    }
 });
