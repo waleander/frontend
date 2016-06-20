@@ -33,13 +33,13 @@ define([
 
     // This is a hasty clone of fluid250.js
 
-    var FabricV1 = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params = params;
-    };
+    return FabricV1;
 
-    FabricV1.prototype.create = function () {
-        this.$adSlot.addClass('ad-slot__fabric-v1 content__mobile-full-width');
+    function FabricV1(adSlot, params) {
+        var scrollingBg, layer2, scrollType;
+
+        adSlot.classList.add('ad-slot__fabric-v1');
+        adSlot.classList.add('content__mobile-full-width');
 
         if (!fabricV1Tpl) {
             fabricV1Tpl = template(fabricV1Html);
@@ -48,88 +48,86 @@ define([
         }
 
         var videoPosition = {
-            position: this.params.videoPositionH === 'left' || this.params.videoPositionH === 'right' ?
-            this.params.videoPositionH + ':' + this.params.videoHorizSpace + 'px;' : ''
+            position: params.videoPositionH === 'left' || params.videoPositionH === 'right' ?
+            params.videoPositionH + ':' + params.videoHorizSpace + 'px;' : ''
         };
 
         var templateOptions = {
-            showLabel: this.params.showAdLabel !== 'hide',
-            video: this.params.videoURL ? iframeVideoTpl(merge(this.params, videoPosition)) : '',
-            hasContainer: 'layerTwoAnimation' in this.params,
-            layerTwoBGPosition: this.params.layerTwoBGPosition && (
-                !this.params.layerTwoAnimation ||
-                this.params.layerTwoAnimation === 'disabled' ||
-                (!isEnhanced && this.params.layerTwoAnimation === 'enabled')
+            showLabel: params.showAdLabel !== 'hide',
+            video: params.videoURL ? iframeVideoTpl(merge(params, videoPosition)) : '',
+            hasContainer: 'layerTwoAnimation' in params,
+            layerTwoBGPosition: params.layerTwoBGPosition && (
+                !params.layerTwoAnimation ||
+                params.layerTwoAnimation === 'disabled' ||
+                (!isEnhanced && params.layerTwoAnimation === 'enabled')
             ) ?
-                this.params.layerTwoBGPosition :
+                params.layerTwoBGPosition :
                 '0% 0%',
-            scrollbg: this.params.backgroundImagePType && this.params.backgroundImagePType !== 'none' ?
-                scrollBgTpl(this.params) :
+            scrollbg: params.backgroundImagePType && params.backgroundImagePType !== 'none' ?
+                scrollBgTpl(params) :
                 false
         };
 
         if (templateOptions.scrollbg) {
             // update bg position
-            fastdom.read(this.updateBgPosition, this);
-            mediator.on('window:throttledScroll', this.updateBgPosition.bind(this));
+            fastdom.read(updateBgPosition);
+            mediator.on('window:throttledScroll', updateBgPosition);
             // to be safe, also update on window resize
-            mediator.on('window:resize', this.updateBgPosition.bind(this));
+            mediator.on('window:resize', updateBgPosition);
         }
 
-        if (this.params.trackingPixel) {
-            addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+        if (params.trackingPixel) {
+            addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
         }
 
         return fastdom.write(function () {
-            this.$adSlot.append(fabricV1Tpl({data: merge(this.params, templateOptions)}));
-            this.scrollingBg = $('.ad-scrolling-bg', this.$adSlot[0]);
-            this.layer2 = $('.hide-until-tablet .fabric-v1_layer2', this.$adSlot[0]);
-            this.scrollType = this.params.backgroundImagePType;
+            adSlot.insertAdjacentHTML('beforeend', fabricV1Tpl({data: merge(params, templateOptions)}));
+            scrollingBg = $('.ad-scrolling-bg', adSlot);
+            layer2 = $('.hide-until-tablet .fabric-v1_layer2', adSlot);
+            scrollType = params.backgroundImagePType;
 
             // layer two animations must not have a background position, otherwise the background will
             // be visible before the animation has been initiated.
-            if (this.params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE10OrLess) {
-                bonzo(this.layer2).css('background-position', '');
+            if (params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE10OrLess) {
+                bonzo(layer2).css('background-position', '');
             }
 
-            if (this.scrollType === 'fixed' && hasBackgroundFixedSupport) {
-                bonzo(this.scrollingBg).css('background-attachment', 'fixed');
+            if (scrollType === 'fixed' && hasBackgroundFixedSupport) {
+                bonzo(scrollingBg).css('background-attachment', 'fixed');
             }
 
             return true;
-        }, this);
-    };
+        });
 
-    FabricV1.prototype.updateBgPosition = function () {
-        if (this.scrollType === 'parallax') {
-            var scrollAmount = Math.ceil((window.pageYOffset - this.$adSlot.offset().top) * 0.3 * -1) + 20;
-            fastdom.write(function () {
-                bonzo(this.scrollingBg)
-                    .addClass('ad-scrolling-bg-parallax')
-                    .css('background-position', '50% ' + scrollAmount + '%');
-            }, this);
-        } else if (this.scrollType === 'fixed' && !hasBackgroundFixedSupport) {
-            var adRect = this.$adSlot[0].getBoundingClientRect();
-            var vPos = (window.innerHeight - adRect.bottom + adRect.height / 2) / window.innerHeight * 100;
-            fastdom.write(function () {
-                bonzo(this.scrollingBg).css('background-position', '50% ' + vPos + '%');
-            }, this);
+        function updateBgPosition() {
+            if (scrollType === 'parallax') {
+                var scrollAmount = Math.ceil(adSlot.getBoundingClientRect().top * 0.3 * -1) + 20;
+                fastdom.write(function () {
+                    bonzo(scrollingBg)
+                        .addClass('ad-scrolling-bg-parallax')
+                        .css('background-position', '50% ' + scrollAmount + '%');
+                });
+            } else if (scrollType === 'fixed' && !hasBackgroundFixedSupport) {
+                var adRect = adSlot.getBoundingClientRect();
+                var vPos = (window.innerHeight - adRect.bottom + adRect.height / 2) / window.innerHeight * 100;
+                fastdom.write(function () {
+                    bonzo(scrollingBg).css('background-position', '50% ' + vPos + '%');
+                });
+            }
+            layer2Animation();
         }
-        this.layer2Animation();
-    };
 
-    FabricV1.prototype.layer2Animation = function () {
-        var inViewB;
-        if (this.params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE10OrLess) {
-            inViewB = (window.pageYOffset + bonzo.viewport().height) > this.$adSlot.offset().top;
-            fastdom.write(function () {
-                bonzo(this.layer2).addClass('ad-scrolling-text-hide' + (this.params.layerTwoAnimationPosition ? '-' + this.params.layerTwoAnimationPosition : ''));
-                if (inViewB) {
-                    bonzo(this.layer2).addClass('ad-scrolling-text-animate' + (this.params.layerTwoAnimationPosition ? '-' + this.params.layerTwoAnimationPosition : ''));
-                }
-            }, this);
+        function layer2Animation() {
+            var inViewB;
+            if (params.layerTwoAnimation === 'enabled' && isEnhanced && !isIE10OrLess) {
+                inViewB = bonzo.viewport().height > adSlot.getBoundingClientRect().top;
+                fastdom.write(function () {
+                    bonzo(layer2).addClass('ad-scrolling-text-hide' + (params.layerTwoAnimationPosition ? '-' + params.layerTwoAnimationPosition : ''));
+                    if (inViewB) {
+                        bonzo(layer2).addClass('ad-scrolling-text-animate' + (params.layerTwoAnimationPosition ? '-' + params.layerTwoAnimationPosition : ''));
+                    }
+                });
+            }
         }
-    };
-
-    return FabricV1;
+    }
 });
