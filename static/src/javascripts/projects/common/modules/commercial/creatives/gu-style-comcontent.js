@@ -25,47 +25,43 @@ define([
     merge,
     addTrackingPixel
 ) {
+    return GustyleComcontent;
 
-    var GustyleComcontent = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params  = params;
-    };
-
-    GustyleComcontent.prototype.create = function () {
+    function GustyleComcontent(adSlot, params) {
         var externalLinkIcon = svgs('externalLink', ['gu-external-icon']),
             templateOptions = {
-                articleContentColor: 'gu-display__content-color--' + this.params.articleContentColor,
-                articleContentPosition: 'gu-display__content-position--' + this.params.articleContentPosition,
-                articleHeaderFontSize: 'gu-display__content-size--' + this.params.articleHeaderFontSize,
-                articleTextFontSize: 'gu-display__content-size--' + this.params.articleTextFontSize,
-                brandLogoPosition: 'gu-display__logo-pos--' + this.params.brandLogoPosition,
+                articleContentColor: 'gu-display__content-color--' + params.articleContentColor,
+                articleContentPosition: 'gu-display__content-position--' + params.articleContentPosition,
+                articleHeaderFontSize: 'gu-display__content-size--' + params.articleHeaderFontSize,
+                articleTextFontSize: 'gu-display__content-size--' + params.articleTextFontSize,
+                brandLogoPosition: 'gu-display__logo-pos--' + params.brandLogoPosition,
                 externalLinkIcon: externalLinkIcon,
-                isHostedBottom: this.params.adType === 'gu-style-hosted-bottom'
+                isHostedBottom: params.adType === 'gu-style-hosted-bottom'
             };
-        var templateToLoad = this.params.adType === 'gu-style' ? gustyleComcontentTpl : gustyleHostedTpl;
+        var templateToLoad = params.adType === 'gu-style' ? gustyleComcontentTpl : gustyleHostedTpl;
 
-        var title = this.params.articleHeaderText || 'unknown';
+        var title = params.articleHeaderText || 'unknown';
         var sponsor = 'Renault';
-        this.params.linkTracking = 'Labs hosted native traffic card' +
+        params.linkTracking = 'Labs hosted native traffic card' +
             ' | ' + config.page.edition +
             ' | ' + config.page.section +
             ' | ' + title +
             ' | ' + sponsor;
 
-        var markup = template(templateToLoad, { data: merge(this.params, templateOptions) });
-        var gustyle = new GuStyle(this.$adSlot, this.params);
+        var markup = template(templateToLoad, { data: merge(params, templateOptions) });
+        var gustyle = new GuStyle(adSlot, params);
 
         return fastdom.write(function () {
-            this.$adSlot[0].insertAdjacentHTML('beforeend', markup);
+            adSlot.insertAdjacentHTML('beforeend', markup);
 
-            if (this.params.trackingPixel) {
-                addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            if (params.trackingPixel) {
+                addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
             }
-        }, this).then(gustyle.addLabel.bind(gustyle)).then(function () {
+        }).then(function () {
+            return gustyle.addLabel();
+        }).then(function () {
             return true;
         });
-    };
-
-    return GustyleComcontent;
+    }
 
 });

@@ -17,8 +17,8 @@ define([
     labelTpl,
     merge
 ) {
-    var Gustyle = function ($slot, params) {
-        this.$slot = $slot;
+    var Gustyle = function (slot, params) {
+        this.slot = slot;
         this.params = params;
         this.isContentPage = !!config.page.isContent;
     };
@@ -32,16 +32,16 @@ define([
                 infoLinkText: 'Learn more about how advertising supports the Guardian.',
                 infoLinkUrl: 'https://www.theguardian.com/advertising-on-the-guardian',
                 icon: svgs('arrowicon', ['gu-comlabel__icon']),
-                dataAttr: this.$slot.attr('id')
+                dataAttr: this.slot.id
             };
 
         return fastdom.write(function () {
             var classList = 'gu-style' + ((this.isContentPage) ? ' gu-style--unboxed' : '');
 
-            this.$slot.addClass(classList);
-            this.$slot.prepend($.create(template(labelTpl, { data: merge(templateOptions) })));
+            this.slot.classList.add(classList);
+            this.slot.insertAdjacentHTML('afterbegin', template(labelTpl, { data: merge(templateOptions) }));
 
-            toggles = new Toggles(this.$slot[0]);
+            toggles = new Toggles(this.slot);
             toggles.init();
 
             return true;
