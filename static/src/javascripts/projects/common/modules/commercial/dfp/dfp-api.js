@@ -381,7 +381,7 @@ define([
             'dfp-ad--pageskin-inread',
             'dfp-ad--merchandising-high'
         ];
-        return prebidEnabled && shouldLazyLoad() && excludedadvertIds.indexOf(advert.id) > -1;
+        return prebidEnabled && shouldLazyLoad() && excludedadvertIds.indexOf(advert.id) === -1;
     }
 
     /**
@@ -404,7 +404,7 @@ define([
 
     function refresh(currentBreakpoint, previousBreakpoint) {
         // only refresh if the slot needs to
-        googletag.pubads().refresh(advertsToRefresh.filter(shouldRefresh));
+        googletag.pubads().refresh(advertsToRefresh.filter(shouldRefresh).map(function (_) { return _.slot; }));
 
         function shouldRefresh(advert) {
             // get the slot breakpoints
@@ -475,16 +475,16 @@ define([
 
     var waitForAdvert = memoize(function (id) {
         return new Promise(function (resolve, reject) {
-            var failedAttempts = 5;
+            var failedAttempts = 50;
             checkAdvert();
             function checkAdvert() {
                 var advert = getAdvertById(id);
                 if (!advert) {
                     failedAttempts -= 1;
                     if (failedAttempts === 0) {
-                        reject(new Error('Ad ' + id + ' failed to load'));
+                        reject(new Error('Ad ' + id + ' failed to load in time'));
                     }
-                    window.setTimeout(checkAdvert, 100);
+                    window.setTimeout(checkAdvert, 200);
                 } else {
                     resolve(advert);
                 }
