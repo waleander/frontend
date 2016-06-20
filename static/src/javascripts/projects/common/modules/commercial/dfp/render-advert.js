@@ -48,7 +48,7 @@ define([
      */
     sizeCallbacks[adSizes.mpu] = function (_, advert) {
         if (advert.node.classList.contains('ad-slot--right')) {
-            var mobileAdSizes = advert.sizes('data-mobile');
+            var mobileAdSizes = advert.sizes['data-mobile'];
             if (mobileAdSizes && mobileAdSizes.indexOf([300, 251]) > -1) {
                 stickyMpu(bonzo(advert.node));
             }
