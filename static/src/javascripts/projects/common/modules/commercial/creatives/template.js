@@ -21,92 +21,86 @@ define([
     svgs,
     templatePreprocessor
 ) {
+    return Template;
+
     /**
      * Create simple templated creatives
      *
      * * https://www.google.com/dfp/59666047#delivery/CreateCreativeTemplate/creativeTemplateId=10021527
      * * https://www.google.com/dfp/59666047#delivery/CreateCreativeTemplate/creativeTemplateId=10028127
      */
-    var Template = function (adSlot, params) {
-        this.adSlot = adSlot instanceof HTMLElement ? adSlot : adSlot[0];
-        this.params = params;
-
-        if (this.params.Toneclass) {
-            this.params.isSoulmates = params.Toneclass.indexOf('soulmates') !== -1;
-            this.params.isMembership = params.Toneclass.indexOf('membership') !== -1;
-            this.params.HeaderToneclass = 'commercial__header--' + this.params.Toneclass.replace('commercial--tone-', '');
+    function Template(adSlot, params) {
+        if (params.Toneclass) {
+            params.isSoulmates = params.Toneclass.indexOf('soulmates') !== -1;
+            params.isMembership = params.Toneclass.indexOf('membership') !== -1;
+            params.HeaderToneclass = 'commercial__header--' + params.Toneclass.replace('commercial--tone-', '');
         }
 
-        this.params.marque36icon = svgs('marque36icon');
-        this.params.marque54icon = svgs('marque54icon');
-        this.params.logosoulmates = svgs('logosoulmates');
-        this.params.logosoulmatesjoin = svgs('logosoulmatesjoin');
-        this.params.logomembership = svgs('logomembershipwhite');
-        this.params.logosoulmateshorizontal = svgs('logosoulmates');
-        this.params.logomasterclasseshorizontal = svgs('logomasterclasseshorizontal');
-        this.params.logomembershorizontal = svgs('logomembershiphorizontal');
-        this.params.logojobshorizontal = svgs('logojobshorizontal');
-        this.params.logobookshophorizontal = svgs('logobookshophorizontal');
-        this.params.logojobs = svgs('logojobs');
-        this.params.logomasterclasses = svgs('logomasterclasses');
-        this.params.arrowRight = svgs('arrowRight', ['i-right']);
-        this.params.logoguardian = svgs('logoguardian');
-        this.params.marque36iconCreativeMarque = svgs('marque36icon', ['creative__marque']);
-    };
+        params.marque36icon = svgs('marque36icon');
+        params.marque54icon = svgs('marque54icon');
+        params.logosoulmates = svgs('logosoulmates');
+        params.logosoulmatesjoin = svgs('logosoulmatesjoin');
+        params.logomembership = svgs('logomembershipwhite');
+        params.logosoulmateshorizontal = svgs('logosoulmates');
+        params.logomasterclasseshorizontal = svgs('logomasterclasseshorizontal');
+        params.logomembershorizontal = svgs('logomembershiphorizontal');
+        params.logojobshorizontal = svgs('logojobshorizontal');
+        params.logobookshophorizontal = svgs('logobookshophorizontal');
+        params.logojobs = svgs('logojobs');
+        params.logomasterclasses = svgs('logomasterclasses');
+        params.arrowRight = svgs('arrowRight', ['i-right']);
+        params.logoguardian = svgs('logoguardian');
+        params.marque36iconCreativeMarque = svgs('marque36icon', ['creative__marque']);
 
-    Template.prototype.create = function () {
+        if( params.creative === 'manual-single') {
+            params.type = 'single';
+            params.creative = 'manual-container';
+            params.creativeCard = 'manual-card-large';
+            params.classNames = ['legacy', 'legacy-single', params.toneClass.replace('commercial--', ''), params.toneClass.replace('commercial--tone-', '')];
+        } else if (params.creative === 'manual-multiple') {
+            // harmonise attribute names until we do this on the DFP side
+            params.toneClass = params.Toneclass;
+            params.baseUrl = params.base__url;
+            params.offerLinkText = params.offerlinktext;
+
+            params.type = 'multiple';
+            params.creative = 'manual-container';
+            params.creativeCard = 'manual-card';
+            params.classNames = ['legacy', params.toneClass.replace('commercial--', ''), params.toneClass.replace('commercial--tone-', '')];
+        } else if (params.creative === 'manual-inline' && config.switches.refactorInlineComponent) {
+            params.omnitureId = params.omniture_id;
+            params.toneClass = params.Toneclass;
+            params.baseUrl = params.base_url;
+            params.offerTitle = params.offer_title;
+            params.offerUrl = params.offer_url;
+            params.offerImage = params.offer_image;
+            params.offerText = params.offer_meta;
+
+            params.creative = 'manual-container';
+            params.creativeCard = 'manual-card';
+            params.type = 'inline';
+            params.classNames = ['legacy-inline', params.toneClass.replace('commercial--', ''), params.toneClass.replace('commercial--tone-', '')];
+        } else if (params.creative === 'logo-ad-feature') {
+            params.creative = 'logo';
+            params.type = 'ad-feature';
+        } else if (params.creative === 'logo-sponsored') {
+            params.creative = 'logo';
+            params.type = 'sponsored';
+        }
+
         return new Promise(function (resolve) {
-            if( this.params.creative === 'manual-single') {
-                this.params.type = 'single';
-                this.params.creative = 'manual-container';
-                this.params.creativeCard = 'manual-card-large';
-                this.params.classNames = ['legacy', 'legacy-single', this.params.toneClass.replace('commercial--', ''), this.params.toneClass.replace('commercial--tone-', '')];
-            } else if (this.params.creative === 'manual-multiple') {
-                // harmonise attribute names until we do this on the DFP side
-                this.params.toneClass = this.params.Toneclass;
-                this.params.baseUrl = this.params.base__url;
-                this.params.offerLinkText = this.params.offerlinktext;
-
-                this.params.type = 'multiple';
-                this.params.creative = 'manual-container';
-                this.params.creativeCard = 'manual-card';
-                this.params.classNames = ['legacy', this.params.toneClass.replace('commercial--', ''), this.params.toneClass.replace('commercial--tone-', '')];
-            } else if (this.params.creative === 'manual-inline' && config.switches.refactorInlineComponent) {
-                this.params.omnitureId = this.params.omniture_id;
-                this.params.toneClass = this.params.Toneclass;
-                this.params.baseUrl = this.params.base_url;
-                this.params.offerTitle = this.params.offer_title;
-                this.params.offerUrl = this.params.offer_url;
-                this.params.offerImage = this.params.offer_image;
-                this.params.offerText = this.params.offer_meta;
-
-                this.params.creative = 'manual-container';
-                this.params.creativeCard = 'manual-card';
-                this.params.type = 'inline';
-                this.params.classNames = ['legacy-inline', this.params.toneClass.replace('commercial--', ''), this.params.toneClass.replace('commercial--tone-', '')];
-            } else if (this.params.creative === 'logo-ad-feature') {
-                this.params.creative = 'logo';
-                this.params.type = 'ad-feature';
-            } else if (this.params.creative === 'logo-sponsored') {
-                this.params.creative = 'logo';
-                this.params.type = 'sponsored';
-            }
-
-            require(['text!common/views/commercial/creatives/' + this.params.creative + '.html'], function (creativeTpl) {
-                if (templatePreprocessor[this.params.creative]) {
-                    templatePreprocessor[this.params.creative](this);
+            require(['text!common/views/commercial/creatives/' + params.creative + '.html'], function (creativeTpl) {
+                if (templatePreprocessor[params.creative]) {
+                    templatePreprocessor[params.creative](params);
                 }
 
-                var creativeHtml = template(creativeTpl, this.params);
+                var creativeHtml = template(creativeTpl, params);
 
                 resolve(fastdom.write(function () {
-                    this.adSlot.insertAdjacentHTML('beforeend', creativeHtml);
+                    adSlot.insertAdjacentHTML('beforeend', creativeHtml);
                     return true;
-                }, this));
-            }.bind(this));
-        }.bind(this));
-    };
-
-    return Template;
-
+                }));
+            });
+        });
+    }
 });
