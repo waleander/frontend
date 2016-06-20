@@ -16,16 +16,13 @@ define([
     labelStr
 ) {
 
-    var Frame = function ($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params  = params;
-    };
+    return Frame;
 
-    Frame.prototype.create = function () {
-        this.params.externalLinkIcon = svgs('externalLink', ['gu-external-icon']);
-        this.params.target = this.params.newWindow === 'yes' ? '_blank' : '_self';
+    function Frame(adSlot, params) {
+        params.externalLinkIcon = svgs('externalLink', ['gu-external-icon']);
+        params.target = params.newWindow === 'yes' ? '_blank' : '_self';
 
-        var frameMarkup = template(frameStr, { data: this.params });
+        var frameMarkup = template(frameStr, { data: params });
         var labelMarkup = template(labelStr, { data: {
             buttonTitle: 'Ad',
             infoTitle: 'Advertising on the Guardian',
@@ -33,20 +30,18 @@ define([
             infoLinkText: 'Learn more about how advertising supports the Guardian.',
             infoLinkUrl: 'https://www.theguardian.com/advertising-on-the-guardian',
             icon: svgs('arrowicon', ['gu-comlabel__icon']),
-            dataAttr: this.$adSlot[0].id
+            dataAttr: adSlot.id
         }});
         return fastdom.write(function () {
-            this.$adSlot[0].insertAdjacentHTML('beforeend', frameMarkup);
-            this.$adSlot[0].lastElementChild.insertAdjacentHTML('afterbegin', labelMarkup);
-            this.$adSlot.addClass('ad-slot--frame');
-            if (this.params.trackingPixel) {
-                addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+            adSlot.insertAdjacentHTML('beforeend', frameMarkup);
+            adSlot.lastElementChild.insertAdjacentHTML('afterbegin', labelMarkup);
+            adSlot.classList.add('ad-slot--frame');
+            if (params.trackingPixel) {
+                addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
             }
-            new Toggles(this.$adSlot[0]).init();
+            new Toggles(adSlot).init();
             return true;
-        }, this);
-    };
-
-    return Frame;
+        });
+    }
 
 });
