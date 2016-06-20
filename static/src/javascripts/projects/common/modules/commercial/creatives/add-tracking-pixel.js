@@ -6,8 +6,8 @@ define([
     trackingPixelStr
 ) {
     var trackingPixelTpl = template(trackingPixelStr);
-    function addTrackingPixel($adSlot, url) {
-        $adSlot.before(trackingPixelTpl({ url: encodeURI(url) }));
+    function addTrackingPixel(adSlot, url) {
+        adSlot.insertAdjacentHTML('beforebegin', trackingPixelTpl({ url: encodeURI(url) }));
     }
 
     return addTrackingPixel;
