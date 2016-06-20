@@ -48,6 +48,61 @@ define([
         soulmatesGroup: soulmatesGroupUrlBuilder('soulmates/')
     };
 
+    var postLoadEvents = {
+        bestbuy: function (el) {
+            new Tabs().init(el);
+        },
+        capi: createToggle,
+        capiSingle: createToggle,
+        paidforCard: function (el) {
+            setFluid(el);
+            adjustMostPopHeight(el);
+            createToggle(el);
+        }
+    };
+
+    return CommercialComponent;
+
+    /**
+     * Loads commercial components.
+     * * https://www.google.com/dfp/59666047#delivery/CreateCreativeTemplate/creativeTemplateId=10023207
+     *
+     * @constructor
+     * @extends Component
+     * @param {Object=} adSlot
+     * @param {Object=} params
+     */
+    function CommercialComponent(adSlot, params) {
+        var type = params.type;
+        params.type = null;
+        var url = urlBuilders[type](params);
+
+        if (url) {
+            return new Promise(function (resolve) {
+                lazyload({
+                    url: url,
+                    container: adSlot,
+                    success: onSuccess,
+                    error: onError
+                });
+
+                function onSuccess() {
+                    if (postLoadEvents[type]) {
+                        postLoadEvents[type](adSlot);
+                    }
+
+                    resolve(true);
+                }
+
+                function onError() {
+                    resolve(false);
+                }
+            });
+        } else {
+            return Promise.reject(new Error('Commercial Component has no url'));
+        }
+    }
+
     function defaultUrlBuilder(url) {
         return function (params) {
             return buildComponentUrl(url, params);
@@ -149,64 +204,4 @@ define([
             return str.substring(str.lastIndexOf('/') + 1);
         }
     }
-
-    /**
-     * Loads commercial components.
-     * * https://www.google.com/dfp/59666047#delivery/CreateCreativeTemplate/creativeTemplateId=10023207
-     *
-     * @constructor
-     * @extends Component
-     * @param {Object=} adSlot
-     * @param {Object=} params
-     */
-    function CommercialComponent(adSlot, params) {
-        this.params = params || {};
-        this.type = this.params.type;
-        // remove type from params
-        this.params.type = null;
-        this.adSlot = adSlot.length ? adSlot[0] : adSlot;
-        this.url = urlBuilders[this.type](this.params);
-    }
-
-    CommercialComponent.prototype.create = function () {
-        return new Promise(function (resolve) {
-            if (this.url) {
-                lazyload({
-                    url: this.url,
-                    container: this.adSlot,
-                    success: onSuccess.bind(this),
-                    error: onError.bind(this)
-                });
-            } else {
-                resolve(false);
-            }
-
-            function onSuccess() {
-                if (this.postLoadEvents[this.type]) {
-                    this.postLoadEvents[this.type](this.adSlot);
-                }
-
-                resolve(true);
-            }
-
-            function onError() {
-                resolve(false);
-            }
-        }.bind(this));
-    };
-
-    CommercialComponent.prototype.postLoadEvents = {
-        bestbuy: function (el) {
-            new Tabs().init(el);
-        },
-        capi: createToggle,
-        capiSingle: createToggle,
-        paidforCard: function (el) {
-            setFluid(el);
-            adjustMostPopHeight(el);
-            createToggle(el);
-        }
-    };
-
-    return CommercialComponent;
 });
