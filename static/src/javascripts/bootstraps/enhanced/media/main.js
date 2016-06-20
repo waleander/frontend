@@ -465,7 +465,14 @@ define([
     function supersizeMainMedia() {
         $('.content__meta-container').addClass('content__meta-container--supersize');
         $('.media-primary').addClass('media-primary--supersize');
-        $('div').removeClass('.gs-container');
+        $('.media-primary').addClass('hosted__video.gu-media--video');
+        $('.content__labels').addClass('content__labels--supersize');
+        $('.content__headline').addClass('content__headline--supersize');
+        $('.vjs-big-play-button').addClass('.vjs-big-play-button:before--supersize');
+        // $('.vjs-big-play-button').addClass('vjs-big-play-button--supersize');
+        $('.vjs-control-bar').addClass('vjs-hidden');
+        $('.content__secondary-column--video').addClass('content__secondary-column--video--supersize');
+        // $('div').removeClass('.gs-container');
     }
 
     function init() {

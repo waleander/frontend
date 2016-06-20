@@ -1,7 +1,7 @@
 @mixin deport-left {
     @include mq(leftCol) {
         margin-left: -3 * ($left-column + $gs-gutter);
-        // margin-right: -2 * ($left-column + $gs-gutter);
+        margin-right: -2 * ($left-column + $gs-gutter);
     }
 
     @include mq(wide) {
@@ -99,7 +99,7 @@ figure.element.element--showcase {
 figure.element.element--supersize {
     @include mq(leftCol) {
         @include deport-left;
-        position: relative;
+        position: absolute;
         margin-bottom: ($gs-baseline/3)*4;
         clear: both;
     }
@@ -167,10 +167,13 @@ figure {
 
 .media-primary.media-primary--supersize {
     @include deport-left;
+    // width:100%;
+    position:relative;
+    top:-30px;
 }
 
 // Articles can have the feature tone applied, but it's not always primary tone
-.has-feature-showcase-element .media-primary.media-primary--showcase .media-primary.media-primary--supersize {
+.has-feature-showcase-element .media-primary.media-primary--showcase {
     margin-left: 0;
     margin-right: 0;
     z-index: 2; // Put the showcase element on top of the left and right layout borders
@@ -202,5 +205,8 @@ figure {
         @include mq($until: desktop) {
             padding-bottom: aspect-ratio-height(5, 3);
         }
+    }
+    .media-primary.media-primary--supersize {
+      position: absolute;
     }
 }
