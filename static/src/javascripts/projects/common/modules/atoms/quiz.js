@@ -9,7 +9,8 @@ define([
     fastdom,
     toArray
 ) {
-    return {
+
+    var modules = {
         // find a bucket message to show once you finish a quiz
         handleCompletion: function () {
             // we're only handling completion in browsers who can validate forms natively
@@ -17,18 +18,16 @@ define([
             if (HTMLFormElement.prototype.checkValidity) {
                 // quizzes can be set to only show answers at the end, in which case we do a round trip.
                 // we'll run this code only if it's an instant-reveal quiz
-                var $quizzes = $('.js-atom-quiz--instant-reveal');
-
+                var $quizzes = $('.js-atom-quiz--instant-reveal'),
+                    $numberOfQuestions = $('.js-atom__quiz_question').length;
 
                 if ($quizzes.length > 0) {
-                    //var $questions = $('.js-atom__quiz_question').length;
                     bean.on(document, 'click', toArray($quizzes), function (e) {
                         var quiz = e.currentTarget,
                             total = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
 
-                        //console.log("+++ Click : " + total + " Of: " + $questions);
-                        console.log("+++ Clicker : " + total + " Of: " );
-
+                        console.log("+++ Click : " + total + " Of: " + $numberOfQuestions);
+                        modules.recordQuizProgressUpdate(total, $numberOfQuestions)
                         if (quiz.checkValidity()) { // the form (quiz) is complete
                             console.log("+++ Click complete " + total);
                             var $bucket__message = null;
@@ -54,14 +53,14 @@ define([
                     });
                 }
                 else {
-
-                    //Here, there's no instant reveal, handle clicks and and counts
                     var $quizzes = $('.js-atom-quiz');
                     console.log("++ The Others Ones: " + $quizzes.length);
                     if ($quizzes.length > 0) {
                         bean.on(document, 'click', toArray($quizzes), function(e) {
                             var quiz = e.currentTarget,
-                            total = $(':checked + .atom-quiz__answer__item', quiz).length
+                                total = $(':checked + .atom-quiz__answer__item', quiz).length
+                            console.log("+++ Click : " + total + " Of: " + $numberOfQuestions);
+                            modules.recordQuizProgressUpdate(total, $numberOfQuestions);
                         });
                         bean.on($quizzes[0], 'click', '.js-atom-quiz--submit', function(){
                             console.log("++ Completo");
@@ -69,6 +68,27 @@ define([
                     }
                 }
             }
+        },
+
+        recordQuizProgressUpdate: function(totalQuestions, questionsAnswered) {
+            var data = {};
+            data['QuizProgressUpdate'] = {
+                questions: totalQuestions,
+                answered: questionsAnswered
+            }
+            modules.ophanRecord(data)
+       },
+
+
+        ophanRecord: function(data) {
+            require('ophan/ng', function (ophan) {
+                ophan.record(data);
+           });
         }
+    };
+
+
+    return {
+        handleCompletion: modules.handleCompletion
     };
 });
