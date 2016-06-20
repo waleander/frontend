@@ -129,6 +129,9 @@
     position: relative;
     z-index: 1; // bring-to-front fix to make it clickable
     overflow: hidden;
+    &--supersize{
+      display:none;
+    }
 }
 
 .content__labels--not-immersive {
@@ -242,6 +245,13 @@
 
     strong {
         font-weight: normal;
+    }
+    &--supersize{
+      position:absolute;
+      z-index: 200;
+      left:-32%;
+      margin-top:50%;
+      width:75%;
     }
 }
 
@@ -517,7 +527,8 @@
 .content__meta-container.content__meta-container--supersize {
     @include mq(leftCol) {
         float: left;
-        position: static;
+        position: relative;
+        top:-140px;
     }
 }
 

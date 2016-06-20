@@ -70,6 +70,9 @@
         @include mq(desktop) {
             height: auto;
         }
+        &--supersize{
+          display:none;
+        }
     }
     .content__secondary-column--audio .ad-slot {
         display: none;

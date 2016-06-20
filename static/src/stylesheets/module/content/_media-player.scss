@@ -79,19 +79,19 @@ $ima-controls-height: 70px;
     }
 }
 
-.vjs-big-play-button {
-    cursor: pointer;
-    position: absolute;
-    z-index: 1;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    border: 0;
-    padding: 0;
-    background-color: transparent;
+  .vjs-big-play-button {
+      cursor: pointer;
+      position: absolute;
+      z-index: 1;
+      top: -100px;
+      left: 0;
+      width: 10%;
+      height: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      border: 0;
+      padding: 0;
+      background-color: transparent;
 
     .vjs-has-started & {
         padding-bottom: $vjs-control-height;
@@ -443,7 +443,7 @@ $ima-controls-height: 70px;
 
 .vjs-volume-menu-button {
 
-    > .vjs-control-text {
+    .vjs-control-text {
         float: left;
         margin-right: $gs-gutter/3;
         width: $gs-gutter;
