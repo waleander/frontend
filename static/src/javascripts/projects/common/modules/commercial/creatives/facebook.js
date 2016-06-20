@@ -21,14 +21,12 @@ define([
     var facebookTpl;
     var labelTpl;
 
-    function Facebook($adSlot, params) {
-        this.$adSlot = $adSlot;
-        this.params  = params;
+    return Facebook;
+
+    function Facebook(adSlot, params) {
         facebookTpl || (facebookTpl = template(facebookStr));
         labelTpl || (labelTpl = template(labelStr));
-    }
 
-    Facebook.prototype.create = function () {
         return new Promise(function (resolve, reject) {
             window.fbAsyncInit || (window.fbAsyncInit = function() {
                 FB.Event.subscribe(
@@ -60,7 +58,7 @@ define([
                 );
             });
 
-            var markup = facebookTpl(assign({ externalLink: svgs('externalLink') }, adUnits[this.params.placement]));
+            var markup = facebookTpl(assign({ externalLink: svgs('externalLink') }, adUnits[params.placement]));
             var labelMarkup = labelTpl({ data: {
                 buttonTitle: 'Ad',
                 infoTitle: 'Advertising on the Guardian',
@@ -68,22 +66,19 @@ define([
                 infoLinkText: 'Learn more about how advertising supports the Guardian.',
                 infoLinkUrl: 'https://www.theguardian.com/advertising-on-the-guardian',
                 icon: svgs('arrowicon', ['gu-comlabel__icon']),
-                dataAttr: this.$adSlot[0].id
+                dataAttr: adSlot.id
             }});
 
             fastdom.write(function () {
-                this.$adSlot[0].insertAdjacentHTML('beforeend', markup);
-                this.$adSlot[0].lastElementChild.insertAdjacentHTML('afterbegin', labelMarkup);
-                this.$adSlot.addClass('ad-slot--facebook');
-                if (this.params.trackingPixel) {
-                    addTrackingPixel(this.$adSlot, this.params.trackingPixel + this.params.cacheBuster);
+                adSlot.insertAdjacentHTML('beforeend', markup);
+                adSlot.lastElementChild.insertAdjacentHTML('afterbegin', labelMarkup);
+                adSlot.classList.add('ad-slot--facebook');
+                if (params.trackingPixel) {
+                    addTrackingPixel(adSlot, params.trackingPixel + params.cacheBuster);
                 }
-                new Toggles(this.$adSlot[0]).init();
+                new Toggles(adSlot).init();
                 loadScript({ id: scriptId, src: scriptSrc + '&appId=' + config.page.fbAppId});
-            }, this);
-        }.bind(this));
-    };
-
-
-    return Facebook;
+            });
+        });
+    }
 });
