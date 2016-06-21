@@ -10,7 +10,6 @@ define([
     'common/views/svgs',
     'text!common/views/commercial/creatives/fabric-expanding-v1.html',
     'text!common/views/commercial/creatives/fabric-expanding-video.html',
-    'lodash/functions/bindAll',
     'lodash/objects/merge',
     'common/modules/commercial/creatives/add-tracking-pixel'
 ], function (
@@ -25,7 +24,6 @@ define([
     svgs,
     fabricExpandingV1Html,
     fabricExpandingVideoHtml,
-    bindAll,
     merge,
     addTrackingPixel
 ) {

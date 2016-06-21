@@ -7,7 +7,6 @@ define([
     'common/utils/storage',
     'common/utils/template',
     'text!common/views/commercial/creatives/expandable.html',
-    'lodash/functions/bindAll',
     'common/modules/commercial/creatives/add-tracking-pixel'
 ], function (
     bean,
@@ -18,7 +17,6 @@ define([
     storage,
     template,
     expandableTpl,
-    bindAll,
     addTrackingPixel
 ) {
 

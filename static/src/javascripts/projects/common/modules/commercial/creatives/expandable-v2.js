@@ -9,7 +9,6 @@ define([
     'common/utils/template',
     'common/views/svgs',
     'text!common/views/commercial/creatives/expandable-v2.html',
-    'lodash/functions/bindAll',
     'lodash/objects/merge',
     'common/modules/commercial/creatives/add-tracking-pixel'
 ], function (
@@ -23,7 +22,6 @@ define([
     template,
     svgs,
     expandableV2Tpl,
-    bindAll,
     merge,
     addTrackingPixel
 ) {
