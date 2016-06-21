@@ -168,8 +168,8 @@ figure {
 .media-primary.media-primary--supersize {
     @include deport-left;
     // width:100%;
-    position:relative;
-    top:-30px;
+    position: relative;
+    top: -30px;
 }
 
 // Articles can have the feature tone applied, but it's not always primary tone
