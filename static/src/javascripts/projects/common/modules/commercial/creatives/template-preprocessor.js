@@ -2,7 +2,7 @@ define([
     'common/views/svgs',
     'common/utils/config',
     'common/utils/template',
-    'lodash/objects/assign',
+    'common/utils/assign',
     'lodash/utilities/identity',
     'text!common/views/commercial/creatives/logo-header.html',
     'text!common/views/commercial/creatives/logo-link.html',
