@@ -94,7 +94,7 @@ $ima-controls-height: 70px;
       background-color: transparent;
 
       &--supersize{
-        display:none !important;
+        display: none !important;
       }
 
     .vjs-has-started & {
@@ -212,10 +212,10 @@ $ima-controls-height: 70px;
     height: $vjs-control-height;
     transition: bottom .8s;
     transition-delay: 1s;
-    display:none;
+    display: none;
 
     &--supersize{
-     display:none;
+     display: none;
     }
 
     &.vjs-hidden {
@@ -227,7 +227,7 @@ $ima-controls-height: 70px;
     position: relative;
 
     &--supersize {
-      display:none;
+      display: none;
     }
 
     .gu-media--video & {
@@ -1129,7 +1129,7 @@ $ima-controls-height: 70px;
     }
 
     .vjs-control-bar--supersize {
-        display:none;
+        display: none;
     }
 
     .vjs-big-play-button .vjs-control-text {

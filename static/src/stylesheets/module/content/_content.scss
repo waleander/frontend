@@ -130,7 +130,7 @@
     z-index: 1; // bring-to-front fix to make it clickable
     overflow: hidden;
     &--supersize{
-      display:none;
+      display: none;
     }
 }
 
@@ -249,9 +249,9 @@
     &--supersize{
       position:absolute;
       z-index: 200;
-      left:-32%;
-      margin-top:50%;
-      width:75%;
+      left: -32%;
+      margin-top: 50%;
+      width: 75%;
     }
 }
 
@@ -528,7 +528,7 @@
     @include mq(leftCol) {
         float: left;
         position: relative;
-        top:-140px;
+        top: -140px;
     }
 }
 
