@@ -352,6 +352,8 @@ define([
             }
         });
 
+        supersizeMainMedia();
+
         return player;
     }
 
@@ -449,7 +451,7 @@ define([
         $('.content__labels').addClass('content__labels--supersize');
         $('.content__headline').addClass('content__headline--supersize');
         $('.inline-video-icon').addClass('inline-video-icon--supersize');
-        $('.gu-media-wrapper--video.vjs-big-play-button').addClass('vjs-big-play-button--supersize');
+        $('.gu-media-wrapper--video .vjs-big-play-button').addClass('vjs-big-play-button--supersize');
         $('.vjs-control-bar').addClass('vjs-control-bar--supersize');
         $('.content__secondary-column--video').addClass('content__secondary-column--video--supersize');
     }
@@ -477,7 +479,6 @@ define([
         initMoreInSection();
         initOnwardContainer();
         initTests();
-        supersizeMainMedia();
     }
 
     return {
