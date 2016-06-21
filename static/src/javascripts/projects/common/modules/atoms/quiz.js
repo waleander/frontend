@@ -13,6 +13,7 @@ define([
     var modules = {
         // find a bucket message to show once you finish a quiz
         handleCompletion: function () {
+            console.log("+++ HandleCompletion");
             // we're only handling completion in browsers who can validate forms natively
             // others do a round trip to the server
             if (HTMLFormElement.prototype.checkValidity) {
@@ -22,49 +23,47 @@ define([
                     $numberOfQuestions = $('.js-atom__quiz_question').length;
 
                 if ($quizzes.length > 0) {
-                    bean.on(document, 'click', toArray($quizzes), function (e) {
-                        var quiz = e.currentTarget,
-                            total = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
+                    bean.on(document, 'click', toArray($quizzes), function(e) {
+                        if(e.target.tagName !== 'LABEL') {
+                            var quiz = e.currentTarget,
+                                total = $(':checked + .atom-quiz__answer__item', quiz).length,
+                                totalCorrect = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
 
-                        console.log("+++ Click : " + total + " Of: " + $numberOfQuestions);
-                        modules.recordQuizProgressUpdate(total, $numberOfQuestions)
-                        if (quiz.checkValidity()) { // the form (quiz) is complete
-                            console.log("+++ Click complete " + total);
-                            var $bucket__message = null;
-                            do {
-                                // try and find a .bucket__message for your total
-                                $bucket__message = $('.js-atom-quiz__bucket-message--' + total, quiz);
+                            modules.recordQuizProgressUpdate(total, $numberOfQuestions)
+                            if (quiz.checkValidity()) { // the form (quiz) is complete
+                                var $bucket__message = null;
+                                do {
+                                    // try and find a .bucket__message for your total
+                                    $bucket__message = $('.js-atom-quiz__bucket-message--' + totalCorrect, quiz);
 
-                                // if we find a message for your total show it, and exit
-                                if ($bucket__message.length > 0) {
-                                    fastdom.write(function () {
-                                        $bucket__message.css({
-                                            'display': 'block'
+                                    // if we find a message for your total show it, and exit
+                                    if ($bucket__message.length > 0) {
+                                        fastdom.write(function () {
+                                            $bucket__message.css({
+                                                'display': 'block'
+                                            });
                                         });
-                                    });
-                                    break;
-                                }
+                                        break;
+                                    }
 
-                                // if we haven't exited, there's no .bucket__message for your score, so you must be in
-                                // a bucket with a range that begins below your total score
-                                total--;
-                            } while (total >= 0); // the lowest we'll look is for 0 correct answers
+                                    // if we haven't exited, there's no .bucket__message for your score, so you must be in
+                                    // a bucket with a range that begins below your total score
+                                    totalCorrect--;
+                                } while (totalCorrect >= 0); // the lowest we'll look is for 0 correct answers
+                            }
                         }
                     });
                 }
                 else {
                     var $quizzes = $('.js-atom-quiz');
-                    console.log("++ The Others Ones: " + $quizzes.length);
                     if ($quizzes.length > 0) {
                         bean.on(document, 'click', toArray($quizzes), function(e) {
-                            var quiz = e.currentTarget,
-                                total = $(':checked + .atom-quiz__answer__item', quiz).length
-                            console.log("+++ Click : " + total + " Of: " + $numberOfQuestions);
-                            modules.recordQuizProgressUpdate(total, $numberOfQuestions);
+                            if(e.target.tagName !== 'LABEL') {  //Label and Hidden radio button cause two events per clic
+                                var quiz = e.currentTarget,
+                                    total = $(':checked + .atom-quiz__answer__item', quiz).length
+                                modules.recordQuizProgressUpdate(total, $numberOfQuestions);
+                            }
                         });
-                        bean.on($quizzes[0], 'click', '.js-atom-quiz--submit', function(){
-                            console.log("++ Completo");
-                        })
                     }
                 }
             }
