@@ -446,14 +446,12 @@ define([
     function supersizeMainMedia() {
         $('.content__meta-container').addClass('content__meta-container--supersize');
         $('.media-primary').addClass('media-primary--supersize');
-        $('.media-primary').addClass('hosted__video.gu-media--video');
         $('.content__labels').addClass('content__labels--supersize');
         $('.content__headline').addClass('content__headline--supersize');
-        $('.vjs-big-play-button').addClass('.vjs-big-play-button:before--supersize');
-        // $('.vjs-big-play-button').addClass('vjs-big-play-button--supersize');
-        $('.vjs-control-bar').addClass('vjs-hidden');
+        $('.inline-video-icon').addClass('inline-video-icon--supersize');
+        $('.gu-media-wrapper--video.vjs-big-play-button').addClass('vjs-big-play-button--supersize');
+        $('.vjs-control-bar').addClass('vjs-control-bar--supersize');
         $('.content__secondary-column--video').addClass('content__secondary-column--video--supersize');
-        // $('div').removeClass('.gs-container');
     }
 
     function init() {

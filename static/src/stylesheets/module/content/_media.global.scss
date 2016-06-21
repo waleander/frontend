@@ -96,6 +96,9 @@
 }
 .content--media--video .inline-video-icon {
     margin-right: .1em;
+    &--supersize{
+      display:none;
+    }
 }
 
 .items--audio .fc-item__title:before {
