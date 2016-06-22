@@ -79,6 +79,16 @@ $ima-controls-height: 70px;
     }
 }
 
+.supersizeDurationText{
+    z-index: 10;
+    position:absolute;
+    top: 428px;
+    left: 191px;
+    font-family: $f-serif-text;
+    color:#333;
+    text-align: left;
+}
+
 .vjs-big-play-button {
     cursor: pointer;
     position: absolute;
@@ -154,10 +164,9 @@ $ima-controls-height: 70px;
         }
 
         &--supersize{
-
           &:before {
             @include video-play-button-size($vjs-supersize-button-size);
-              content: 'Watch now | 14:33';
+              content: 'Watch now |';
               background-color: $media-default;
               text-indent: 0; //I want to show 'Watch now' text instead of the hardcoded "Play Video"
               position: absolute;
@@ -168,6 +177,7 @@ $ima-controls-height: 70px;
               width: 205px;
               height: 48px;
               border-radius: 30px;
+              padding-right: 10px;
           }
 
           &:after {
@@ -176,7 +186,7 @@ $ima-controls-height: 70px;
             position: absolute;
             top: 29px;
             font-size: 8px;
-            left: 54px;
+            left: 58px;
             border-width: 8px 8px 8px 18px;
             border-style: solid;
             border-width: 1em 0 1em 2.4em;
@@ -284,6 +294,10 @@ $ima-controls-height: 70px;
         bottom: 0;
         transition: bottom 0s;
         transition-delay: 0s;
+    }
+
+    .content__headline--supersize {
+      display: none;
     }
 
     .vjs-using-native-controls & {

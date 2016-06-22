@@ -107,6 +107,7 @@ define([
             if (!isNaN(duration)) {
                 player.duration(duration);
                 player.trigger('timeupdate'); // triggers a refresh of relevant control bar components
+                // console.log(player.duration());
             }
 
             // we have some special autoplay rules, so do not want to depend on 'default' autoplay
@@ -472,7 +473,19 @@ define([
         $('.gu-media-wrapper--video .vjs-big-play-button .vjs-control-text').addClass('vjs-control-text--supersize').removeClass('vjs-control-text');
         $('.vjs-control-bar').addClass('vjs-control-bar--supersize');
         $('.content__secondary-column--video').addClass('content__secondary-column--video--supersize');
-    }
+        $('.content__headline--supersize')[0].innerText = $('.content__headline--supersize')[0].innerText.replace(' – video','');
+        var supersizeDuration = $('video').attr('data-duration');
+
+        var ms = parseInt(supersizeDuration),
+            min = Math.floor(ms/60),
+            sec = ms % 60;
+
+        var durationTXT = "<div class='supersizeDurationText'>" + min + ':' + sec + "</div>";
+        var durationHTML = document.createElement('div')
+        durationHTML.innerHTML = durationTXT;
+        var bigPlayButton = $('.vjs-big-play-button')[0];
+        bigPlayButton.parentNode.insertBefore(durationHTML.firstChild, bigPlayButton.nextSibling);
+        }
 
     function init() {
         // The `hasMultipleVideosInPage` flag is temporary until the # will be fixed
