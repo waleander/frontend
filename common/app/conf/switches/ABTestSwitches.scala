@@ -80,7 +80,7 @@ trait ABTestSwitches {
     "Swap video thrashers on football front",
     owners = Seq(Owner.withGithub("blongden73")),
     safeState = Off,
-    sellByDate = new LocalDate(2016, 6, 21), // Tuesday
+    sellByDate = new LocalDate(2016, 6, 28), // Tuesday
     exposeClientSide = true
   )
 
@@ -94,13 +94,4 @@ trait ABTestSwitches {
     exposeClientSide = true
   )
 
-  val ABTestAudience = Switch(
-    SwitchGroup.ABTests,
-    "ab-test-audience",
-    "Test the A/B test samples against page views",
-    owners = Seq(Owner.withGithub("gtrufitt")),
-    safeState = Off,
-    sellByDate = new LocalDate(2016, 6, 21),
-    exposeClientSide = true
-  )
 }
