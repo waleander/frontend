@@ -13,7 +13,6 @@ define([
     var modules = {
         // find a bucket message to show once you finish a quiz
         handleCompletion: function () {
-            console.log("+++ HandleCompletion");
             // we're only handling completion in browsers who can validate forms natively
             // others do a round trip to the server
             if (HTMLFormElement.prototype.checkValidity) {
@@ -24,12 +23,13 @@ define([
 
                 if ($quizzes.length > 0) {
                     bean.on(document, 'click', toArray($quizzes), function(e) {
+                        //The Labels and the checkbox each seem to generate their own event. Filter one out so we only record each click in the data-lake
                         if(e.target.tagName !== 'LABEL') {
                             var quiz = e.currentTarget,
                                 total = $(':checked + .atom-quiz__answer__item', quiz).length,
                                 totalCorrect = $(':checked + .atom-quiz__answer__item--is-correct', quiz).length;
 
-                            modules.recordQuizProgressUpdate(total, $numberOfQuestions)
+                            modules.recordQuizProgressUpdate(total, $numberOfQuestions);
                             if (quiz.checkValidity()) { // the form (quiz) is complete
                                 var $bucket__message = null;
                                 do {
@@ -55,12 +55,12 @@ define([
                     });
                 }
                 else {
-                    var $quizzes = $('.js-atom-quiz');
+                    $quizzes = $('.js-atom-quiz');
                     if ($quizzes.length > 0) {
                         bean.on(document, 'click', toArray($quizzes), function(e) {
                             if(e.target.tagName !== 'LABEL') {  //Label and Hidden radio button cause two events per clic
                                 var quiz = e.currentTarget,
-                                    total = $(':checked + .atom-quiz__answer__item', quiz).length
+                                    total = $(':checked + .atom-quiz__answer__item', quiz).length;
                                 modules.recordQuizProgressUpdate(total, $numberOfQuestions);
                             }
                         });
@@ -74,16 +74,16 @@ define([
             data['QuizProgressUpdate'] = {
                 questions: totalQuestions,
                 answered: questionsAnswered
-            }
-            modules.ophanRecord(data)
-       },
+            };
+            modules.ophanRecord(data);
+        },
 
 
-        ophanRecord: function(data) {
+         ophanRecord: function(data) {
             require('ophan/ng', function (ophan) {
                 ophan.record(data);
-           });
-        }
+            });
+         }
     };
 
 
