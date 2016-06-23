@@ -413,8 +413,7 @@ $ima-controls-height: 70px;
     width: 100%;
     position: absolute;
     top: $vjs-progress-inset-bottom - $vjs-progress-hitbox-height;
-    .vjs-ad-playing &,
-    .content__headline--supersize &{
+    .vjs-ad-playing &{
         display: none;
     }
 }

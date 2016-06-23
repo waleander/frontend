@@ -123,6 +123,7 @@ define([
                 player = videojs(el, options);
             }
             var titleElement = $('.content__headline--supersize');
+
             player.on('play', function (event) {
               titleElement[0].style.display = 'none';
               console.log('works');
@@ -130,6 +131,14 @@ define([
 
             player.on('pause', function (event) {
             	titleElement[0].style.display = 'block';
+            });
+
+            player.ima.addEventListener('STARTED', function (event) {
+          	   titleElement[0].style.display = 'none';
+             });
+
+            player.ima.addEventListener('COMPLETE', function (event) {
+            	 titleElement[0].style.display = 'block';
             });
         });
 
@@ -311,6 +320,7 @@ define([
                 playerSetupComplete = new Promise(function (resolve) {
                     player.ready(function () {
                         var vol;
+                        var titleElement = $('.content__headline--supersize');
 
                         deferToAnalytics(function () {
                             events.initOmnitureTracking(player, mediaId);
@@ -366,6 +376,7 @@ define([
                                         });
                                         player.on('adstart', function() {
                                             player.adSkipCountdown(15);
+                                            titleElement[0].style.display = 'none';
                                         });
                                         player.ima.requestAds();
 
