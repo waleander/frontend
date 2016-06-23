@@ -79,7 +79,7 @@ $ima-controls-height: 70px;
     }
 }
 
-.supersizeDurationText{
+.vjs-duration-supersize {
     z-index: 10;
     position:absolute;
     top: 428px;
@@ -87,6 +87,15 @@ $ima-controls-height: 70px;
     font-family: $f-serif-text;
     color:#333;
     text-align: left;
+
+    .gu-media--audio &,
+    .vjs-has-ended &,
+    .vjs-ad-playing &,
+    .vjs-playing &,
+    .vjs-has-started.vjs-using-native-controls &,
+    .vjs-ad-loading & {
+        display: none !important;
+    }
 }
 
 .vjs-big-play-button {
@@ -206,6 +215,7 @@ $ima-controls-height: 70px;
     .vjs-ad-playing &,
     .vjs-playing &,
     .vjs-has-started.vjs-using-native-controls &,
+    .content__headline--hide &,
     .vjs-ad-loading & {
         display: none !important;
     }
@@ -262,11 +272,6 @@ $ima-controls-height: 70px;
     height: $vjs-control-height;
     transition: bottom .8s;
     transition-delay: 1s;
-    display: none;
-
-    &--supersize {
-     display: none;
-    }
 
     &.vjs-hidden {
         display: none;
@@ -275,10 +280,6 @@ $ima-controls-height: 70px;
 
 .vjs-control-bar {
     position: relative;
-
-    &--supersize {
-      display: none;
-    }
 
     .gu-media--video & {
         position: absolute;
@@ -294,10 +295,6 @@ $ima-controls-height: 70px;
         bottom: 0;
         transition: bottom 0s;
         transition-delay: 0s;
-    }
-
-    .content__headline--supersize {
-      display: none;
     }
 
     .vjs-using-native-controls & {
@@ -416,7 +413,8 @@ $ima-controls-height: 70px;
     width: 100%;
     position: absolute;
     top: $vjs-progress-inset-bottom - $vjs-progress-hitbox-height;
-    .vjs-ad-playing & {
+    .vjs-ad-playing &,
+    .content__headline--supersize &{
         display: none;
     }
 }

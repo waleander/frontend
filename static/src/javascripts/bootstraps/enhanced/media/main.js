@@ -122,6 +122,15 @@ define([
                 options.techOrder = techOrder(el).reverse();
                 player = videojs(el, options);
             }
+            var titleElement = $('.content__headline--supersize');
+            player.on('play', function (event) {
+              titleElement[0].style.display = 'none';
+              console.log('works');
+            });
+
+            player.on('pause', function (event) {
+            	titleElement[0].style.display = 'block';
+            });
         });
 
         return player;
@@ -474,17 +483,18 @@ define([
         $('.vjs-control-bar').addClass('vjs-control-bar--supersize');
         $('.content__secondary-column--video').addClass('content__secondary-column--video--supersize');
         $('.content__headline--supersize')[0].innerText = $('.content__headline--supersize')[0].innerText.replace(' – video','');
-        var supersizeDuration = $('video').attr('data-duration');
 
+        var supersizeDuration = $('video').attr('data-duration');
         var ms = parseInt(supersizeDuration),
             min = Math.floor(ms/60),
             sec = ms % 60;
 
-        var durationTXT = "<div class='supersizeDurationText'>" + min + ':' + sec + "</div>";
+        var durationTXT = "<div class='vjs-duration-supersize'>" + min + ':' + sec + "</div>";
         var durationHTML = document.createElement('div')
         durationHTML.innerHTML = durationTXT;
         var bigPlayButton = $('.vjs-big-play-button')[0];
         bigPlayButton.parentNode.insertBefore(durationHTML.firstChild, bigPlayButton.nextSibling);
+
         }
 
     function init() {
@@ -509,7 +519,6 @@ define([
         initFacia();
         initMoreInSection();
         initOnwardContainer();
-        // supersizeMainMedia();
     }
 
     return {
