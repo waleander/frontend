@@ -419,8 +419,10 @@ define([
                 });
             }
         });
+        // var hasClass = (" " + element.className + " ").indexOf(" leftCol ") > -1;
+        // && element.classList.contains('leftCol')
         var DocsPath = 'news/series/the-guardian-documentary';
-        if (config.page.seriesId === DocsPath) {
+        if (config.page.seriesId === DocsPath && screen.width >= 600) {
           supersizeMainMedia();
         }
         return player;

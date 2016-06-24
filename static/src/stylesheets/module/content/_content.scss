@@ -255,7 +255,7 @@
         font-size:48px;
         line-height: 48px;
         font-weight: 200;
-        vertical-align: text-bottom;;
+        vertical-align: text-bottom;
     }
     &--hide {
       display: none;
@@ -535,7 +535,7 @@
     @include mq(leftCol) {
         float: left;
         position: relative;
-        top: -140px;
+        top: 76%;
     }
 }
 
