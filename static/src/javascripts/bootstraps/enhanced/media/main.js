@@ -419,7 +419,10 @@ define([
                 });
             }
         });
+        // if ('/series/' = 'the-guardian-documentary') {
+        if ('/series/' + getTag() = 'the-guardian-documentary') {
         supersizeMainMedia();
+      }
         return player;
     }
 
