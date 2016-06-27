@@ -82,9 +82,9 @@ $ima-controls-height: 70px;
 .vjs-duration-supersize {
     z-index: 10;
     position:absolute;
-    top: 428px;
+    top: 429px;
     left: 191px;
-    font-family: $f-serif-text;
+    font-family: $f-sans-serif-text;
     color:#333;
     text-align: left;
 
@@ -201,6 +201,9 @@ $ima-controls-height: 70px;
             border-width: 1em 0 1em 2.4em;
             border-color: transparent transparent transparent #333;
             -moz-transform: scale(.99999); // fix for diagonal border aliasing in firefox
+            &:hover{
+              background-color: darken(#ffbb00,10%);
+            }
           }
 
           @include fs-textSans(4);
