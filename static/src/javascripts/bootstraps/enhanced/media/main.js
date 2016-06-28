@@ -419,10 +419,9 @@ define([
                 });
             }
         });
-        // var hasClass = (" " + element.className + " ").indexOf(" leftCol ") > -1;
-        // && element.classList.contains('leftCol')
         var DocsPath = 'news/series/the-guardian-documentary';
-        if (config.page.seriesId === DocsPath && screen.width >= 1300) {
+        if (config.page.seriesId === DocsPath) {
+          // && screen.width >= 1300
           supersizeMainMedia();
         }
         return player;
@@ -491,7 +490,9 @@ define([
     function supersizeMainMedia() {
         // $('.content__meta-container').addClass('content__meta-container--supersize');
         $('.content__main-column__body').addClass('content__main-column__body--supersize');
-        $('.content__section-label__link').addClass('.content__section-label__link--supersize');
+        // $('.content__section-label__link').addClass('content__section-label__link--supersize');
+        $('.vjs-poster').addClass('vjs-poster--supersize');
+        $('.u-responsive-ratio--hd').addClass('u-responsive-ratio--hd--supersize');
         $('.media-primary').addClass('media-primary--supersize');
         $('.content__labels').addClass('content__labels--supersize');
         $('.content__headline').addClass('content__headline--supersize');

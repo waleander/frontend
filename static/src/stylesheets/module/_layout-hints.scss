@@ -1,6 +1,10 @@
 @mixin deport-left {
+    @include mq(desktop)  {
+      margin-right: -2 * ($left-column + $gs-gutter);
+    }
+
     @include mq(leftCol) {
-        margin-left: -3 * ($left-column + $gs-gutter);
+        margin-left: -1 * ($left-column + $gs-gutter);
         margin-right: -2 * ($left-column + $gs-gutter);
     }
 
@@ -167,10 +171,13 @@ figure {
 
 .media-primary.media-primary--supersize {
     @include deport-left;
-    // width:100%;
     position: relative;
-    top: -30px;
-    background-color: red;
+    @include mq(mobile) {
+      top: -8px;
+    }
+    @include mq(wide) {
+      top: -30px;
+    }
 }
 
 // Articles can have the feature tone applied, but it's not always primary tone

@@ -138,6 +138,11 @@
 
 .u-responsive-ratio--hd {
     padding-bottom: aspect-ratio-height(16, 9);
+    &--supersize {
+      @include mq($until: mobileLandscape) {
+        height: 150px;
+      }
+    }
 }
 
 .u-responsive-ratio--letterbox {
