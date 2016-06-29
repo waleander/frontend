@@ -111,7 +111,7 @@ define([
             }
 
             // we have some special autoplay rules, so do not want to depend on 'default' autoplay
-            player.guAutoplay = $(el).attr('data-auto-play') === 'true';
+            player.guAutoplay = $(el).attr('data-auto-play') === 'false';
 
             // need to explicitly set the dimensions for the ima plugin.
             player.height(bonzo(player.el()).parent().dim().height);
