@@ -278,10 +278,10 @@
         line-height: 30px;
       }
       @include mq(tablet) {
-        bottom: -260px;
+        bottom: -240px;
       }
       @include mq(desktop) {
-        bottom: -330px;
+        bottom: -310px;
       }
       @include mq(leftCol) {
         &:before {
@@ -290,7 +290,7 @@
         }
         left: -20%;
         width: 80%;
-        bottom: -390px;
+        bottom: -370px;
         font-size: 48px;
         line-height: 48px;
         font-weight: 200;

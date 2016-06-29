@@ -175,7 +175,7 @@ figure {
     @include mq(mobile) {
       top: -8px;
     }
-    @include mq(wide) {
+    @include mq(tablet) {
       top: -30px;
     }
 }
