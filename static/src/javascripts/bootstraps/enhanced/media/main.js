@@ -420,7 +420,8 @@ define([
             }
         });
         var DocsPath = 'news/series/the-guardian-documentary';
-        if (config.page.seriesId === DocsPath) {
+        var KatrinaPath = 'us-news/series/hurricane-katrina-10-years-on';
+        if (config.page.seriesId === DocsPath || KatrinaPath) {
           // && screen.width >= 1300
           supersizeMainMedia();
         }
