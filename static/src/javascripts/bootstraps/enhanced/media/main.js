@@ -421,7 +421,7 @@ define([
         });
         var DocsPath = 'news/series/the-guardian-documentary';
         var KatrinaPath = 'us-news/series/hurricane-katrina-10-years-on';
-        if (config.page.seriesId === DocsPath || KatrinaPath) {
+        if (config.page.seriesId === DocsPath || config.page.seriesId === KatrinaPath) {
           // && screen.width >= 1300
           supersizeMainMedia();
         }
