@@ -35,19 +35,16 @@ class ArticleController extends Controller with RendersItemResponse with Logging
   override def renderItem(path: String)(implicit request: RequestHeader): Future[Result] = mapModel(path, blocks = true)(render(path, _))
 
 
-  private def renderNewerUpdates(page: PageWithStoryPackage, lastUpdateBlockId: String, isLivePage: Option[Boolean])(implicit request: RequestHeader): Result = {
-    val newBlocks = page.article.fields.blocks.takeWhile(block => s"block-${block.id}" != lastUpdateBlockId)
-    val blocksHtml = views.html.liveblog.liveBlogBlocks(newBlocks, page.article, Edition(request).timezone)
-    val timelineHtml = views.html.liveblog.keyEvents("", KeyEventData(newBlocks, Edition(request).timezone))
+  private def renderNewerUpdates(page: LiveBlogPage, lastUpdateBlockId: String)(implicit request: RequestHeader): Result = {
+    val blocksHtml = views.html.liveblog.liveBlogBlocks(page.currentPage.currentPage.blocks, page.article, Edition(request).timezone)
+    val timelineHtml = views.html.liveblog.keyEvents("", KeyEventData(page.currentPage.currentPage.blocks, Edition(request).timezone))
     val allPagesJson = Seq(
       "timeline" -> timelineHtml,
-      "numNewBlocks" -> newBlocks.size,
-      "mostRecentBlockId" -> page.article.fields.blocks.headOption.map(block => s"block-${block.id}").getOrElse("block-9")
-    )
-    val livePageJson = isLivePage.filter(_ == true).map { _ =>
+      "numNewBlocks" -> page.currentPage.currentPage.blocks.size,
+      "mostRecentBlockId" -> page.article.fields.blocks.headOption.map(block => s"block-${block.id}").getOrElse("block-9"),
       "html" -> blocksHtml
-    }
-    Cached(page)(JsonComponent((allPagesJson ++ livePageJson): _*))
+    )
+    Cached(page)(JsonComponent(allPagesJson: _*))
   }
 
   case class TextBlock(
@@ -115,20 +112,20 @@ class ArticleController extends Controller with RendersItemResponse with Logging
 
   def renderLiveBlog(path: String, page: Option[String] = None) =
     Action.async { implicit request =>
-      mapModel(path, blocks = true, page) {// temporarily only ask for blocks too for things we know are new live blogs until until the migration is done and we can always use blocks
+      mapModel(path, Some(page.map(a => PageWithBlock(ParseBlockId(a))).getOrElse(Canonical))) {// temporarily only ask for blocks too for things we know are new live blogs until until the migration is done and we can always use blocks
         render(path, _)
       }
     }
 
-  def renderLiveBlogJson(path: String, lastUpdate: Option[String], rendered: Option[Boolean], isLivePage: Option[Boolean]) = {
+  def renderLiveBlogJson(path: String, lastUpdate: Option[String], rendered: Option[Boolean]) = {
     Action.async { implicit request =>
-      mapModel(path, blocks = true) { model =>
-        (lastUpdate, rendered) match {
-          case (Some(lastUpdate), _) => renderNewerUpdates(model, lastUpdate, isLivePage)
-          case (None, Some(false)) => blockText(model, 6)
-          case (_, _) => render(path, model)
+        (lastUpdate.flatMap(a => ParseBlockId(a)), rendered) match {
+          case (Some(lastUpdate), _) => mapModel(path, range = Some(SinceBlockId(lastUpdate))) {
+            case model: LiveBlogPage => renderNewerUpdates(model, lastUpdate)
+          }
+          case (None, Some(false)) => mapModel(path, range = Some(Canonical)) { model => blockText(model, 6) }
+          case (_, _) => mapModel(path, range = Some(Canonical)) { model => render(path, model) }
         }
-      }
     }
   }
 
@@ -142,21 +139,32 @@ class ArticleController extends Controller with RendersItemResponse with Logging
 
   def renderArticle(path: String) = {
     Action.async { implicit request =>
-      mapModel(path, blocks = request.isEmail) {
+      mapModel(path, range = if (request.isEmail) Some(Canonical) else None) {
         render(path, _)
       }
     }
   }
 
-  def mapModel(path: String, blocks: Boolean = false, pageParam: Option[String] = None)(render: PageWithStoryPackage => Result)(implicit request: RequestHeader): Future[Result] = {
-    lookup(path, blocks) map responseToModelOrResult(pageParam) recover convertApiExceptions map {
+  sealed trait Range
+  case object Canonical extends Range
+  case class PageWithBlock(page: Option[String]) extends Range
+  case class SinceBlockId(lastUpdate: String) extends Range
+
+  def mapModel(path: String, range: Option[Range] = None)(render: PageWithStoryPackage => Result)(implicit request: RequestHeader): Future[Result] = {
+    val blocksString = range.map(_ match {
+      case Canonical => "body:latest:29"// this only makes sense for liveblogs at the moment, but article use field body not blocks anyway
+      case PageWithBlock(_) => "body" // just get them all, the caching should prevent too many requests, could use "around"
+      case SinceBlockId(lastUpdate) => s"body:around:$lastUpdate:5" // more than 5 wouldn't come in (in one go), but never mind
+    })
+    lookup(path, blocksString) map responseToModelOrResult(range, blocksString) recover convertApiExceptions map {
       case Left(model) => render(model)
       case Right(other) => RenderOtherStatus(other)
     }
   }
 
-  private def lookup(path: String, blocks: Boolean)(implicit request: RequestHeader): Future[ItemResponse] = {
+  private def lookup(path: String, blocksString: Option[String])(implicit request: RequestHeader): Future[ItemResponse] = {
     val edition = Edition(request)
+
 
     log.info(s"Fetching article: $path for edition ${edition.id}: ${RequestLog(request)}")
     val capiItem = ContentApiClient.item(path, edition)
@@ -165,7 +173,7 @@ class ArticleController extends Controller with RendersItemResponse with Logging
       .showReferences("all")
       .showAtoms("all")
 
-    val capiItemWithBlocks = if (blocks) capiItem.showBlocks("body") else capiItem
+    val capiItemWithBlocks = blocksString.map(capiItem.showBlocks(_)).getOrElse(capiItem)
     ContentApiClient.getResponse(capiItemWithBlocks)
 
   }
@@ -177,18 +185,19 @@ class ArticleController extends Controller with RendersItemResponse with Logging
     * @param response
    * @return Either[PageWithStoryPackage, Result]
    */
-  def responseToModelOrResult(pageParam: Option[String])(response: ItemResponse)(implicit request: RequestHeader): Either[PageWithStoryPackage, Result] = {
+  def responseToModelOrResult(range: Option[Range], blocksString: Option[String])(response: ItemResponse)(implicit request: RequestHeader): Either[PageWithStoryPackage, Result] = {
     val supportedContent = response.content.filter(isSupported).map(Content(_))
-    val page = pageParam.map(ParseBlockId.apply)
     val supportedContentResult = ModelOrResult(supportedContent, response)
     val content: Either[PageWithStoryPackage, Result] = supportedContentResult.left.flatMap { content =>
-      (content, page) match {
-        case (minute: Article, None) if minute.isUSMinute =>
+      (content, range) match {
+        case (minute: Article, Some(Canonical)) if minute.isUSMinute =>
           Left(MinutePage(minute, StoryPackages(minute, response)))
-        case (liveBlog: Article, None/*no page param*/) if liveBlog.isLiveBlog =>
+        case (liveBlog: Article, Some(Canonical)/*no page param*/) if liveBlog.isLiveBlog =>
           createLiveBlogModel(liveBlog, response, None)
-        case (liveBlog: Article, Some(Some(requiredBlockId))/*page param specified and valid format*/) if liveBlog.isLiveBlog =>
+        case (liveBlog: Article, Some(PageWithBlock(Some(requiredBlockId)))/*page param specified and valid format*/) if liveBlog.isLiveBlog =>
           createLiveBlogModel(liveBlog, response, Some(requiredBlockId))
+        case (liveBlog: Article, Some(SinceBlockId(lastUpdate))/*page param specified and valid format*/) if liveBlog.isLiveBlog =>
+          createLiveBlogModelSince(liveBlog, response, lastUpdate, blocksString.filter(_ == "body"))
         case (article: Article, None) => Left(ArticlePage(article, StoryPackages(article, response)))
         case _ =>
           Right(NotFound)
@@ -196,6 +205,28 @@ class ArticleController extends Controller with RendersItemResponse with Logging
     }
 
     content
+  }
+
+  def createLiveBlogModelSince(liveBlog: Article, response: ItemResponse, sinceBlockId: String, blocksString: Option[String]) = {
+
+    val blocks = blocksString.map(liveBlog.content.fields.).getOrElse(liveBlog.content.fields.blocks)
+    val liveBlogPageModel = LiveBlogCurrentPage(
+      blocks,
+      sinceBlockId
+    )
+    // only cache a "no blocks yet" response for a short time, but once something's there, let fastly cache it
+    val cacheTime =
+      if (liveBlog.fields.isLive && liveBlogPageModel.currentPage.blocks.isEmpty)
+        liveBlog.metadata.cacheTime
+      else
+        CacheTime.NotRecentlyUpdated
+
+    val liveBlogCache = liveBlog.copy(
+      content = liveBlog.content.copy(
+        metadata = liveBlog.content.metadata.copy(
+          cacheTime = cacheTime)))
+    Left(LiveBlogPage(liveBlogCache, liveBlogPageModel, StoryPackages(liveBlog, response)))
+
   }
 
   def createLiveBlogModel(liveBlog: Article, response: ItemResponse, maybeRequiredBlockId: Option[String]) = {

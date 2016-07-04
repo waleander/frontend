@@ -168,11 +168,10 @@ define([
         };
 
         var checkForUpdates = function () {
-            var shouldFetchBlocks = '&isLivePage=' + (isLivePage ? 'true' : 'false');
             var latestBlockIdToUse = ((latestBlockId) ? latestBlockId : 'block-0');
 
             return ajax({
-                url: window.location.pathname + '.json?lastUpdate=' + latestBlockIdToUse + shouldFetchBlocks,
+                url: window.location.pathname + '.json?lastUpdate=' + latestBlockIdToUse,
                 type: 'json',
                 method: 'get',
                 crossOrigin: true
@@ -197,10 +196,12 @@ define([
                     } else {
                         toastButtonRefresh();
                     }
+                    // once there's an update, it's cached a long time, so recheck from the new ID
+                    setTimeout(checkForUpdates, 1);
+                } else {
+                    updateDelay(currentUpdateDelay);
+                    setTimeout(checkForUpdates, currentUpdateDelay);
                 }
-            }).then(function () {
-                updateDelay(currentUpdateDelay);
-                setTimeout(checkForUpdates, currentUpdateDelay);
             });
         };
 

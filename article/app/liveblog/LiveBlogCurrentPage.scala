@@ -4,6 +4,12 @@ import model.liveblog.BodyBlock
 
 object LiveBlogCurrentPage {
 
+  def apply(blocks: Seq[BodyBlock], sinceBlockId: String): LiveBlogCurrentPage = {
+    val newBlocks = blocks.takeWhile(block => s"block-${block.id}" != sinceBlockId)
+    val page = FirstPage(newBlocks)
+    LiveBlogCurrentPage(page, None)
+  }
+
   def apply(pageSize: Int, blocks: Seq[BodyBlock], isRequestedBlock: Option[String]): Option[LiveBlogCurrentPage] = {
     val (mainPageBlocks, restPagesBlocks) = getPages(pageSize, blocks)
     val newestPage = FirstPage(mainPageBlocks)
