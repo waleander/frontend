@@ -73,6 +73,14 @@
     .hosted-gallery__image-sizer {
         position: absolute;
     }
+    .hosted-gallery__image-ovarlay {
+        @include simple-gradient(transparent, #383838);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
     img {
         width: 100%;
         height: 100%;
@@ -164,7 +172,7 @@
     position: absolute;
     bottom: 0;
     color: #ffffff;
-    padding: 10px 10%;
+    padding: 10px $gs-column-width * 4;
 }
 
 .hosted-gallery__heading {
