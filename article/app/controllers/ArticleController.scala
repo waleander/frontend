@@ -40,11 +40,15 @@ class ArticleController extends Controller with RendersItemResponse with Logging
     val timelineHtml = views.html.liveblog.keyEvents("", KeyEventData(page.currentPage.currentPage.blocks, Edition(request).timezone))
     val allPagesJson = Seq(
       "timeline" -> timelineHtml,
-      "numNewBlocks" -> page.currentPage.currentPage.blocks.size,
-      "mostRecentBlockId" -> page.article.fields.blocks.headOption.map(block => s"block-${block.id}").getOrElse("block-9"),
-      "html" -> blocksHtml
+      "numNewBlocks" -> newBlocks.size
     )
-    Cached(page)(JsonComponent(allPagesJson: _*))
+    val livePageJson = isLivePage.filter(_ == true).map { _ =>
+      "html" -> blocksHtml
+    }
+    val mostRecent = page.article.fields.blocks.headOption.map { block =>
+      "mostRecentBlockId" -> s"block-${block.id}"
+    }
+    Cached(page)(JsonComponent((allPagesJson ++ livePageJson ++ mostRecent): _*))
   }
 
   case class TextBlock(
@@ -261,8 +265,6 @@ class ArticleController extends Controller with RendersItemResponse with Logging
   }
 
 }
-
-object ArticleController extends ArticleController
 
 object ParseBlockId extends RegexParsers {
   def apply(input: String): Option[String] = {

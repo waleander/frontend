@@ -5,23 +5,10 @@ define([
     'fastdom',
     'common/utils/$',
     'qwery',
-    'common/utils/ajax',
     'common/utils/config',
     'common/utils/detect',
     'common/utils/fsm',
     'common/utils/mediator',
-    'common/utils/template',
-    'common/utils/url',
-    'common/modules/component',
-    'common/modules/ui/blockSharing',
-    'common/modules/ui/images',
-    'common/views/svgs',
-    'text!common/views/content/block-sharing.html',
-    'text!common/views/content/button.html',
-    'text!common/views/content/endslate.html',
-    'text!common/views/content/loader.html',
-    'text!common/views/content/share-button.html',
-    'text!common/views/content/share-button-mobile.html',
     'lodash/collections/map',
     'lodash/functions/throttle',
     'lodash/collections/forEach',
@@ -34,23 +21,10 @@ define([
     fastdom,
     $,
     qwery,
-    ajax,
     config,
     detect,
     FiniteStateMachine,
     mediator,
-    template,
-    url,
-    Component,
-    blockSharing,
-    imagesModule,
-    svgs,
-    blockSharingTpl,
-    buttonTpl,
-    endslateTpl,
-    loaderTpl,
-    shareButtonTpl,
-    shareButtonMobileTpl,
     map,
     throttle,
     forEach,
@@ -63,10 +37,8 @@ define([
         // CONFIG
         this.useSwipe = detect.hasTouchScreen();
         this.swipeThreshold = 0.05;
-        this.resize = this.trigger.bind(this, 'resize');
         this.index = this.index || 1;
         this.imageRatios = [];
-        mediator.on('window:resize', this.resize);
 
         // ELEMENT BINDINGS
         this.$galleryEl = $('.js-hosted-gallery-container');
@@ -83,27 +55,32 @@ define([
         this.$counter = $('.js-hosted-gallery-image-count', this.$progress);
         this.$ctaFloat = $('.js-hosted-gallery-cta-float', this.$galleryEl)[0];
 
-        // FSM CONFIG
-        this.fsm = new FiniteStateMachine({
-            initial: 'image',
-            onChangeState: function (oldState, newState) {
-                this.$galleryEl
-                    .removeClass('hosted-gallery--' + oldState)
-                    .addClass('hosted-gallery--' + newState);
-            },
-            context: this,
-            states: this.states
-        });
+        if(this.$galleryEl.length){
+            this.resize = this.trigger.bind(this, 'resize');
+            mediator.on('window:resize', this.resize);
 
-        bean.on(this.infoBtn, 'click', this.trigger.bind(this, 'toggle-info'));
-        this.loadSurroundingImages(1, this.$images.length);
+            // FSM CONFIG
+            this.fsm = new FiniteStateMachine({
+                initial: 'image',
+                onChangeState: function (oldState, newState) {
+                    this.$galleryEl
+                        .removeClass('hosted-gallery--' + oldState)
+                        .addClass('hosted-gallery--' + newState);
+                },
+                context: this,
+                states: this.states
+            });
 
-        if (this.useSwipe) {
-            this.$galleryEl.addClass('use-swipe');
-            this.initSwipe();
-        } else {
-            this.$galleryEl.addClass('use-scroll');
-            this.initScroll();
+            bean.on(this.infoBtn, 'click', this.trigger.bind(this, 'toggle-info'));
+            this.loadSurroundingImages(1, this.$images.length);
+
+            if (this.useSwipe) {
+                this.$galleryEl.addClass('use-swipe');
+                this.initSwipe();
+            } else {
+                this.$galleryEl.addClass('use-scroll');
+                this.initScroll();
+            }
         }
     }
 
