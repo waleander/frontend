@@ -40,15 +40,13 @@ class ArticleController extends Controller with RendersItemResponse with Logging
     val timelineHtml = views.html.liveblog.keyEvents("", KeyEventData(page.currentPage.currentPage.blocks, Edition(request).timezone))
     val allPagesJson = Seq(
       "timeline" -> timelineHtml,
-      "numNewBlocks" -> newBlocks.size
-    )
-    val livePageJson = isLivePage.filter(_ == true).map { _ =>
+      "numNewBlocks" -> page.currentPage.currentPage.blocks.size,
       "html" -> blocksHtml
-    }
+    )
     val mostRecent = page.article.fields.blocks.headOption.map { block =>
       "mostRecentBlockId" -> s"block-${block.id}"
     }
-    Cached(page)(JsonComponent((allPagesJson ++ livePageJson ++ mostRecent): _*))
+    Cached(page)(JsonComponent((allPagesJson ++ mostRecent): _*))
   }
 
   case class TextBlock(
