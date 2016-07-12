@@ -445,6 +445,14 @@ class GuardianConfiguration extends Logging {
     lazy val fallbackCachebustId = configuration.getStringProperty("admin.r2.press.fallback.cachebust.id").getOrElse("")
   }
 
+  object teacherResource {
+    lazy val sqsQueueUrl = configuration.getStringProperty("admin.teacher_resource.press.queue.url")
+    lazy val sqsTakedownQueueUrl = configuration.getStringProperty("admin.teacher_resource.takedown.queue.url")
+    lazy val pressRateInSeconds = configuration.getIntegerProperty("admin.teacher_resource.press.rate.seconds").getOrElse(60)
+    lazy val pressQueueWaitTimeInSeconds = configuration.getIntegerProperty("admin.teacher_resource.press.queue.wait.seconds").getOrElse(10)
+    lazy val pressQueueMaxMessages = configuration.getIntegerProperty("admin.teacher_resource.press.queue.max.messages").getOrElse(10)
+  }
+
   object memcached {
     lazy val host = configuration.getStringProperty("memcached.host")
   }
@@ -458,6 +466,8 @@ class GuardianConfiguration extends Logging {
     lazy val frontPressSns: Option[String] = configuration.getStringProperty("frontpress.sns.topic")
     lazy val r2PressSns: Option[String] = configuration.getStringProperty("r2press.sns.topic")
     lazy val r2PressTakedownSns: Option[String] = configuration.getStringProperty("r2press.takedown.sns.topic")
+    lazy val teacherResourcePressSns = configuration.getStringProperty("teacher_resource.press.sns.topic")
+    lazy val teacherResourceTakedownSns = configuration.getStringProperty("teacher_resource.takedown.sns.topic")
 
     def mandatoryCredentials: AWSCredentialsProvider = credentials.getOrElse(throw new BadConfigurationException("AWS credentials are not configured"))
     val credentials: Option[AWSCredentialsProvider] = {

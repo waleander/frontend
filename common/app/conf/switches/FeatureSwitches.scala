@@ -376,6 +376,16 @@ trait FeatureSwitches {
     exposeClientSide = false
   )
 
+  val TeacherResourcePressSwitch = Switch(
+    SwitchGroup.Feature,
+    "teacher-resource-page-press-service",
+    "When ON, the teacher-resource page press service will monitor the queue and press pages to S3",
+    owners = Seq(Owner.withGithub("JustinPinner")),
+    safeState = Off,
+    sellByDate = new LocalDate(2016, 8, 2),  // Tuesday August 2nd
+    exposeClientSide = false
+  )
+
   val EmailInArticleSwitch = Switch(
     SwitchGroup.Feature,
     "email-in-article",

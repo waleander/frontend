@@ -81,6 +81,14 @@ object R2PressedPageTakedownNotification extends Notification {
   lazy val topic: String = Configuration.aws.r2PressTakedownSns.getOrElse("")
 }
 
+object TeacherResourcePressNotification extends Notification {
+  lazy val topic: String = Configuration.aws.teacherResourcePressSns.getOrElse("")
+}
+
+object TeacherResourceTakedownNotification extends Notification {
+  lazy val topic: String = Configuration.aws.teacherResourceTakedownSns.getOrElse("")
+}
+
 object MissingVideoEncodings extends Notification {
   lazy val topic: String = "arn:aws:sns:eu-west-1:642631414762:frontend-missingVideoEncodingsNotificationTopic"
 
