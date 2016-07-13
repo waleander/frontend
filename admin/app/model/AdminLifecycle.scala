@@ -27,6 +27,7 @@ class AdminLifecycle(appLifecycle: ApplicationLifecycle, jobs: JobScheduler = Jo
   lazy val adminPressJobLowPushRateInMinutes: Int = Configuration.faciatool.adminPressJobLowPushRateInMinutes
   lazy val adminRebuildIndexRateInMinutes: Int = Configuration.indexes.adminRebuildIndexRateInMinutes
   lazy val r2PagePressRateInSeconds: Int = Configuration.r2Press.pressRateInSeconds
+  lazy val teacherResourcePagePressRateInSeconds: Int = Configuration.teacherResource.pressRateInSeconds
 
   private def scheduleJobs(): Unit = {
 
@@ -47,6 +48,10 @@ class AdminLifecycle(appLifecycle: ApplicationLifecycle, jobs: JobScheduler = Jo
 
     jobs.scheduleEveryNSeconds("R2PagePressJob", r2PagePressRateInSeconds) {
       R2PagePressJob.run()
+    }
+
+    jobs.scheduleEveryNSeconds("TeacherResourcePagePressJob", teacherResourcePagePressRateInSeconds) {
+      TeacherResourcePagePressJob.run()
     }
 
     //every 2, 17, 32, 47 minutes past the hour, on the 12th second past the minute (e.g 13:02:12, 13:17:12)

@@ -37,6 +37,12 @@ POST        /press/r2                                                           
 GET         /press/r2/batchupload                                                                   controllers.admin.R2PressController.pressForm()
 POST        /press/r2/batchupload                                                                   controllers.admin.R2PressController.batchUpload()
 
+# Teacher Resource Press
+GET         /press/teacher-resource                                                                 controllers.admin.TeacherResourcePressController.pressForm()
+POST        /press/teacher-resource                                                                 controllers.admin.TeacherResourcePressController.press()
+GET         /press/teacher-resource/batchupload                                                     controllers.admin.TeacherResourcePressController.pressForm()
+POST        /press/teacher-resource/batchupload                                                     controllers.admin.TeacherResourcePressController.batchUpload()
+
 # API endpoint proxying for https
 GET         /api/proxy/*path                                                                        controllers.admin.Api.proxy(path, callback)
 GET         /api/tag                                                                                controllers.admin.Api.tag(q, callback)

@@ -124,12 +124,12 @@ abstract class HtmlCleaner extends Logging with ExecutionContexts {
       element.hasAttr("src") && element.attr("src").contains(newOmnitureScriptBase)
     } match {
       case true =>
-        log.info(s"Archive omniture script exists and was not replaced")
+        log.info(s"Omniture script exists and was not replaced")
         document
       case false =>
         val omnitureTag = "<!---Omniture page tracking for pressed page ---> <img src=\"" + newOmnitureScriptBase + "?" + omnitureQueryString + "\" width=\"1\" height=\"1\"/>"
         document.body().append(omnitureTag)
-        log.info("Archive omniture script appended")
+        log.info("Omniture script appended")
         document
     }
   }

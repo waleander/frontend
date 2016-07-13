@@ -1,12 +1,12 @@
-package controllers
+package controllers.admin
 
 import java.io.File
 
 import common.{ExecutionContexts, Logging}
-import controllers.admin.AuthActions
+import controllers.AuthLogging
 import model.TeacherResourcePressMessage
 import play.api.mvc.{AnyContent, Controller}
-import services.{TeacherResourceTakedownNotifier, TeacherResourcePressNotifier}
+import services.{TeacherResourcePressNotifier, TeacherResourceTakedownNotifier}
 
 class TeacherResourcePressController extends Controller with Logging with AuthLogging with ExecutionContexts {
 
@@ -77,7 +77,7 @@ class TeacherResourcePressController extends Controller with Logging with AuthLo
         }
       }
     }.map(_.toList).getOrElse(List.empty)
-    Ok(views.html.pressR2(urlMsgs = result))
+    Ok(views.html.pressTeacherResource(urlMsgs = result))
   }
 
   private def isTakedown(body: AnyContent) = {

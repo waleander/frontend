@@ -1,5 +1,7 @@
 package jobs
 
+import java.net.URI
+
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest
@@ -10,7 +12,7 @@ import implicits.TeacherResourcePressNotification.pressMessageFormatter
 import model.TeacherResourcePressMessage
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import pagepresser.{InteractiveHtmlCleaner, NextGenInteractiveHtmlCleaner, PollsHtmlCleaner, SimpleHtmlCleaner}
+import pagepresser._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.ws.WS
@@ -19,8 +21,8 @@ import services.{S3TeacherResource, S3TeacherResourceOriginals}
 import scala.concurrent.Future
 
 object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
-  private val waitTimeSeconds = Configuration.r2Press.pressQueueWaitTimeInSeconds
-  private val maxMessages = Configuration.r2Press.pressQueueMaxMessages
+  private val waitTimeSeconds = Configuration.teacherResource.pressQueueWaitTimeInSeconds
+  private val maxMessages = Configuration.teacherResource.pressQueueMaxMessages
   private val credentials = Configuration.aws.mandatoryCredentials
 
   def run() = {
@@ -79,10 +81,12 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
     }
   }
 
-  private def pressAsUrl(urlIn: String): String = urlIn.replace("https://", "").replace("http://","")
+  private def pressAsUrl(urlIn: String): String = {
+    val uri = URI.create(urlIn)
+    (uri.getPath + (if(uri.getQuery == null) "" else "?" + uri.getQuery)).tail
+  }
 
   private def parseAndClean(originalDocSource: String, convertToHttps: Boolean): Future[String] = {
-    // TODO!
     val cleaners = Seq(TeacherResourceHtmlCleaner)
     val archiveDocument = Jsoup.parse(originalDocSource)
     val doc: Document = cleaners.filter(_.canClean(archiveDocument))
@@ -110,7 +114,7 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
     val pressUrl = pressAsUrl(urlIn)
 
     S3TeacherResourceOriginals.get(pressUrl).map { originalSource =>
-      log.info(s"Re-pressing $urlIn")
+      log.info(s"Re-pressing $urlIn from $pressUrl")
 
       val cleanedHtmlString = parseAndClean(originalSource, message.convertToHttps)
 
@@ -148,7 +152,7 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
 
               if (S3TeacherResourceOriginals.get(pressUrl).isEmpty) {
                 S3TeacherResourceOriginals.putPublic(pressUrl, originalSource, "text/html")
-                log.info(s"Original page source saved for $urlIn")
+                log.info(s"Original page source saved for $pressUrl")
               }
 
               val cleanedHtmlString = parseAndClean(originalSource, message.convertToHttps)
@@ -183,7 +187,7 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
   }
 
   private def takedown(message: Message[String]): Future[Unit] = {
-    val urlIn = (Json.parse(message.get) \ "Message").as[String]
+    val urlIn = pressAsUrl((Json.parse(message.get) \ "Message").as[String])
     try {
       if (urlIn.nonEmpty) {
         //TODO!
