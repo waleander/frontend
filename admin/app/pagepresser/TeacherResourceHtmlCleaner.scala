@@ -20,8 +20,9 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
   override protected def universalClean(document: Document): Document = {
     removeAds(document)
     replaceDownloadLink(document)
-    removeByTagWithNestedElementAttribute(document, "li", "onclick")
-    removeByTagWithNestedElementAttributeValueContains(document, "li", "href", ".aspx")
+    removeAllTagsWithAttribute(document, "li", "onclick")
+    removeAllTagsWithAttribute(document, "a", "onclick")
+    removeAllTagsWithNestedElementAttributeValueContains(document, "li", "href", ".aspx")
     replaceLinks(document)
     removeHiddenElements(document)
   }
@@ -31,14 +32,14 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
     document
   }
 
-  private def removeByTagWithNestedElementAttribute(document: Document, tagName: String, nestedAttributeName: String): Document = {
+  private def removeAllTagsWithAttribute(document: Document, tagName: String, attributeName: String): Document = {
     document.getElementsByTag(tagName).foreach { el =>
-      if (el.getElementsByAttribute(nestedAttributeName).nonEmpty) el.remove()
+      if (el.hasAttr(attributeName)) el.remove()
     }
     document
   }
 
-  private def removeByTagWithNestedElementAttributeValueContains(document: Document, tagName: String, nestedAttributeName: String, nestedAttributeValue: String): Document = {
+  private def removeAllTagsWithNestedElementAttributeValueContains(document: Document, tagName: String, nestedAttributeName: String, nestedAttributeValue: String): Document = {
     document.getElementsByTag(tagName).foreach { el =>
       if (el.getElementsByAttribute(nestedAttributeName).exists(_.attr(nestedAttributeName).contains(nestedAttributeValue))) {
         el.remove()
@@ -49,16 +50,19 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
 
   private def replaceDownloadLink(document: Document): Document = {
     val fileNameEl = document.getElementById("hdnFilename")
-    val downloadEl = document.getElementById("dwnspan")
+    val downloadEl = document.getElementById("dwnspan").clone()
     if (fileNameEl != null && downloadEl != null) {
       val fileName = fileNameEl.attr("value")
       if (fileName != null) {
-        document.getElementById("dwnspan").parent().append(s"""<div><a href="$fileName" id="lnkbtnDownload" class="download_button hrefhover">Download</a></div>""")
+        val newLinkHtml = s"""<a href="$fileName" id="lnkbtnDownload" class="download_button hrefhover">Download</a>"""
+        downloadEl.getElementsByTag("a").foreach(_.remove())
+        downloadEl.append(newLinkHtml)
+        document.getElementById("dwnspan").replaceWith(downloadEl)
       } else {
-        log.error("### fileName is null")
+        log.error("fileName is null")
       }
     } else {
-      log.error("### download link and/or filename not present")
+      log.error("download link and/or filename not present")
     }
     document
   }
