@@ -10,21 +10,20 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
   }
 
   override def clean(document: Document, convertToHttps: Boolean) = {
-    universalClean(document)
-    removeScripts(document)
-    removeByTagName(document, "noscript")
-    if (convertToHttps) secureDocument(document)
-    document
-  }
-
-  override protected def universalClean(document: Document): Document = {
     removeAds(document)
+    replaceResourceNameLink(document)
     replaceDownloadLink(document)
     removeAllTagsWithAttribute(document, "li", "onclick")
     removeAllTagsWithAttribute(document, "a", "onclick")
     removeAllTagsWithNestedElementAttributeValueContains(document, "li", "href", ".aspx")
     replaceLinks(document)
     removeHiddenElements(document)
+    removeSpecificElements(document)
+    replaceBackLink(document)
+    removeScripts(document)
+    removeByTagName(document, "noscript")
+    if (convertToHttps) secureDocument(document)
+    document
   }
 
   override def removeAds(document: Document): Document = {
@@ -48,6 +47,16 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
     document
   }
 
+  private def replaceResourceNameLink(document: Document): Document = {
+    val fileName = document.getElementById("hdnFilename").attr("value")
+    val downloadNameLinkEl = document.getElementById("previewlesson").clone()
+    val fileDescription = downloadNameLinkEl.getElementById("lblLname").text()
+    downloadNameLinkEl.removeAttr("onclick")
+    downloadNameLinkEl.attr("href", fileName)
+    document.getElementById("previewlesson").replaceWith(downloadNameLinkEl)
+    document
+  }
+
   private def replaceDownloadLink(document: Document): Document = {
     val fileNameEl = document.getElementById("hdnFilename")
     val downloadEl = document.getElementById("dwnspan").clone()
@@ -67,8 +76,25 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
     document
   }
 
+  private def replaceBackLink(document: Document): Document = {
+    document.getElementById("lnkbtnBack").attr("href", "https://teachers.theguardian.com/teacher-resources")
+    document
+  }
+
   private def removeHiddenElements(document: Document): Document = {
     document.getElementsByAttributeValue("type", "hidden").foreach(_.remove())
+    document
+  }
+
+  private def removeSpecificElements(document: Document): Document = {
+    document.getElementById("Header1_Menu1_myresource").remove()
+    document.getElementById("Header1_Menu1_searchresource").remove()
+    document.getElementById("Header1_Menu1_testurclass").remove()
+    document.getElementsByClass("lessonlinks_new").foreach(_.remove())
+    document.getElementById("UpdatePanel1").remove()
+    document.getElementById("usppaging1").remove()
+    document.getElementById("Confirm_modalOverlay").remove()
+    document.getElementById("Confirm_modalHolder").remove()
     document
   }
 

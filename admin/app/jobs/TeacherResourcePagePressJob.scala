@@ -83,7 +83,8 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
 
   private def pressAsUrl(urlIn: String): String = {
     val uri = URI.create(urlIn)
-    (uri.getPath + (if(uri.getQuery == null) "" else "?" + uri.getQuery)).tail
+    val pressPath = (uri.getPath + (if(uri.getQuery == null) "" else "?" + uri.getQuery)).tail
+    if (pressPath.endsWith("/")) pressPath.dropRight(1) else pressPath
   }
 
   private def parseAndClean(originalDocSource: String, convertToHttps: Boolean): Future[String] = {
