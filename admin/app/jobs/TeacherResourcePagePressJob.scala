@@ -41,8 +41,8 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
 
         Future.sequence(Seq(pressing, takingDown)).map(_ => ())
       } catch {
-        case e: Exception => log.error(s"Failed to decode r2 url: ${e.getMessage}", e)
-          Future.failed(new RuntimeException(s"Failed to decode r2 url: ${e.getMessage}", e))
+        case e: Exception => log.error(s"Failed to decode url: ${e.getMessage}", e)
+          Future.failed(new RuntimeException(s"Failed to decode url: ${e.getMessage}", e))
       }
     } else {
       log.info("TeacherResourcePagePressJob is switched OFF")
@@ -90,11 +90,20 @@ object TeacherResourcePagePressJob extends ExecutionContexts with Logging {
   private def parseAndClean(originalDocSource: String, convertToHttps: Boolean): Future[String] = {
     val cleaners = Seq(TeacherResourceHtmlCleaner)
     val archiveDocument = Jsoup.parse(originalDocSource)
-    val doc: Document = cleaners.filter(_.canClean(archiveDocument))
+    val testDoc = cleaners.filter(_.canClean(archiveDocument))
       .map(_.clean(archiveDocument, convertToHttps))
       .headOption
-      .getOrElse(archiveDocument)
+
+    val doc = if (testDoc.isDefined) {
+      log.info("Success")
+      testDoc.get
+    } else {
+      log.error("No suitable cleaners exist for document. Original source used.")
+      archiveDocument
+    }
+
     Future.successful(doc.toString)
+
   }
 
   private def S3TeacherResourcePutAndCheck(pressUrl: String, cleanedHtml: String) = {

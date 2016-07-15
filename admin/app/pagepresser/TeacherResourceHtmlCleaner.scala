@@ -11,6 +11,7 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
 
   override def clean(document: Document, convertToHttps: Boolean) = {
     removeAds(document)
+    replaceCssLinks(document)
     replaceResourceNameLink(document)
     replaceDownloadLink(document)
     removeAllTagsWithAttribute(document, "li", "onclick")
@@ -28,6 +29,16 @@ object TeacherResourceHtmlCleaner extends HtmlCleaner {
 
   override def removeAds(document: Document): Document = {
     // TODO? (Might not want to, but if we do it'll be a different implementation than HtmlCleaner)
+    document
+  }
+
+  private def replaceCssLinks(document: Document): Document = {
+    document.getAllElements.filter { el =>
+      el.hasAttr("href") && !el.attr("href").startsWith("http") && el.attr("href").endsWith(".css")
+    }.foreach { el =>
+      val cssRef = el.attr("href").split("/").last
+      el.attr("href", s"/teachers.theguardian.com/CSS/$cssRef")
+    }
     document
   }
 
