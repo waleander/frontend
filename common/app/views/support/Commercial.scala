@@ -3,7 +3,6 @@ package views.support
 import common.Edition
 import common.editions.Uk
 import common.commercial.{Branding, CardContent, ContainerModel, PaidContent}
-import common.dfp.AdSize.responsiveSize
 import common.dfp._
 import conf.switches.Switches.{FixedTechTopSlot, containerBrandingFromCapi}
 import layout.{ColumnAndCards, ContentCard, FaciaContainer}
@@ -39,7 +38,7 @@ object Commercial {
       val fluidAdvertsTop = Seq("fluid")
       val leaderboardAdvertsTop = if (FixedTechTopSlot.isSwitchedOn && isUKTechFront(metaData)) None else Some("728,90")
       Map(
-        "mobile" -> (Seq("1,1", "88,70") ++ leaderboardAdvertsTop ++ fabricAdvertsTop ++ fluidAdvertsTop),
+        "tablet" -> (Seq("1,1", "88,70") ++ leaderboardAdvertsTop ++ fabricAdvertsTop ++ fluidAdvertsTop),
         "desktop" -> (Seq("1,1", "88,70") ++ leaderboardAdvertsTop ++ Seq("940,230", "900,250", "970,250") ++ fabricAdvertsTop ++ fluidAdvertsTop)
       )
     }
@@ -48,26 +47,16 @@ object Commercial {
     def cssClasses(metaData: MetaData, edition: Edition, maybeTags: Option[Tags], sizesOverride: Seq[AdSize] = Nil): String = {
       val classes = Seq(
         "top-banner-ad-container",
-        "top-banner-ad-container--desktop",
-        "top-banner-ad-container--above-nav",
-        "js-top-banner-above-nav",
-        "top-banner-ad-container--reveal"
+        "js-top-banner"
       )
 
       classes mkString " "
     }
 
     def slotCssClasses(metaData: MetaData): Seq[String] = {
-        val classes = Seq("top-banner-ad")
+        val classes = Seq("top-banner-ad", "top-banner-ad-desktop")
         val fixedTechSlotClass = if(FixedTechTopSlot.isSwitchedOn && isUKTechFront(metaData)) Some("h250") else None
         classes ++ fixedTechSlotClass
-    }
-  }
-
-  object topSlot {
-
-    def hasResponsiveAd(metaData: MetaData, edition: Edition): Boolean = {
-      hasAdOfSize(TopSlot, responsiveSize, metaData, edition)
     }
   }
 

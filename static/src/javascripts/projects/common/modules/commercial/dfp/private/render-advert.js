@@ -44,8 +44,8 @@ define([
         };
     }
 
-    var addFluid250 = addClassIfHasClass(['ad-slot__fluid250']);
-    var addFluid    = addClassIfHasClass(['ad-slot--fluid', 'ad-slot--h250']);
+    var addFluid250 = addClassIfHasClass(['ad-slot--fluid250']);
+    var addFluid    = addClassIfHasClass(['ad-slot--fluid']);
 
     var sizeCallbacks = {};
 
@@ -55,22 +55,12 @@ define([
     sizeCallbacks[adSizes.fluid] = addFluid250(['ad-slot--top-banner-ad']);
 
     /**
-     * Trigger sticky scrolling if the ad has the magic 'sticky' size
-     */
-    sizeCallbacks[adSizes.stickyMpu] = function (_, advert) {
-        stickyMpu(bonzo(advert.node));
-    };
-
-    /**
      * Trigger sticky scrolling for MPUs in the right-hand article column
      */
     sizeCallbacks[adSizes.mpu] = function (_, advert) {
         var $node = bonzo(advert.node);
         if ($node.hasClass('ad-slot--right')) {
-            var mobileAdSizes = advert.sizes.mobile;
-            if (mobileAdSizes && mobileAdSizes.some(function (size) { return size[0] === 300 && size[1] === 251; })) {
-                stickyMpu($node);
-            }
+            stickyMpu($node);
         } else {
             return addFluid(['ad-slot--facebook'])(_, advert);
         }
