@@ -3,13 +3,15 @@ define([
     'common/utils/QueueAsync',
     'Promise',
     'raven',
-    'common/modules/article/spacefinder'
+    'common/modules/article/spacefinder',
+    'common/utils/steady-page'
 ], function (
     fastdom,
     QueueAsync,
     Promise,
     raven,
-    spacefinder
+    spacefinder,
+    steadyPage
 ) {
     var queue;
 
@@ -26,12 +28,11 @@ define([
      * @param rules - a spacefinder ruleset
      * @param writer - function, takes a para element and injects a container for the new content synchronously. It should NOT use Fastdom.
      * @param options - Options
-     * @param options.domWriter - Override fastdom.write as the mechanism for queueing writes
+     * @param options.useSteadyPage - True if we should use steadypage instead of fastdom to insert els
      *
      * @returns {Promise} - when insertion attempt completed, resolves 'true' if inserted, or 'false' if no space found
      */
     SpaceFiller.prototype.fillSpace = function (rules, writer, options) {
-        var write = (options && options.domWriter) || fastdom.write;
         return queue.add(insertNextContent);
 
         function insertNextContent() {
@@ -39,9 +40,17 @@ define([
         }
 
         function onSpacesFound(paragraphs) {
-            return write(function () {
-                return writer(paragraphs);
-            });
+            if (options.useSteadyPage) {
+                // The writer function should return an array containing an array
+                // of containers and an array of callbacks to insert elements
+                // as the steadypage util expects
+                var steadyPageParams = writer(paragraphs);
+                return steadyPage.insert(steadyPageParams[0], steadyPageParams[1]);
+            } else {
+                return fastdom.write(function () {
+                    return writer(paragraphs);
+                });
+            }
         }
 
         function onNoSpacesFound(ex) {

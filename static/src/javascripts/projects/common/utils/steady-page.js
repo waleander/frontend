@@ -157,10 +157,12 @@ define([
      * Insert an element into the page
      * Use if your element doesn't exist and is inserted into a container
      * ** Don't use fastdom - it is handled in this utility **
-     * @param {HTMLElement} container The element that the component is being inserted into
-     * @param {Function} cb Should contain all functionality that displays and lays-out the element
+     * @param {(HTMLElement|HTMLElement[])} cont Single HTMLElement or Array of HTMLElements of the elements
+     * that should be measured to check scroll adjustment
+     * @param {Function|Function[]} cb A function or array of functions that
+     * contain all functionality that displays and lays-out the element(s)
      */
-    function insert(container, cb) {
+    function insert(cont, cb) {
         if (!config.switches.steadyPageUtil) {
             return fastdom.write(cb);
         }
@@ -170,10 +172,19 @@ define([
             prevHeight: 0
         };
 
-        q.enqueue({
-            container: container,
-            cb: cb
-        });
+        if (Array.isArray(cont) && Array.isArray(cb)) {
+            cont.forEach(function (_, i) {
+                q.enqueue({
+                    container: cont[i],
+                    cb: cb[i]
+                });
+            });
+        } else {
+            q.enqueue({
+                container: cont,
+                cb: cb
+            });
+        }
 
         return (running ? promise : go(initialState)).then(scrollThePage);
     }

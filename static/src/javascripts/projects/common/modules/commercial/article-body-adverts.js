@@ -3,7 +3,6 @@ define([
     'qwery',
     'common/utils/config',
     'common/utils/detect',
-    'common/utils/steady-page',
     'common/modules/article/space-filler',
     'common/modules/commercial/dfp/add-slot',
     'common/modules/commercial/dfp/track-ad-render',
@@ -15,7 +14,6 @@ define([
     qwery,
     config,
     detect,
-    steadyPage,
     spaceFiller,
     addSlot,
     trackAdRender,
@@ -96,11 +94,13 @@ define([
             waitForImages: true,
             waitForLinks: true,
             waitForInteractives: true,
-            domWriter: detect.isBreakpoint({max: 'tablet'}) ? writerOverride : false
+            useSteadyPage: detect.isBreakpoint({max: 'tablet'})
         });
 
         function insertInlineAds(paras) {
             var countAdded = 0;
+            var adSlots = [];
+            var callbacks = [];
             while(countAdded < count && paras.length) {
                 var para = paras.shift();
                 var adDefinition;
@@ -110,11 +110,16 @@ define([
                     inlineAd += 1;
                     adDefinition = 'inline' + inlineAd;
                 }
-                insertAdAtPara(para, adDefinition, 'inline');
+                var insertion = insertAdAtPara(para, adDefinition, 'inline');
+
+                // Stack up slots and callbacks for the steadypage insertion
+                adSlots.push(insertion[0]);
+                callbacks.push(insertion[1]);
+
                 bodyAds += 1;
                 countAdded += 1;
             }
-            return countAdded;
+            return [adSlots, callbacks];
         }
     }
 
@@ -128,7 +133,11 @@ define([
         // If on mobile we will
         // insert ad using steady page
         // to avoid jumping the user
-        detect.isBreakpoint({max: 'tablet'}) ? steadyPage.insert(ad, insertion): insertion();
+        if (detect.isBreakpoint({max: 'tablet'})) {
+            return [ad, insertion];
+        } else {
+            insertion();
+        }
     }
 
     function addSlots(countAdded) {
