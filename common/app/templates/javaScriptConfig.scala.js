@@ -11,6 +11,7 @@
             s""""${CamelCase.fromHyphenated(switch.name)}":${switch.isSwitchedOn}"""}.mkString(","))}
         },
         "tests": { @JavaScript(mvt.ActiveTests.getJavascriptConfig) },
+        "abacusTests": { @JavaScript(abacus.AbacusAgent.javascriptConfig) },
         "modules": { },
         "stylesheets": {
             "fonts": {
@@ -25,5 +26,6 @@
                 }
             }
         }
+        
     }
 }

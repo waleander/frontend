@@ -10,6 +10,7 @@ object Dependencies {
   val awsVersion = "1.10.58"
   val faciaVersion = "1.6.2"
 
+  val abacusModels = "com.gu" %% "abacus-models" % "0.1.1" excludeAll(ExclusionRule("com.typesafe.play", "play-json"))
   val akkaAgent = "com.typesafe.akka" %% "akka-agent" % "2.3.4"
   val akkaContrib = "com.typesafe.akka" %% "akka-contrib" % "2.3.5"
   val apacheCommonsMath3 = "org.apache.commons" % "commons-math3" % "3.2"

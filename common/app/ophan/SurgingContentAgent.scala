@@ -8,6 +8,7 @@ import services.OphanApi
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
 object SurgingContentAgent extends Logging with ExecutionContexts {
 
   private val agent = AkkaAgent[SurgingContent](SurgingContent())

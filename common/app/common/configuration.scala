@@ -547,6 +547,10 @@ class GuardianConfiguration extends Logging {
   object Survey {
     lazy val formStackAccountName: String = "guardiannewsampampmedia"
   }
+
+  object abacus {
+    lazy val host = configuration.getStringProperty("abacus.api.host").getOrElse("http://abacus-api-ro.gutools.co.uk/")
+  }
 }
 
 object ManifestData {
