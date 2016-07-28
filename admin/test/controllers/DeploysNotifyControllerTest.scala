@@ -9,20 +9,19 @@ import play.api.libs.json.Json
 import play.api.libs.ws.WSClient
 import play.api.test.Helpers._
 import play.api.test.{FakeHeaders, FakeRequest}
-import test.{ConfiguredTestSuite, WithTestWsClient}
+import test.{ConfiguredTestSuite, WithMaterializer, WithTestWsClient}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 @DoNotDiscover class DeploysNotifyControllerTest
   extends WordSpec
-  with Matchers
-  with ConfiguredTestSuite
-  with ExecutionContexts
-  with BeforeAndAfterAll
-  with WithTestWsClient {
-
-  implicit lazy val materializer: Materializer = app.materializer
+    with Matchers
+    with ConfiguredTestSuite
+    with ExecutionContexts
+    with BeforeAndAfterAll
+    with WithMaterializer
+    with WithTestWsClient {
 
   val existingBuild = "1629"
   val fakeApiKey = "fake-api-key"

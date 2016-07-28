@@ -2,6 +2,7 @@ package test
 
 import java.io.File
 
+import akka.stream.Materializer
 import com.gargoylesoftware.htmlunit.BrowserVersion
 import common.{ExecutionContexts, Lazy}
 import conf.Configuration
@@ -12,7 +13,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play._
 import play.api._
 import play.api.libs.ws.WSClient
-import play.api.libs.ws.ning.{NingWSClient, NingWSClientConfig}
+import play.api.libs.ws.ahc.AhcWSClient
 import play.api.test._
 import recorder.ContentApiHttpRecorder
 
@@ -125,10 +126,15 @@ object TestRequest {
   }
 }
 
-trait WithTestWsClient {
-  self: WithTestWsClient with BeforeAndAfterAll =>
+trait WithMaterializer {
+  def app: Application
+  implicit lazy val materializer: Materializer = app.materializer
+}
 
-  private val lazyWsClient = Lazy(NingWSClient(NingWSClientConfig(maxRequestRetry = 0)))
+trait WithTestWsClient {
+  self: WithTestWsClient with BeforeAndAfterAll with WithMaterializer =>
+
+  private val lazyWsClient = Lazy(AhcWSClient())
   lazy val wsClient: WSClient = lazyWsClient
 
   override def afterAll() = if(lazyWsClient.isDefined) lazyWsClient.close

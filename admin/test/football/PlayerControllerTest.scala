@@ -7,9 +7,9 @@ import play.api.mvc.AnyContentAsFormUrlEncoded
 import play.api.test._
 import play.api.test.Helpers._
 import football.services.GetPaClient
-import test.{ConfiguredTestSuite, WithTestWsClient}
+import test.{ConfiguredTestSuite, WithMaterializer, WithTestWsClient}
 
-@DoNotDiscover class PlayerControllerTest extends FreeSpec with ShouldMatchers with GetPaClient with ExecutionContexts with ConfiguredTestSuite with BeforeAndAfterAll with WithTestWsClient {
+@DoNotDiscover class PlayerControllerTest extends FreeSpec with ShouldMatchers with GetPaClient with ExecutionContexts with ConfiguredTestSuite with BeforeAndAfterAll with WithMaterializer with WithTestWsClient {
 
   override lazy val mode = app.mode
 

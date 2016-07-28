@@ -38,8 +38,7 @@ class ApplicationsTestSuite extends Suites (
   new CrosswordDataTest,
   new NewspaperControllerTest
 ) with SingleServerSuite
-  with BeforeAndAfterAll
-  with WithTestWsClient {
+  with BeforeAndAfterAll with WithMaterializer with WithTestWsClient {
 
   override lazy val port: Int = new HealthCheck(wsClient).testPort
 }

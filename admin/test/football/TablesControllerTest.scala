@@ -8,7 +8,7 @@ import play.api.mvc.AnyContentAsFormUrlEncoded
 import play.api.test._
 import play.api.test.Helpers._
 import play.twirl.api.HtmlFormat
-import test.{ConfiguredTestSuite, WithTestWsClient}
+import test.{ConfiguredTestSuite, WithMaterializer, WithTestWsClient}
 
 import scala.annotation.tailrec
 import football.services.GetPaClient
@@ -22,6 +22,7 @@ import scala.language.postfixOps
     with ShouldMatchers
     with ConfiguredTestSuite
     with BeforeAndAfterAll
+    with WithMaterializer
     with WithTestWsClient {
 
   override lazy val mode = app.mode

@@ -70,6 +70,7 @@ class DiscussionTestSuite extends Suites (
   new ProfileTest
 ) with SingleServerSuite
   with BeforeAndAfterAll
+  with WithMaterializer
   with WithTestWsClient {
   override lazy val port: Int = new HealthCheck(wsClient).testPort
 }
