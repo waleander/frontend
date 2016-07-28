@@ -1,22 +1,18 @@
 package test
 
-import akka.util.{CompactByteString, ByteString}
 import conf.Configuration
-import org.asynchttpclient.HttpResponseStatus
-import org.asynchttpclient.netty.NettyResponse
 import controllers.HealthCheck
 import org.scalatest.{BeforeAndAfterAll, Suites}
-import play.api.libs.ws.ning.NingWSResponse
-import recorder.HttpRecorder
+import recorder.{HttpRecorder, WsHttpRecorder}
 import com.ning.http.client.{FluentCaseInsensitiveStringsMap, Response => NingResponse}
 import com.ning.http.client.uri.Uri
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.Application
 import java.util
-import java.net.URI
 import java.io.{File, InputStream}
 import java.nio.ByteBuffer
-import discussion.{DiscussionApi, DiscussionApiLike}
+import discussion.DiscussionApiLike
+
+import scala.concurrent.duration._
 
 private case class Resp(getResponseBody: String) extends NingResponse {
   def getContentType: String = "application/json"

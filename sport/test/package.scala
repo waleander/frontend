@@ -6,18 +6,14 @@ import common.ExecutionContexts
 import java.io.{File, InputStream}
 import java.nio.ByteBuffer
 import java.util
-
 import football.controllers.HealthCheck
 import org.scalatest.{BeforeAndAfterAll, Suites}
-import play.api.libs.ws.ning.NingWSResponse
-import recorder.HttpRecorder
+import recorder.{HttpRecorder, WsHttpRecorder}
 import play.api.libs.ws.{WSClient, WSResponse}
 import conf.FootballClient
 import pa.{Http, Response => PaResponse}
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.io.Source
 
 class SportTestSuite extends Suites (
   new CompetitionListControllerTest,
