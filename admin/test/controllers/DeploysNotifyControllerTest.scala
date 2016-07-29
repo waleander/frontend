@@ -49,7 +49,7 @@ import scala.concurrent.duration._
     }
   }
 
-  val controller = new DeploysNotifyControllerStub(wsClient)
+  lazy val controller = new DeploysNotifyControllerStub(wsClient)
 
     s"POST /deploys-radiator/api/builds/${existingBuild}/notify" when {
 

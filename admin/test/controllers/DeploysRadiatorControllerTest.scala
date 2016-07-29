@@ -33,14 +33,14 @@ import scala.concurrent.duration._
     }
   }
 
-  val recordingHttpClient = new TestHttpClient(wsClient)
+  lazy val recordingHttpClient = new TestHttpClient(wsClient)
 
   class DeploysRadiatorControllerStub extends DeploysRadiatorController {
     override val teamcity = new TeamcityService(recordingHttpClient)
     override val riffRaff = new RiffRaffService(recordingHttpClient)
   }
 
-  val controller = new DeploysRadiatorControllerStub()
+  lazy val controller = new DeploysRadiatorControllerStub()
 
   "GET /deploys-radiator/api/deploys" should {
     val getDeploysRequest = FakeRequest(method = "GET", path = "/deploys-radiator/api/deploys")
