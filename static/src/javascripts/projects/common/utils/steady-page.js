@@ -35,11 +35,11 @@ define([
      *
      * @param  {Number} state.scrollY The original scroll position
      */
-    function go(state) {
+    function go() {
         running = true;
 
         var batch = [];
-        var batchHeightsBeforeInsert;
+        var originalScrollPos;
 
         promise = new Promise(function(resolve){
             while (!q.empty()) {
@@ -49,37 +49,27 @@ define([
 
             resolve(batch);
         })
-        .then(function(){
-            return getHeightOfAllContainers(batch);
-        })
-        .then(function(heightsBeforeIns) {
-            batchHeightsBeforeInsert = heightsBeforeIns || 0;
+        .then(function() {
+            originalScrollPos = window.scrollY;
             return insertElements(batch);
         })
         .then(function(){
-            return getHeightOfAllContainers(batch).then(function(newHeights) {
-                return assign(state, {
-                    newHeight: newHeights - batchHeightsBeforeInsert
-                });
-            });
+            return getHeightOfAllContainers(batch);
         })
-        .then(function(state){
-            if (q.empty()) {
-                // If the queue is empty (no more elements need to be added to the page) we immediately scroll
-                var scrollY = state.newHeight + state.prevHeight + state.scrollY;
+        .then(function(newHeights){
+            var scrollY = newHeights + originalScrollPos;
 
-                if (scrollY) {
-                    window.scrollTo(0, scrollY);
-                }
+            if (scrollY) {
+                window.scrollTo(0, scrollY);
+            }
 
-                running = false;
-            } else {
+            running = false;
+
+            if (!q.empty()) {
                 // If there are elements waiting to be added to the page we take the previous container's heights
                 // and recursively call the function so that we only scroll the page once the queue is empty -
                 // this prevents excessive and jarring scrolling
-                return go(assign(state, {
-                    prevHeight: state.prevHeight + state.newHeight
-                }));
+                return go();
             }
         });
 
@@ -99,17 +89,12 @@ define([
             return fastdom.write(cb);
         }
 
-        var initialState = {
-            scrollY: window.scrollY,
-            prevHeight: 0
-        };
-
         q.enqueue({
             container: container,
             cb: cb
         });
 
-        return (running ? promise : go(initialState));
+        return (running ? promise : go());
     }
 
 
@@ -135,14 +120,16 @@ define([
     function getHeightOfAllContainers (batch) {
         var viewportHeight;
 
-        return fastdom.read(function() {
+        return new Promise(function(resolve){
             viewportHeight = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
             // Add all the heights of the passed in batch
             // removing the current height
-            return batch.filter(elementIsAbove).reduce(function(height, insertion) {
+            resolve(batch.filter(elementIsAbove).reduce(function(height, insertion) {
                 return height + readHeight(insertion.container);
-            }, 0);
+            }, 0));
         });
+
+
 
         function elementIsAbove(el) {
 
