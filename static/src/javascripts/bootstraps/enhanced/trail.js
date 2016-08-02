@@ -102,13 +102,8 @@ define([
 
     function repositionComments() {
         if (!identityApi.isUserLoggedIn()) {
-            var $comments = $('.js-comments');
             fastdom.write(function () {
-                $comments.appendTo(qwery('.js-repositioned-comments'));
-                if (window.location.hash === '#comments') {
-                    var top = $comments.offset().top;
-                    $(document.body).scrollTop(top);
-                }
+                $('.js-comments').appendTo(qwery('.js-repositioned-comments'));
             });
         }
     }

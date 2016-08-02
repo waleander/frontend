@@ -25,13 +25,10 @@ define([
      *
      * @param rules - a spacefinder ruleset
      * @param writer - function, takes a para element and injects a container for the new content synchronously. It should NOT use Fastdom.
-     * @param options - Options
-     * @param options.domWriter - Override fastdom.write as the mechanism for queueing writes
      *
      * @returns {Promise} - when insertion attempt completed, resolves 'true' if inserted, or 'false' if no space found
      */
     SpaceFiller.prototype.fillSpace = function (rules, writer, options) {
-        var write = (options && options.domWriter) || fastdom.write;
         return queue.add(insertNextContent);
 
         function insertNextContent() {
@@ -39,7 +36,7 @@ define([
         }
 
         function onSpacesFound(paragraphs) {
-            return write(function () {
+            return fastdom.write(function () {
                 return writer(paragraphs);
             });
         }
