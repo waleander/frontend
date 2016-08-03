@@ -114,3 +114,7 @@ GET        /$leftSide<[^+]+>+*rightSide                                         
 
 # Google site verification
 GET        /google$account<[\w\d-]*>.html                                       controllers.SiteVerificationController.googleSiteVerify(account)
+
+
+
+GET            /documentary/bertha/     controllers.DocumentaryController.renderDoc()

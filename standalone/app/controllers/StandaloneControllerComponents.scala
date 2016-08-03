@@ -53,5 +53,6 @@ trait StandaloneControllerComponents
   lazy val travelOffersController = wire[TravelOffersController]
   lazy val wallchartController = wire[WallchartController]
   lazy val weatherController = wire[WeatherController]
+  lazy val documentaryController = wire[DocumentaryController]
 
 }

@@ -7,5 +7,6 @@ class ItemController(articleController: ArticleController) extends ItemResponseC
   MediaController,
   InteractiveController,
   ImageContentController,
-  FaciaDraftController
+  FaciaDraftController,
+  DocumentaryController
 )

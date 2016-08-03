@@ -421,6 +421,7 @@ GET            /$path<[\w\d-]*(/[\w\d-]*)?/(cartoon|graphic|picture)/.*>        
 GET            /$path<[\w\d-]*(/[\w\d-]*)?/(video|audio)/.*>/info.json                                                           controllers.MediaController.renderInfoJson(path)
 GET            /$path<[\w\d-]*(/[\w\d-]*)?/(video|audio)/.*>.json                                                                controllers.MediaController.renderJson(path)
 GET            /$path<[\w\d-]*(/[\w\d-]*)?/(video|audio)/.*>                                                                     controllers.MediaController.render(path)
+GET            /documentary/bertha/     controllers.DocumentaryController.renderDoc()
 
 GET            /$path<[\w\d-]*(/[\w\d-]*)?/(interactive|ng-interactive)/.*>.json                                                 controllers.InteractiveController.renderInteractiveJson(path)
 GET            /$path<[\w\d-]*(/[\w\d-]*)?/(interactive|ng-interactive)/.*>                                                      controllers.InteractiveController.renderInteractive(path)
