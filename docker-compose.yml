@@ -1,0 +1,26 @@
+dotcom:
+  build: .
+  dockerfile: Dockerfile-DEV
+  environment:
+    VIRTUAL_HOST: m.thegulocal.com
+  command: sbt "project dev-build" ~run
+  volumes:
+    - .:/app
+    - ~/.gu:/root/.gu
+    - ~/.aws:/root/.aws
+    - ~/.npm:/root/.npm
+    - ~/.sbt:/root/.sbt
+    - ~/.ivy2:/root/.ivy2
+
+
+identity:
+  build: ./identity
+  environment:
+    APP_SECRET: localdev
+    VIRTUAL_HOST: profile.thegulocal.com
+  command: sbt "project identity" ~idrun
+  volumes:
+    - .:/opt/app
+    - ~/.gu:/root/.gu
+    - ~/.sbt:/root/.sbt
+    - ~/.ivy2:/root/.ivy2
