@@ -15,22 +15,36 @@
      */
     function DOMTokenList(el) {
         this.el = el;
+        // In SVGs the className is an object instead of a string
+        // https://www.w3.org/TR/SVG/single-page.html#types-InterfaceSVGStylable
+        var className = el.className;
+        if ('baseVal' in className) {
+            className = className.baseVal;
+        }
         // The className needs to be trimmed and split on whitespace
         // to retrieve a list of classes.
-        var classes = el.className.replace(/^\s+|\s+$/g, '').split(/\s+/);
+        var classes = className.replace(/^\s+|\s+$/g, '').split(/\s+/);
         for (var i = 0; i < classes.length; i++) {
             push.call(this, classes[i]);
         }
     };
 
+    function set (el, string) {
+        if ('baseVal' in el.className) {
+            el.className.baseVal = string;
+        } else {
+            el.className = string;
+        }
+    }
+
     DOMTokenList.prototype = {
         add: function (token) {
             if (this.contains(token)) return;
             push.call(this, token);
-            this.el.className = this.toString();
+            set(this.el, this.toString());
         },
         contains: function (token) {
-            return this.el.className.indexOf(token) != -1;
+            return this.indexOf(token) != -1;
         },
         item: function (index) {
             return this[index] || null;
@@ -41,7 +55,7 @@
                 if (this[i] == token) break;
             }
             splice.call(this, i, 1);
-            this.el.className = this.toString();
+            set(this.el, this.toString());
         },
         toString: function () {
             return join.call(this, ' ');
